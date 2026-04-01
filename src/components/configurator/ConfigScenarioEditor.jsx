@@ -12,6 +12,9 @@ const DIMENSIONS = [
   { id: 'esg', label: 'ESG', icon: '◈' },
   { id: 'implementation', label: 'Implementation', icon: '◧' },
   { id: 'performance', label: 'Performance', icon: '↗' },
+  { id: 'sector', label: 'Sector', icon: '⬡' },
+  { id: 'currency', label: 'Currency', icon: '€' },
+  { id: 'style', label: 'Style', icon: '▦' },
 ]
 
 export default function ConfigScenarioEditor({ sc, idx, portfolio, updaters, onRemove, canRemove }) {

@@ -19,6 +19,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
     toggleComparison, upCompLabel,
     upCompAlloc, upCompESG, upCompSFDR,
     upCompImpl, upCompCosts,
+    upCompSector, upCompCurrency,
   } = updaters
 
   const comp = sc.comparison
@@ -229,6 +230,77 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
                   </Field>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Sector override */}
+          {sc.dimension === 'sector' && (
+            <div style={{ marginTop: 14 }}>
+              <SubLabel>Sector overrides</SubLabel>
+              <div style={{ ...c.helpText, marginBottom: 8 }}>
+                Only fill in sectors that change.
+              </div>
+              {(portfolio.sectors || []).map((sec, i) => {
+                const compSec = comp.sectors?.find(s => s.id === sec.id)
+                const compVal = compSec?.weight
+                const delta = compVal !== undefined ? compVal - sec.weight : 0
+                return (
+                  <div key={sec.id} style={c.deltaRow}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: sec.color }} />
+                      <span style={c.rowLabel}>{sec.label}</span>
+                      <span style={c.helpText}>({sec.weight}%)</span>
+                    </div>
+                    <span style={c.deltaArrow}>→</span>
+                    <input style={{ ...c.input, width: 64 }}
+                      type="number" min={0} max={100}
+                      placeholder="—"
+                      value={compVal ?? ''}
+                      onChange={e => upCompSector(idx, sec.id, e.target.value)} />
+                    <span style={{
+                      ...c.deltaDiff,
+                      color: !compVal ? '#C0C0BB' : delta > 0 ? '#E01B41' : delta < 0 ? '#4ED596' : '#8A8A82',
+                    }}>
+                      {compVal !== undefined && delta !== 0 ? `${delta > 0 ? '+' : ''}${delta}%` : compVal !== undefined ? '=' : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Currency override */}
+          {sc.dimension === 'currency' && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <SubLabel>Currency overrides</SubLabel>
+                {comp.currencies && (
+                  <TotalBadge values={comp.currencies.map(c => c.weight)} label="Total" />
+                )}
+              </div>
+              {(portfolio.currencies || []).map((cur, i) => {
+                const compCur = comp.currencies?.find(c => c.currency === cur.currency)
+                const compVal = compCur?.weight
+                const delta = compVal !== undefined ? compVal - cur.weight : 0
+                return (
+                  <div key={cur.currency} style={c.deltaRow}>
+                    <span style={{ ...c.rowLabel, flex: 1 }}>{cur.currency}</span>
+                    <span style={c.deltaFrom}>{cur.weight}%</span>
+                    <span style={c.deltaArrow}>→</span>
+                    <input style={{ ...c.input, width: 64 }}
+                      type="number" min={0} max={100}
+                      placeholder="—"
+                      value={compVal ?? ''}
+                      onChange={e => upCompCurrency(idx, cur.currency, e.target.value)} />
+                    <span style={{
+                      ...c.deltaDiff,
+                      color: !compVal ? '#C0C0BB' : delta > 0 ? '#E01B41' : delta < 0 ? '#4ED596' : '#8A8A82',
+                    }}>
+                      {compVal !== undefined && delta !== 0 ? `${delta > 0 ? '+' : ''}${delta}%` : compVal !== undefined ? '=' : '—'}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           )}
 

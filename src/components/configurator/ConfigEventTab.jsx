@@ -9,7 +9,7 @@ const LANGUAGES = ['en', 'nl', 'fr', 'de']
 
 export default function ConfigEventTab({ draft, updaters }) {
   const [activeLang, setActiveLang] = useState('en')
-  const { upEvent, upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR } = updaters
+  const { upEvent, upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR, upSector, upCurrency } = updaters
   const p = draft.portfolio
 
   const allocTotal = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
@@ -192,6 +192,36 @@ export default function ConfigEventTab({ draft, updaters }) {
               </Field>
             ))}
           </div>
+        </Section>
+
+        {/* Sector weights */}
+        <Section
+          title="Sector Weights"
+          titleRight={
+            <TotalBadge values={(p.sectors || []).map(s => s.weight)} label="Total" />
+          }
+        >
+          {(p.sectors || []).map((sec, i) => (
+            <Field key={sec.id} label={sec.label} row>
+              <NumInput small value={sec.weight} onChange={v => upSector(i, v)} />
+              <span style={c.unit}>%</span>
+            </Field>
+          ))}
+        </Section>
+
+        {/* Currency weights */}
+        <Section
+          title="Currency Weights"
+          titleRight={
+            <TotalBadge values={(p.currencies || []).map(c => c.weight)} label="Total" />
+          }
+        >
+          {(p.currencies || []).map((cur, i) => (
+            <Field key={cur.currency} label={cur.currency} row>
+              <NumInput small value={cur.weight} onChange={v => upCurrency(i, v)} />
+              <span style={c.unit}>%</span>
+            </Field>
+          ))}
         </Section>
 
       </div>

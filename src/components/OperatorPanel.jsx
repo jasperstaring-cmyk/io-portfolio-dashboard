@@ -1,16 +1,19 @@
 const DIMENSIONS = [
-  { id: 'asset_class', label: 'Asset Class', icon: '◉' },
-  { id: 'geography', label: 'Geography', icon: '⊕' },
-  { id: 'esg', label: 'ESG', icon: '◈' },
+  { id: 'asset_class',    label: 'Asset Class',    icon: '◉' },
+  { id: 'geography',      label: 'Geography',      icon: '⊕' },
+  { id: 'esg',            label: 'ESG',            icon: '◈' },
   { id: 'implementation', label: 'Implementation', icon: '◧' },
-  { id: 'performance', label: 'Performance', icon: '↗' },
+  { id: 'performance',    label: 'Performance',    icon: '↗' },
+  { id: 'sector',         label: 'Sector',         icon: '⬡' },
+  { id: 'currency',       label: 'Currency',       icon: '€' },
+  { id: 'style',          label: 'Style',          icon: '▦' },
 ]
 
 export default function OperatorPanel({
   scenarios, activeIndex, onSelectScenario,
   showComparison, onToggleComparison,
   activeDimension, onSelectDimension,
-  activeScenario, lang
+  activeScenario, lang, onEnterExplore
 }) {
   return (
     <div style={styles.panel}>
@@ -86,6 +89,19 @@ export default function OperatorPanel({
           </button>
         </div>
       </div>
+
+      <div style={styles.vDivider} />
+
+      <div style={styles.section}>
+        <div style={styles.sectionLabel}>EXPLORE</div>
+        <div style={styles.row}>
+          <button onClick={onEnterExplore} style={styles.exploreBtn}>
+            <span style={{ fontSize: '0.82rem', lineHeight: 1 }}>⬡</span>
+            <span style={styles.exploreBtnLabel}>Explore mode</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   )
 }
@@ -218,5 +234,25 @@ const styles = {
     fontSize: '0.6rem',
     color: '#8A8A82',
     lineHeight: 1.35,
+  },
+  exploreBtn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '7px 16px',
+    background: 'rgba(78,213,150,0.07)',
+    border: '1.5px solid rgba(78,213,150,0.35)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  exploreBtnLabel: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.57rem',
+    fontWeight: 700,
+    color: '#1a7a50',
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
   },
 }

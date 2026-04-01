@@ -4,6 +4,9 @@ import GeographyChart from './charts/GeographyChart'
 import ESGChart from './charts/ESGChart'
 import ImplementationChart from './charts/ImplementationChart'
 import PerformanceChart from './charts/PerformanceChart'
+import SectorChart from './charts/SectorChart'
+import CurrencyChart from './charts/CurrencyChart'
+import StyleChart from './charts/StyleChart'
 
 const DIMENSIONS = {
   asset_class: AssetClassChart,
@@ -11,6 +14,9 @@ const DIMENSIONS = {
   esg: ESGChart,
   implementation: ImplementationChart,
   performance: PerformanceChart,
+  sector: SectorChart,
+  currency: CurrencyChart,
+  style: StyleChart,
 }
 
 export default function PresentationView({

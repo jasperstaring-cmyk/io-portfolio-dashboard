@@ -76,6 +76,31 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+
+  function upSector(idx, val) {
+    setDraft(d => ({
+      ...d,
+      portfolio: {
+        ...d.portfolio,
+        sectors: d.portfolio.sectors.map((s, i) =>
+          i === idx ? { ...s, weight: val } : s
+        ),
+      },
+    }))
+  }
+
+  function upCurrency(idx, val) {
+    setDraft(d => ({
+      ...d,
+      portfolio: {
+        ...d.portfolio,
+        currencies: d.portfolio.currencies.map((c, i) =>
+          i === idx ? { ...c, weight: val } : c
+        ),
+      },
+    }))
+  }
+
   // ── Scenarios ────────────────────────────────────────────────────────────
 
   function upScenario(idx, key, val) {
@@ -204,6 +229,41 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+
+  function upCompSector(idx, sectorId, val) {
+    setDraft(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx || !s.comparison) return s
+        const sectors = s.comparison.sectors || []
+        const exists = sectors.find(x => x.id === sectorId)
+        const newSectors = val === ''
+          ? sectors.filter(x => x.id !== sectorId)
+          : exists
+            ? sectors.map(x => x.id === sectorId ? { ...x, weight: Number(val) } : x)
+            : [...sectors, { id: sectorId, weight: Number(val) }]
+        return { ...s, comparison: { ...s.comparison, sectors: newSectors } }
+      }),
+    }))
+  }
+
+  function upCompCurrency(idx, currency, val) {
+    setDraft(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx || !s.comparison) return s
+        const currencies = s.comparison.currencies || []
+        const exists = currencies.find(x => x.currency === currency)
+        const newCurrencies = val === ''
+          ? currencies.filter(x => x.currency !== currency)
+          : exists
+            ? currencies.map(x => x.currency === currency ? { ...x, weight: Number(val) } : x)
+            : [...currencies, { currency, weight: Number(val) }]
+        return { ...s, comparison: { ...s.comparison, currencies: newCurrencies } }
+      }),
+    }))
+  }
+
   function toggleComparison(idx) {
     setDraft(d => ({
       ...d,
@@ -248,12 +308,13 @@ export function useConfigDraft(initialConfig) {
     // Event
     upEvent,
     // Portfolio
-    upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR,
+    upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR, upSector, upCurrency,
     // Scenarios
     upScenario, upScenarioLang, upSpeaker,
     // Comparison
     upCompLabel, upCompAlloc, upCompESG, upCompSFDR,
     upCompImpl, upCompCosts, toggleComparison,
+    upCompSector, upCompCurrency,
     // Scenario CRUD
     addScenario, removeScenario,
   }

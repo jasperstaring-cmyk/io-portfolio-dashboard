@@ -55,3 +55,34 @@ html, body, #root {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray200); border-radius: 2px; }
+
+/* ── Chart animations ─────────────────────────────────────────────────────── */
+
+@keyframes donut-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.donut-animate {
+  animation: donut-in 0.55s cubic-bezier(0.34, 1.26, 0.64, 1) both;
+  transform-origin: center;
+}
+
+.chart-fade-in {
+  animation: fade-up 0.4s ease both;
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+@keyframes explore-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
