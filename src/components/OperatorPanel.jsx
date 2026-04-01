@@ -1,3 +1,28 @@
+// Check if a comparison has relevant data for the active dimension
+function comparisonRelevantFor(comparison, dimension) {
+  if (!comparison) return false
+  switch (dimension) {
+    case 'asset_class':
+      return !!(comparison.allocations?.length)
+    case 'geography':
+      return !!(comparison.allocations?.some(a => a.geographic?.length))
+    case 'esg':
+      return !!(comparison.esg)
+    case 'implementation':
+      return !!(comparison.implementation || comparison.costs)
+    case 'sector':
+      return !!(comparison.sectors?.length)
+    case 'currency':
+      return !!(comparison.currencies?.length)
+    case 'style':
+      return !!(comparison.style?.length)
+    case 'performance':
+      return false
+    default:
+      return false
+  }
+}
+
 const DIMENSIONS = [
   { id: 'asset_class',    label: 'Asset Class',    icon: '◉' },
   { id: 'geography',      label: 'Geography',      icon: '⊕' },
@@ -67,26 +92,40 @@ export default function OperatorPanel({
       <div style={styles.section}>
         <div style={styles.sectionLabel}>COMPARE</div>
         <div style={styles.row}>
-          <button
-            onClick={onToggleComparison}
-            disabled={!activeScenario?.comparison}
-            style={{
-              ...styles.compareBtn,
-              ...(showComparison ? styles.compareBtnActive : {}),
-              ...(!activeScenario?.comparison ? styles.compareBtnDisabled : {}),
-            }}>
-            <span style={{
-              ...styles.compareToggle,
-              color: showComparison ? '#4ED596' : '#8A8A82',
-            }}>
-              {showComparison ? '● ON' : '○ OFF'}
-            </span>
-            <span style={styles.compareDesc}>
-              {activeScenario?.comparison
-                ? (activeScenario.comparison.label?.[lang] || activeScenario.comparison.label?.en)
-                : 'No comparison available'}
-            </span>
-          </button>
+          {(() => {
+            const comp = activeScenario?.comparison
+            const isRelevant = comparisonRelevantFor(comp, activeDimension)
+            const hasComp = !!comp
+            return (
+              <button
+                onClick={onToggleComparison}
+                disabled={!hasComp}
+                style={{
+                  ...styles.compareBtn,
+                  ...(showComparison ? styles.compareBtnActive : {}),
+                  ...(!hasComp ? styles.compareBtnDisabled : {}),
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{
+                    ...styles.compareToggle,
+                    color: showComparison ? '#4ED596' : '#8A8A82',
+                  }}>
+                    {showComparison ? '● ON' : '○ OFF'}
+                  </span>
+                  {hasComp && !isRelevant && (
+                    <span style={styles.compareWarn} title="This comparison has no data for the current dimension">
+                      ⚠ not for this view
+                    </span>
+                  )}
+                </div>
+                <span style={styles.compareDesc}>
+                  {hasComp
+                    ? (comp.label?.[lang] || comp.label?.en)
+                    : 'No comparison available'}
+                </span>
+              </button>
+            )
+          })()}
         </div>
       </div>
 
@@ -246,6 +285,13 @@ const styles = {
     borderRadius: '6px',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
+  },
+  compareWarn: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.52rem',
+    fontWeight: 700,
+    color: '#F5A623',
+    letterSpacing: '0.02em',
   },
   exploreBtnLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
