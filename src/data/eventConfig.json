@@ -144,7 +144,15 @@
       "maxDrawdown": -12.3
     },
     "costs": {
-      "weightedTer": 0.42
+      "weightedTer": 0.42,
+      "marketAvg": 0.68,
+      "breakdown": [
+        { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.35 },
+        { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.22 },
+        { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.58 },
+        { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 1.05 },
+        { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.08 }
+      ]
     },
     "sectors": [
       {
@@ -518,7 +526,15 @@
           "individual": 5
         },
         "costs": {
-          "weightedTer": 0.18
+          "weightedTer": 0.18,
+          "marketAvg": 0.68,
+          "breakdown": [
+            { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.12 },
+            { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.09 },
+            { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.20 },
+            { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 0.35 },
+            { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.06 }
+          ]
         }
       }
     },
@@ -677,43 +693,63 @@
           "de": "Value-Ausrichtung"
         },
         "style": [
-          {
-            "id": "large_value",
-            "weight": 22
-          },
-          {
-            "id": "large_blend",
-            "weight": 16
-          },
-          {
-            "id": "large_growth",
-            "weight": 12
-          },
-          {
-            "id": "mid_value",
-            "weight": 14
-          },
-          {
-            "id": "mid_blend",
-            "weight": 10
-          },
-          {
-            "id": "mid_growth",
-            "weight": 7
-          },
-          {
-            "id": "small_value",
-            "weight": 10
-          },
-          {
-            "id": "small_blend",
-            "weight": 6
-          },
-          {
-            "id": "small_growth",
-            "weight": 3
-          }
+          { "id": "large_value",  "weight": 22 },
+          { "id": "large_blend",  "weight": 16 },
+          { "id": "large_growth", "weight": 12 },
+          { "id": "mid_value",    "weight": 14 },
+          { "id": "mid_blend",    "weight": 10 },
+          { "id": "mid_growth",   "weight": 7  },
+          { "id": "small_value",  "weight": 10 },
+          { "id": "small_blend",  "weight": 6  },
+          { "id": "small_growth", "weight": 3  }
         ]
+      }
+    },
+    {
+      "id": "cost_efficiency",
+      "speakerProfile": {
+        "name": "Mark de Vries",
+        "title": "Head of Manager Selection",
+        "organisation": "APG Asset Management"
+      },
+      "speaker": {
+        "en": "Cost Efficiency",
+        "nl": "Kostenefficiëntie",
+        "fr": "Efficience des coûts",
+        "de": "Kosteneffizienz"
+      },
+      "theme": {
+        "en": "Cost & TER",
+        "nl": "Kosten & TER",
+        "fr": "Coûts & TER",
+        "de": "Kosten & TER"
+      },
+      "policyQuestion": {
+        "en": "How much of your gross return are you giving away in costs — and is it worth it?",
+        "nl": "Hoeveel van uw brutorendement geeft u weg aan kosten — en is dat de moeite waard?",
+        "fr": "Quelle part de votre rendement brut cédez-vous en frais — et est-ce justifié?",
+        "de": "Wie viel Ihrer Bruttorendite verlieren Sie durch Kosten — und lohnt es sich?"
+      },
+      "dimension": "cost",
+      "state": "base",
+      "comparison": {
+        "label": {
+          "en": "Passive ETF equivalent",
+          "nl": "Passief ETF equivalent",
+          "fr": "Équivalent ETF passif",
+          "de": "Passives ETF-Äquivalent"
+        },
+        "costs": {
+          "weightedTer": 0.18,
+          "marketAvg": 0.68,
+          "breakdown": [
+            { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.12 },
+            { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.09 },
+            { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.20 },
+            { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 0.35 },
+            { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.06 }
+          ]
+        }
       }
     }
   ]

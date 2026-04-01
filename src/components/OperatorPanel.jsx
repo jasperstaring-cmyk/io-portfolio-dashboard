@@ -16,6 +16,8 @@ function comparisonRelevantFor(comparison, dimension) {
       return !!(comparison.currencies?.length)
     case 'style':
       return !!(comparison.style?.length)
+    case 'cost':
+      return !!(comparison.costs)
     case 'performance':
       return false
     default:
@@ -32,6 +34,7 @@ const DIMENSIONS = [
   { id: 'sector',         label: 'Sector',         icon: '⬡' },
   { id: 'currency',       label: 'Currency',       icon: '€' },
   { id: 'style',          label: 'Style',          icon: '▦' },
+  { id: 'cost',           label: 'Cost',           icon: '₀' },
 ]
 
 export default function OperatorPanel({

@@ -6,20 +6,36 @@ const RC = {
 }
 
 export default function GeographyChart({ portfolio, scenario, showComparison }) {
-  const geoMap = {}
-  portfolio.allocations.forEach(a => {
-    a.geographic?.forEach(g => {
-      geoMap[g.region] = (geoMap[g.region] || 0) + g.weight
+  // Build a geoMap by scaling each asset class's geographic sub-weights
+  // proportionally to its current allocation (a.current). This makes the chart
+  // respond correctly in explore mode when allocation sliders change a.current.
+  function buildGeoMap(allocations, compAllocations) {
+    const map = {}
+    allocations.forEach(a => {
+      if (!a.geographic?.length) return
+      const rawSum = a.geographic.reduce((s, g) => s + g.weight, 0)
+      if (rawSum === 0) return
+      // In comparison mode, use override current if available
+      let current = a.current ?? rawSum
+      if (compAllocations) {
+        const override = compAllocations.find(c => c.id === a.id)
+        if (override?.current !== undefined) current = override.current
+      }
+      const scale = current / rawSum
+      a.geographic.forEach(g => {
+        map[g.region] = (map[g.region] || 0) + g.weight * scale
+      })
     })
-  })
+    Object.keys(map).forEach(k => { map[k] = Math.round(map[k]) })
+    return map
+  }
+
+  const geoMap = buildGeoMap(portfolio.allocations)
 
   const compMap = {}
   if (showComparison && scenario?.comparison?.allocations) {
-    portfolio.allocations.forEach(a => {
-      const comp = scenario.comparison.allocations.find(c => c.id === a.id)
-      const geo = comp?.geographic || a.geographic
-      geo?.forEach(g => { compMap[g.region] = (compMap[g.region] || 0) + g.weight })
-    })
+    const cm = buildGeoMap(portfolio.allocations, scenario.comparison.allocations)
+    Object.assign(compMap, cm)
   }
 
   const hasCompData = showComparison && Object.keys(compMap).length > 0

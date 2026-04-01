@@ -7,6 +7,7 @@ import PerformanceChart from './charts/PerformanceChart'
 import SectorChart from './charts/SectorChart'
 import CurrencyChart from './charts/CurrencyChart'
 import StyleChart from './charts/StyleChart'
+import CostChart from './charts/CostChart'
 
 const DIMENSIONS = {
   asset_class: AssetClassChart,
@@ -17,6 +18,7 @@ const DIMENSIONS = {
   sector: SectorChart,
   currency: CurrencyChart,
   style: StyleChart,
+  cost: CostChart,
 }
 
 const DIM_LABELS = {
@@ -28,6 +30,7 @@ const DIM_LABELS = {
   sector: 'Sector Allocation',
   currency: 'Currency Exposure',
   style: 'Investment Style',
+  cost: 'Cost & TER',
 }
 
 export default function ExplorePresentationView({
