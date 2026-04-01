@@ -1,0 +1,220 @@
+{
+  "event": {
+    "name": "Portfolio Day & Dinner 2026",
+    "date": "28 September 2026",
+    "location": "Spant! Bussum",
+    "language": "en"
+  },
+  "portfolio": {
+    "name": "IO Balanced European Model Portfolio",
+    "profile": "Balanced",
+    "currency": "EUR",
+    "implementation": "mixed",
+    "allocations": [
+      {
+        "id": "equities",
+        "label": { "en": "Equities", "nl": "Aandelen", "fr": "Actions", "de": "Aktien" },
+        "target": 45,
+        "current": 48,
+        "min": 35,
+        "max": 55,
+        "color": "#E01B41",
+        "geographic": [
+          { "region": "Europe", "weight": 18 },
+          { "region": "North America", "weight": 20 },
+          { "region": "Asia Pacific", "weight": 6 },
+          { "region": "Emerging Markets", "weight": 4 }
+        ],
+        "sectors": [
+          { "name": "Technology", "weight": 22 },
+          { "name": "Financials", "weight": 18 },
+          { "name": "Healthcare", "weight": 14 },
+          { "name": "Industrials", "weight": 12 },
+          { "name": "Consumer Disc.", "weight": 10 },
+          { "name": "Consumer Staples", "weight": 8 },
+          { "name": "Energy", "weight": 6 },
+          { "name": "Materials", "weight": 5 },
+          { "name": "Utilities", "weight": 3 },
+          { "name": "Real Estate", "weight": 2 }
+        ]
+      },
+      {
+        "id": "fixed_income",
+        "label": { "en": "Fixed Income", "nl": "Obligaties", "fr": "Obligations", "de": "Anleihen" },
+        "target": 35,
+        "current": 32,
+        "min": 25,
+        "max": 45,
+        "color": "#4ED596",
+        "geographic": [
+          { "region": "Europe", "weight": 20 },
+          { "region": "North America", "weight": 8 },
+          { "region": "Emerging Markets", "weight": 4 }
+        ]
+      },
+      {
+        "id": "real_estate",
+        "label": { "en": "Real Estate", "nl": "Vastgoed", "fr": "Immobilier", "de": "Immobilien" },
+        "target": 8,
+        "current": 7,
+        "min": 4,
+        "max": 12,
+        "color": "#5B8DEF"
+      },
+      {
+        "id": "alternatives",
+        "label": { "en": "Alternatives", "nl": "Alternatieven", "fr": "Alternatifs", "de": "Alternative" },
+        "target": 8,
+        "current": 9,
+        "min": 4,
+        "max": 12,
+        "color": "#F5A623"
+      },
+      {
+        "id": "cash",
+        "label": { "en": "Cash", "nl": "Liquide", "fr": "Liquidités", "de": "Liquidität" },
+        "target": 4,
+        "current": 4,
+        "min": 2,
+        "max": 8,
+        "color": "#8A8A82"
+      }
+    ],
+    "esg": {
+      "score": 6.8,
+      "maxScore": 10,
+      "carbonRisk": 12,
+      "sfdr": [
+        { "article": "Article 9", "weight": 22 },
+        { "article": "Article 8", "weight": 54 },
+        { "article": "Article 6", "weight": 24 }
+      ]
+    },
+    "performance": {
+      "ytd": 4.2,
+      "oneYear": 8.7,
+      "threeYear": 5.1,
+      "benchmark": 3.8,
+      "volatility": 8.4,
+      "maxDrawdown": -12.3
+    },
+    "costs": {
+      "weightedTer": 0.42,
+      "estimatedAnnualCost": 4200
+    },
+    "currencies": [
+      { "currency": "EUR", "weight": 52 },
+      { "currency": "USD", "weight": 30 },
+      { "currency": "GBP", "weight": 8 },
+      { "currency": "JPY", "weight": 5 },
+      { "currency": "Other", "weight": 5 }
+    ],
+    "implementation": {
+      "active": 55,
+      "passive": 35,
+      "individual": 10
+    }
+  },
+  "scenarios": [
+    {
+      "id": "opening",
+      "speaker": { "en": "Opening", "nl": "Opening", "fr": "Ouverture", "de": "Eröffnung" },
+      "theme": { "en": "Portfolio Overview", "nl": "Portefeuille Overzicht", "fr": "Vue d'ensemble", "de": "Portfolioübersicht" },
+      "policyQuestion": {
+        "en": "Does your portfolio reflect the world as it is today — or the world as it was?",
+        "nl": "Weerspiegelt uw portefeuille de wereld zoals die nu is — of zoals die was?",
+        "fr": "Votre portefeuille reflète-t-il le monde tel qu'il est aujourd'hui?",
+        "de": "Spiegelt Ihr Portfolio die Welt von heute wider — oder die von gestern?"
+      },
+      "dimension": "asset_class",
+      "state": "base",
+      "comparison": null
+    },
+    {
+      "id": "geopolitics",
+      "speaker": { "en": "Macro Economist", "nl": "Macro-econoom", "fr": "Macro-économiste", "de": "Makroökonom" },
+      "theme": { "en": "Geopolitics & Allocation", "nl": "Geopolitiek & Allocatie", "fr": "Géopolitique & Allocation", "de": "Geopolitik & Allokation" },
+      "policyQuestion": {
+        "en": "How vulnerable is your portfolio to further escalation of trade conflicts?",
+        "nl": "Hoe kwetsbaar is uw portefeuille voor verdere escalatie van handelsconflicten?",
+        "fr": "Dans quelle mesure votre portefeuille est-il vulnérable à une escalade des conflits commerciaux?",
+        "de": "Wie verwundbar ist Ihr Portfolio bei einer weiteren Eskalation von Handelskonflikten?"
+      },
+      "dimension": "geography",
+      "state": "base",
+      "comparison": {
+        "label": { "en": "Reduced US exposure", "nl": "Afgebouwde VS-positie", "fr": "Exposition US réduite", "de": "Reduzierte US-Exposition" },
+        "allocations": [
+          { "id": "equities", "current": 46, "geographic": [
+            { "region": "Europe", "weight": 26 },
+            { "region": "North America", "weight": 10 },
+            { "region": "Asia Pacific", "weight": 6 },
+            { "region": "Emerging Markets", "weight": 4 }
+          ]}
+        ]
+      }
+    },
+    {
+      "id": "fixed_income",
+      "speaker": { "en": "Fixed Income Specialist", "nl": "Fixed Income Specialist", "fr": "Spécialiste Obligataire", "de": "Anleihenexperte" },
+      "theme": { "en": "Rates & Duration", "nl": "Rente & Duration", "fr": "Taux & Duration", "de": "Zinsen & Duration" },
+      "policyQuestion": {
+        "en": "Do you have enough protection if interest rates rise further?",
+        "nl": "Heeft u genoeg bescherming als de rente verder stijgt?",
+        "fr": "Êtes-vous suffisamment protégé si les taux continuent de monter?",
+        "de": "Sind Sie ausreichend geschützt, wenn die Zinsen weiter steigen?"
+      },
+      "dimension": "asset_class",
+      "state": "base",
+      "comparison": {
+        "label": { "en": "Higher bond weight", "nl": "Hoger obligatiegewicht", "fr": "Poids obligataire accru", "de": "Höherer Anleihenanteil" },
+        "allocations": [
+          { "id": "equities", "current": 40 },
+          { "id": "fixed_income", "current": 40 }
+        ]
+      }
+    },
+    {
+      "id": "esg",
+      "speaker": { "en": "ESG Expert", "nl": "ESG Expert", "fr": "Expert ESG", "de": "ESG-Experte" },
+      "theme": { "en": "Sustainability & SFDR", "nl": "Duurzaamheid & SFDR", "fr": "Durabilité & SFDR", "de": "Nachhaltigkeit & SFDR" },
+      "policyQuestion": {
+        "en": "Does your portfolio still match what you promised your clients?",
+        "nl": "Voldoet uw portefeuille nog aan wat u uw klanten heeft beloofd?",
+        "fr": "Votre portefeuille correspond-il encore à ce que vous avez promis à vos clients?",
+        "de": "Entspricht Ihr Portfolio noch dem, was Sie Ihren Kunden versprochen haben?"
+      },
+      "dimension": "esg",
+      "state": "base",
+      "comparison": {
+        "label": { "en": "Full Article 9", "nl": "Volledig Art. 9", "fr": "Intégral Article 9", "de": "Vollständig Artikel 9" },
+        "esg": {
+          "score": 8.4,
+          "sfdr": [
+            { "article": "Article 9", "weight": 80 },
+            { "article": "Article 8", "weight": 20 },
+            { "article": "Article 6", "weight": 0 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "active_passive",
+      "speaker": { "en": "Active vs Passive Debate", "nl": "Actief vs Passief Debat", "fr": "Débat Actif vs Passif", "de": "Aktiv vs. Passiv Debatte" },
+      "theme": { "en": "Implementation", "nl": "Implementatie", "fr": "Implémentation", "de": "Umsetzung" },
+      "policyQuestion": {
+        "en": "Are you paying for alpha that isn't there?",
+        "nl": "Betaalt u voor alpha die er niet is?",
+        "fr": "Payez-vous pour une alpha qui n'existe pas?",
+        "de": "Bezahlen Sie für Alpha, das gar nicht existiert?"
+      },
+      "dimension": "implementation",
+      "state": "base",
+      "comparison": {
+        "label": { "en": "Passive equivalent", "nl": "Passief equivalent", "fr": "Équivalent passif", "de": "Passives Äquivalent" },
+        "implementation": { "active": 10, "passive": 85, "individual": 5 },
+        "costs": { "weightedTer": 0.18 }
+      }
+    }
+  ]
+}
