@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-
 const COLORS = {
   equities: '#E01B41',
   fixed_income: '#4ED596',
@@ -9,14 +7,6 @@ const COLORS = {
 }
 
 export default function AssetClassChart({ portfolio, scenario, showComparison, lang }) {
-  const [animated, setAnimated] = useState(false)
-
-  useEffect(() => {
-    setAnimated(false)
-    const t = setTimeout(() => setAnimated(true), 50)
-    return () => clearTimeout(t)
-  }, [showComparison])
-
   const allocations = portfolio.allocations
 
   function getComp(id) {
@@ -24,14 +14,14 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
     return scenario.comparison.allocations.find(a => a.id === id)?.current ?? null
   }
 
-  // Build donut from active values (comp or base)
+  // Active values — used directly, CSS transition handles the animation
   const activeAllocs = allocations.map(a => {
     const comp = getComp(a.id)
-    return { ...a, displayCurrent: comp !== null ? comp : a.current }
+    return { ...a, compVal: comp, displayVal: comp !== null ? comp : a.current }
   })
-  const total = activeAllocs.reduce((s, a) => s + a.displayCurrent, 0)
 
-  const cx = 180, cy = 180, r = 148, inner = 82
+  const donutTotal = activeAllocs.reduce((s, a) => s + a.displayVal, 0)
+  const cx = 160, cy = 160, r = 130, inner = 72
   let cum = -90
 
   function xy(angle) {
@@ -43,7 +33,7 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
   }
 
   const slices = activeAllocs.map(a => {
-    const angle = (a.displayCurrent / total) * 360
+    const angle = (a.displayVal / donutTotal) * 360
     const sl = { ...a, startAngle: cum, endAngle: cum + angle }
     cum += angle
     return sl
@@ -54,42 +44,41 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 
   return (
     <div style={s.wrap}>
-      {/* Donut — reflects active state */}
+      {/* Donut */}
       <div style={s.donutCol}>
-        <svg viewBox="0 0 360 360" style={s.svg}>
+        <svg viewBox="0 0 320 320" style={s.svg} preserveAspectRatio="xMidYMid meet">
           <circle cx={cx} cy={cy} r={r + 10}
-            fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="20" />
+            fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="18" />
           {slices.map(sl => (
-            <path key={sl.id} d={arc(sl.startAngle, sl.endAngle)}
-              fill={COLORS[sl.id]} opacity={showComparison ? 0.7 : 0.88}
+            <path key={sl.id}
+              d={arc(sl.startAngle, sl.endAngle)}
+              fill={COLORS[sl.id]}
+              opacity={showComparison ? 0.72 : 0.88}
               stroke="#0C182E" strokeWidth="2.5"
-              style={{ transition: 'd 0.7s ease' }} />
+              style={{ transition: 'opacity 0.5s ease' }} />
           ))}
-          {/* Comparison ring — subtle outline when active */}
           {showComparison && (
             <circle cx={cx} cy={cy} r={r + 2}
-              fill="none" stroke="rgba(78,213,150,0.35)" strokeWidth="3"
-              strokeDasharray="8 4" />
+              fill="none" stroke="rgba(78,213,150,0.4)"
+              strokeWidth="3" strokeDasharray="8 4" />
           )}
           <circle cx={cx} cy={cy} r={inner} fill="#0C182E" />
           <circle cx={cx} cy={cy} r={inner - 1}
             fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
-          <text x={cx} y={cy - 20} textAnchor="middle"
-            fill="rgba(255,255,255,0.32)"
-            fontFamily="'Merriweather Sans', sans-serif"
-            fontSize="10" fontWeight="800" letterSpacing="2">
+          <text x={cx} y={cy - 18} textAnchor="middle"
+            fill="rgba(255,255,255,0.32)" fontFamily="'Merriweather Sans', sans-serif"
+            fontSize="9" fontWeight="800" letterSpacing="2">
             {showComparison ? 'SCENARIO' : 'PORTFOLIO'}
           </text>
           <text x={cx} y={cy + 10} textAnchor="middle"
             fill={showComparison ? '#4ED596' : 'white'}
-            fontFamily="'Merriweather', serif"
-            fontSize="24" fontWeight="700"
-            style={{ transition: 'fill 0.4s ease' }}>
+            fontFamily="'Merriweather', serif" fontSize="22" fontWeight="700"
+            style={{ transition: 'fill 0.5s ease' }}>
             {portfolio.profile}
           </text>
-          <text x={cx} y={cy + 30} textAnchor="middle"
+          <text x={cx} y={cy + 28} textAnchor="middle"
             fill="rgba(255,255,255,0.28)"
-            fontFamily="'Merriweather Sans', sans-serif" fontSize="11">
+            fontFamily="'Merriweather Sans', sans-serif" fontSize="10">
             {portfolio.currency}
           </text>
         </svg>
@@ -109,9 +98,9 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 
         {allocations.map(a => {
           const comp = getComp(a.id)
-          const label = a.label?.[lang] || a.label?.en
           const displayVal = comp !== null ? comp : a.current
           const delta = comp !== null ? comp - a.current : 0
+          const label = a.label?.[lang] || a.label?.en
           const max = 65
           const color = COLORS[a.id]
           const hasChange = comp !== null && delta !== 0
@@ -120,12 +109,9 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
             <div key={a.id} style={{
               ...s.row,
               background: hasChange
-                ? delta > 0
-                  ? 'rgba(224,27,65,0.06)'
-                  : 'rgba(78,213,150,0.06)'
+                ? delta < 0 ? 'rgba(78,213,150,0.05)' : 'rgba(224,27,65,0.05)'
                 : 'transparent',
-              borderRadius: hasChange ? 4 : 0,
-              transition: 'background 0.5s ease',
+              transition: 'background 0.6s ease',
             }}>
               <div style={{ ...s.cell, flex: 2 }}>
                 <div style={{ width: 4, height: 28, borderRadius: 2, background: color, flexShrink: 0 }} />
@@ -144,44 +130,38 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
                     left: `${(a.target / max) * 100}%`,
                     width: 2, background: 'rgba(255,255,255,0.2)', zIndex: 2,
                   }} />
-                  {/* Base bar (always shown faintly when comparing) */}
+                  {/* Base reference bar */}
                   {comp !== null && (
                     <div style={{
                       position: 'absolute', top: 5, bottom: 5, left: 0,
-                      borderRadius: 3, background: color, opacity: 0.22,
+                      borderRadius: 3, background: color, opacity: 0.18,
                       width: `${(a.current / max) * 100}%`,
-                      zIndex: 2,
                     }} />
                   )}
-                  {/* Active bar */}
+                  {/* Active bar — CSS transition on width */}
                   <div style={{
                     position: 'absolute', top: 5, bottom: 5, left: 0,
-                    borderRadius: 3, opacity: comp !== null ? 0.9 : 0.82,
-                    width: animated ? `${(displayVal / max) * 100}%` : `${(a.current / max) * 100}%`,
-                    background: comp !== null ? (delta < 0 ? '#4ED596' : '#E01B41') : color,
+                    borderRadius: 3, opacity: 0.85,
+                    width: `${(displayVal / max) * 100}%`,
+                    background: hasChange ? (delta < 0 ? '#4ED596' : '#E01B41') : color,
                     zIndex: 3,
-                    transition: 'width 0.75s cubic-bezier(0.4,0,0.2,1), background 0.4s ease',
+                    transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.5s ease',
                   }} />
                 </div>
               </div>
 
-              {/* Value — shows comp value when active */}
               <div style={{ width: 64, textAlign: 'right' }}>
                 <span style={{
                   ...s.valNow,
-                  color: hasChange
-                    ? delta < 0 ? '#4ED596' : '#E01B41'
-                    : '#FFFFFF',
-                  transition: 'color 0.4s ease',
+                  color: hasChange ? (delta < 0 ? '#4ED596' : '#E01B41') : '#FFFFFF',
+                  transition: 'color 0.5s ease',
                 }}>
                   {displayVal}%
                 </span>
                 {hasChange && (
                   <span style={{
-                    display: 'block',
-                    fontFamily: "'Merriweather Sans', sans-serif",
-                    fontSize: '0.6rem', fontWeight: 700,
-                    color: 'rgba(255,255,255,0.4)',
+                    display: 'block', fontFamily: "'Merriweather Sans', sans-serif",
+                    fontSize: '0.58rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)',
                   }}>
                     was {a.current}%
                   </span>
@@ -204,7 +184,10 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
           {[
             { el: <div style={s.rangeSwatch} />, label: 'Bandwidth' },
             { el: <div style={s.targetSwatch} />, label: 'Target' },
-            ...(showComparison ? [{ el: <div style={s.compSwatch} />, label: 'Scenario value' }] : []),
+            ...(showComparison && scenario?.comparison ? [{
+              el: <div style={s.compSwatch} />,
+              label: scenario.comparison.label?.en,
+            }] : []),
           ].map(l => (
             <div key={l.label} style={s.legendItem}>
               {l.el}
@@ -218,14 +201,14 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 }
 
 const s = {
-  wrap: { display: 'flex', alignItems: 'center', gap: 40, height: '100%', width: '100%' },
-  donutCol: { flexShrink: 0, width: '38%', maxWidth: 340, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  svg: { width: '100%', height: '100%', maxHeight: 320 },
-  tableCol: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0, height: '100%' },
+  wrap: { display: 'flex', alignItems: 'stretch', gap: 40, height: '100%', width: '100%' },
+  donutCol: { flexShrink: 0, width: '36%', maxWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 },
+  svg: { width: '100%', height: '100%', display: 'block' },
+  tableCol: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 },
   thead: { display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 8 },
   th: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em' },
   divider: { height: 1, background: 'rgba(255,255,255,0.07)', margin: '4px 0' },
-  row: { display: 'flex', alignItems: 'center', gap: 12, padding: '11px 6px', borderBottom: '1px solid rgba(255,255,255,0.04)' },
+  row: { display: 'flex', alignItems: 'center', gap: 12, padding: '11px 6px', borderBottom: '1px solid rgba(255,255,255,0.04)', borderRadius: 4 },
   cell: { display: 'flex', alignItems: 'center', gap: 10 },
   name: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.88rem', fontWeight: 600, color: 'rgba(255,255,255,0.88)' },
   track: { height: 28, background: 'rgba(255,255,255,0.05)', borderRadius: 4, position: 'relative', overflow: 'hidden' },
