@@ -3,190 +3,147 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
   const compImpl = showComparison && scenario?.comparison?.implementation
   const costs = portfolio.costs
   const compCosts = showComparison && scenario?.comparison?.costs
-
-  const current = compImpl || impl
+  const active = compImpl || impl
   const activeCosts = compCosts || costs
 
   const items = [
-    {
-      id: 'active',
-      label: 'Active Management',
-      sublabel: 'Alpha-seeking, manager discretion',
-      color: '#E01B41',
-    },
-    {
-      id: 'passive',
-      label: 'Passive / ETF',
-      sublabel: 'Index-tracking, market beta',
-      color: '#4ED596',
-    },
-    {
-      id: 'individual',
-      label: 'Individual Securities',
-      sublabel: 'Direct stock & bond holdings',
-      color: '#5B8DEF',
-    },
+    { id: 'active', label: 'Active Management', sub: 'Alpha-seeking, manager discretion', color: '#E01B41' },
+    { id: 'passive', label: 'Passive / ETF', sub: 'Index-tracking, market beta', color: '#4ED596' },
+    { id: 'individual', label: 'Individual Securities', sub: 'Direct stock & bond holdings', color: '#5B8DEF' },
   ]
 
-  // Donut
-  const cx = 130, cy = 130, r = 100, inner = 58
+  const cx = 140, cy = 140, r = 110, inner = 60
   let cum = -90
 
-  function polarXY(angle, radius = r) {
-    return {
-      x: cx + radius * Math.cos(angle * Math.PI / 180),
-      y: cy + radius * Math.sin(angle * Math.PI / 180),
-    }
-  }
-
-  function arc(start, end, color, val) {
-    if (val <= 0) return null
-    const s = polarXY(start), e = polarXY(end)
-    const large = end - start > 180 ? 1 : 0
-    return (
-      <path
-        d={`M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} L ${cx} ${cy} Z`}
-        fill={color} opacity={0.85}
-        stroke="#0C182E" strokeWidth="2.5" />
-    )
+  function pt(angle) {
+    return { x: cx + r * Math.cos(angle*Math.PI/180), y: cy + r * Math.sin(angle*Math.PI/180) }
   }
 
   const slices = items.map(item => {
-    const val = current[item.id] || 0
+    const val = active[item.id] || 0
     const angle = (val / 100) * 360
-    const s = { ...item, val, startAngle: cum, endAngle: cum + angle }
+    const sl = { ...item, val, start: cum, end: cum + angle }
     cum += angle
-    return s
+    return sl
   })
 
-  const terSaving = compCosts
-    ? Math.abs(compCosts.weightedTer - costs.weightedTer).toFixed(2)
-    : null
-
   return (
-    <div style={styles.container}>
+    <div style={s.wrap}>
       {/* Donut */}
-      <div style={styles.donutWrap}>
-        <div style={styles.sectionTitle}>PORTFOLIO CONSTRUCTION</div>
-        <svg width="260" height="260" viewBox="0 0 260 260">
-          {/* Outer subtle ring */}
-          <circle cx={cx} cy={cy} r={r + 10}
-            fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="18" />
-          {slices.map(s => arc(s.startAngle, s.endAngle, s.color, s.val))}
+      <div style={s.donutCol}>
+        <div style={s.label}>PORTFOLIO CONSTRUCTION</div>
+        <svg viewBox="0 0 280 280" style={s.donutSvg}>
+          <circle cx={cx} cy={cy} r={r+10}
+            fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="18" />
+          {slices.map(sl => {
+            if (sl.val <= 0) return null
+            const a = pt(sl.start), b = pt(sl.end)
+            const large = sl.end - sl.start > 180 ? 1 : 0
+            return (
+              <path key={sl.id}
+                d={`M ${a.x} ${a.y} A ${r} ${r} 0 ${large} 1 ${b.x} ${b.y} L ${cx} ${cy} Z`}
+                fill={sl.color} opacity={0.86}
+                stroke="#0C182E" strokeWidth="2.5" />
+            )
+          })}
           <circle cx={cx} cy={cy} r={inner} fill="#0C182E" />
-          <circle cx={cx} cy={cy} r={inner - 1}
+          <circle cx={cx} cy={cy} r={inner-1}
             fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
-          <text x={cx} y={cy - 10} textAnchor="middle"
-            fontFamily="'Merriweather Sans'" fontSize="9"
-            fontWeight="700" fill="rgba(255,255,255,0.35)" letterSpacing="0.08em">
+          <text x={cx} y={cy-8} textAnchor="middle"
+            fontFamily="'Merriweather Sans'" fontSize="10"
+            fontWeight="700" fill="rgba(255,255,255,0.32)" letterSpacing="1">
             {compImpl ? 'SCENARIO' : 'CURRENT'}
           </text>
-          <text x={cx} y={cy + 12} textAnchor="middle"
+          <text x={cx} y={cy+14} textAnchor="middle"
             fontFamily="'Merriweather', serif"
-            fontSize="14" fontWeight="700" fill="white">
-            mix
-          </text>
+            fontSize="15" fontWeight="700" fill="white">mix</text>
         </svg>
       </div>
 
-      {/* Breakdown bars */}
-      <div style={styles.breakdownWrap}>
-        <div style={styles.sectionTitle}>BREAKDOWN</div>
+      {/* Breakdown */}
+      <div style={s.breakdownCol}>
+        <div style={s.label}>BREAKDOWN</div>
         {items.map(item => {
-          const baseVal = impl[item.id] || 0
-          const currVal = current[item.id] || 0
-          const delta = currVal - baseVal
-
+          const base = impl[item.id] || 0
+          const curr = active[item.id] || 0
+          const delta = curr - base
           return (
-            <div key={item.id} style={styles.itemBlock}>
-              <div style={styles.itemHeader}>
-                <div style={styles.itemLabelGroup}>
-                  <div style={{ ...styles.dot, background: item.color }} />
+            <div key={item.id} style={s.itemBlock}>
+              <div style={s.itemRow}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 11, height: 11, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
                   <div>
-                    <div style={styles.itemLabel}>{item.label}</div>
-                    <div style={styles.itemSublabel}>{item.sublabel}</div>
+                    <div style={s.itemLabel}>{item.label}</div>
+                    <div style={s.itemSub}>{item.sub}</div>
                   </div>
                 </div>
-                <div style={styles.itemVals}>
-                  <span style={{ ...styles.itemPct, color: item.color }}>
-                    {currVal}%
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ ...s.itemPct, color: item.color }}>{curr}%</span>
                   {compImpl && delta !== 0 && (
                     <span style={{
-                      ...styles.itemDelta,
+                      ...s.delta,
                       color: delta < 0 ? '#4ED596' : '#E01B41',
-                      background: delta < 0
-                        ? 'rgba(78,213,150,0.1)' : 'rgba(224,27,65,0.1)',
+                      background: delta < 0 ? 'rgba(78,213,150,0.1)' : 'rgba(224,27,65,0.1)',
                     }}>
                       {delta > 0 ? '+' : ''}{delta}
                     </span>
                   )}
                 </div>
               </div>
-              <div style={styles.track}>
-                {compImpl && baseVal > 0 && (
-                  <div style={{
-                    ...styles.baseBar,
-                    width: `${baseVal}%`,
-                    background: item.color,
-                    opacity: 0.25,
-                  }} />
+              <div style={s.track}>
+                {compImpl && base > 0 && (
+                  <div style={{ ...s.baseBar, width: `${base}%`, background: item.color }} />
                 )}
-                <div style={{
-                  ...styles.bar,
-                  width: `${currVal}%`,
-                  background: item.color,
-                }} />
+                <div style={{ ...s.bar, width: `${curr}%`, background: item.color }} />
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Cost impact */}
-      <div style={styles.costWrap}>
-        <div style={styles.sectionTitle}>COST IMPACT (TER)</div>
-        <div style={styles.costCard}>
-          <div style={styles.terDisplay}>
-            <span style={styles.terLabel}>Weighted avg. TER</span>
-            <span style={styles.terVal}>{activeCosts.weightedTer.toFixed(2)}%</span>
+      {/* Cost card */}
+      <div style={s.costCol}>
+        <div style={s.label}>COST IMPACT (TER)</div>
+        <div style={s.costCard}>
+          <div>
+            <div style={s.terLabel}>Weighted avg. TER</div>
+            <div style={s.terVal}>{activeCosts.weightedTer.toFixed(2)}%</div>
           </div>
 
           {compCosts && (
             <>
-              <div style={styles.costDivider} />
-              <div style={styles.savingRow}>
-                <span style={styles.savingLabel}>
-                  {compCosts.weightedTer < costs.weightedTer ? '↓ Annual saving' : '↑ Additional cost'}
+              <div style={s.divider} />
+              <div style={s.savingRow}>
+                <span style={s.savingLabel}>
+                  {compCosts.weightedTer < costs.weightedTer ? '↓ Annual saving' : '↑ Extra cost'}
                 </span>
                 <span style={{
-                  ...styles.savingVal,
+                  ...s.savingVal,
                   color: compCosts.weightedTer < costs.weightedTer ? '#4ED596' : '#E01B41',
                 }}>
-                  {terSaving}% p.a.
+                  {Math.abs(compCosts.weightedTer - costs.weightedTer).toFixed(2)}% p.a.
                 </span>
               </div>
             </>
           )}
 
-          <div style={styles.costDivider} />
-          <div style={styles.exampleRow}>
-            <span style={styles.exampleLabel}>On €1M portfolio</span>
-            <span style={styles.exampleVal}>
-              ~€{(activeCosts.weightedTer / 100 * 1000000).toLocaleString('nl-NL')}/yr
+          <div style={s.divider} />
+          <div style={s.exRow}>
+            <span style={s.exLabel}>On €1M portfolio</span>
+            <span style={s.exVal}>
+              ~€{(activeCosts.weightedTer / 100 * 1_000_000).toLocaleString('nl-NL')}/yr
             </span>
           </div>
 
           {compCosts && (
-            <div style={styles.exampleRow}>
-              <span style={styles.exampleLabel}>vs current</span>
+            <div style={s.exRow}>
+              <span style={s.exLabel}>vs current</span>
               <span style={{
-                ...styles.exampleVal,
+                ...s.exVal, fontSize: '0.78rem',
                 color: compCosts.weightedTer < costs.weightedTer ? '#4ED596' : '#E01B41',
-                fontSize: '0.8rem',
               }}>
                 {compCosts.weightedTer < costs.weightedTer ? 'saves ' : 'costs '}
-                €{Math.abs((compCosts.weightedTer - costs.weightedTer) / 100 * 1000000).toLocaleString('nl-NL')}/yr
+                €{Math.abs((compCosts.weightedTer - costs.weightedTer) / 100 * 1_000_000).toLocaleString('nl-NL')}/yr
               </span>
             </div>
           )}
@@ -196,169 +153,107 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
   )
 }
 
-const styles = {
-  container: {
-    display: 'flex',
-    gap: '36px',
-    height: '100%',
-    width: '100%',
+const s = {
+  wrap: {
+    display: 'flex', gap: 36,
+    height: '100%', width: '100%',
     alignItems: 'center',
   },
-  donutWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    flexShrink: 0,
+  donutCol: {
+    flexShrink: 0, width: '30%', maxWidth: 280,
+    display: 'flex', flexDirection: 'column',
+    gap: 8, height: '100%', justifyContent: 'center',
   },
-  sectionTitle: {
+  donutSvg: {
+    width: '100%', height: 'auto', maxHeight: '260px',
+  },
+  breakdownCol: {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    gap: 16, justifyContent: 'center',
+  },
+  costCol: {
+    width: 220, flexShrink: 0,
+    display: 'flex', flexDirection: 'column', gap: 10,
+  },
+  label: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    fontWeight: 800,
-    color: 'rgba(255,255,255,0.3)',
-    letterSpacing: '0.1em',
-  },
-  breakdownWrap: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px',
-    justifyContent: 'center',
+    fontSize: '0.58rem', fontWeight: 800,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
   },
   itemBlock: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
+    display: 'flex', flexDirection: 'column', gap: 7,
   },
-  itemHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  itemLabelGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  dot: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    flexShrink: 0,
+  itemRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
   itemLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.85rem',
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.88)',
+    fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)',
   },
-  itemSublabel: {
+  itemSub: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.3)',
-  },
-  itemVals: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.28)',
   },
   itemPct: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.1rem',
-    fontWeight: 800,
+    fontSize: '1.1rem', fontWeight: 800,
   },
-  itemDelta: {
+  delta: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.7rem',
-    fontWeight: 700,
-    padding: '2px 7px',
-    borderRadius: '4px',
+    fontSize: '0.7rem', fontWeight: 700,
+    padding: '2px 7px', borderRadius: 4,
   },
   track: {
-    height: '8px',
+    height: 10,
     background: 'rgba(255,255,255,0.06)',
-    borderRadius: '4px',
-    position: 'relative',
-    overflow: 'hidden',
+    borderRadius: 5, position: 'relative', overflow: 'hidden',
   },
   baseBar: {
-    position: 'absolute',
-    top: 0, bottom: 0, left: 0,
-    borderRadius: '4px',
+    position: 'absolute', top: 0, bottom: 0, left: 0,
+    borderRadius: 5, opacity: 0.22,
     transition: 'width 0.7s ease',
   },
   bar: {
-    position: 'absolute',
-    top: 0, bottom: 0, left: 0,
-    borderRadius: '4px',
-    opacity: 0.75,
+    position: 'absolute', top: 0, bottom: 0, left: 0,
+    borderRadius: 5, opacity: 0.75,
     transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
-  },
-  costWrap: {
-    width: '220px',
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
   },
   costCard: {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '10px',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  terDisplay: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
+    borderRadius: 10, padding: '18px 20px',
+    display: 'flex', flexDirection: 'column', gap: 12,
   },
   terLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.65rem',
-    color: 'rgba(255,255,255,0.4)',
+    fontSize: '0.65rem', color: 'rgba(255,255,255,0.38)',
+    marginBottom: 4,
   },
   terVal: {
     fontFamily: "'Merriweather', serif",
-    fontSize: '2.2rem',
-    fontWeight: 700,
-    color: '#FFFFFF',
-    lineHeight: 1,
+    fontSize: '2.4rem', fontWeight: 700, color: '#FFFFFF', lineHeight: 1,
   },
-  costDivider: {
-    height: '1px',
-    background: 'rgba(255,255,255,0.08)',
-  },
+  divider: { height: 1, background: 'rgba(255,255,255,0.08)' },
   savingRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
   savingLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.65rem',
-    color: 'rgba(255,255,255,0.4)',
+    fontSize: '0.65rem', color: 'rgba(255,255,255,0.38)',
   },
   savingVal: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.85rem',
-    fontWeight: 800,
+    fontSize: '0.88rem', fontWeight: 800,
   },
-  exampleRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  exRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
-  exampleLabel: {
+  exLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.3)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)',
   },
-  exampleVal: {
+  exVal: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.75rem',
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.7)',
+    fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.68)',
   },
 }

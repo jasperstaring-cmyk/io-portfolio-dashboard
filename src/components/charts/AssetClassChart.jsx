@@ -9,162 +9,160 @@ const COLORS = {
 export default function AssetClassChart({ portfolio, scenario, showComparison, lang }) {
   const allocations = portfolio.allocations
 
-  function getComparisonCurrent(id) {
+  function getComp(id) {
     if (!showComparison || !scenario?.comparison?.allocations) return null
-    const found = scenario.comparison.allocations.find(a => a.id === id)
-    return found ? found.current : null
+    return scenario.comparison.allocations.find(a => a.id === id)?.current ?? null
   }
 
   const total = allocations.reduce((s, a) => s + a.current, 0)
-  const cx = 160, cy = 160, r = 130, innerR = 72
-  let cumAngle = -90
+  const cx = 180, cy = 180, r = 148, inner = 82
+  let cum = -90
 
-  function polarToXY(cx, cy, r, angleDeg) {
-    const rad = (angleDeg * Math.PI) / 180
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+  function xy(angle, radius = r) {
+    return {
+      x: cx + radius * Math.cos(angle * Math.PI / 180),
+      y: cy + radius * Math.sin(angle * Math.PI / 180),
+    }
   }
 
-  function describeArc(cx, cy, r, startAngle, endAngle) {
-    const start = polarToXY(cx, cy, r, startAngle)
-    const end = polarToXY(cx, cy, r, endAngle)
-    const largeArc = endAngle - startAngle > 180 ? 1 : 0
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} L ${cx} ${cy} Z`
+  function arc(start, end) {
+    const s = xy(start), e = xy(end)
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${end - start > 180 ? 1 : 0} 1 ${e.x} ${e.y} L ${cx} ${cy} Z`
   }
 
   const slices = allocations.map(a => {
     const angle = (a.current / total) * 360
-    const slice = { ...a, startAngle: cumAngle, endAngle: cumAngle + angle }
-    cumAngle += angle
-    return slice
+    const s = { ...a, startAngle: cum, endAngle: cum + angle }
+    cum += angle
+    return s
   })
 
-  const statusColor = (a) => {
-    if (a.current < a.min || a.current > a.max) return '#E01B41'
-    if (Math.abs(a.current - a.target) > 5) return '#F5A623'
-    return '#4ED596'
-  }
+  const status = a => a.current < a.min || a.current > a.max ? '#E01B41'
+    : Math.abs(a.current - a.target) > 5 ? '#F5A623' : '#4ED596'
 
   return (
-    <div style={styles.container}>
-      <div style={styles.chartWrap}>
-        <svg width="320" height="320" viewBox="0 0 320 320">
-          <circle cx={cx} cy={cy} r={r + 8}
-            fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="16" />
+    <div style={styles.wrap}>
+      {/* Donut — responsive via viewBox */}
+      <div style={styles.donutCol}>
+        <svg viewBox="0 0 360 360" style={styles.donutSvg}>
+          <circle cx={cx} cy={cy} r={r + 10}
+            fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="20" />
           {slices.map(s => (
-            <path key={s.id}
-              d={describeArc(cx, cy, r, s.startAngle, s.endAngle)}
-              fill={COLORS[s.id] || '#8A8A82'}
-              opacity={0.88}
+            <path key={s.id} d={arc(s.startAngle, s.endAngle)}
+              fill={COLORS[s.id]} opacity={0.88}
               stroke="#0C182E" strokeWidth="2.5" />
           ))}
-          <circle cx={cx} cy={cy} r={innerR} fill="#0C182E" />
-          <circle cx={cx} cy={cy} r={innerR - 1}
-            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-          <text x={cx} y={cy - 18} textAnchor="middle"
-            fill="rgba(255,255,255,0.4)"
+          <circle cx={cx} cy={cy} r={inner} fill="#0C182E" />
+          <circle cx={cx} cy={cy} r={inner - 1}
+            fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+          <text x={cx} y={cy - 20} textAnchor="middle"
+            fill="rgba(255,255,255,0.38)"
             fontFamily="'Merriweather Sans', sans-serif"
-            fontSize="9" fontWeight="700" letterSpacing="0.1em">PORTFOLIO</text>
-          <text x={cx} y={cy + 8} textAnchor="middle"
+            fontSize="11" fontWeight="800" letterSpacing="2">PORTFOLIO</text>
+          <text x={cx} y={cy + 12} textAnchor="middle"
             fill="white" fontFamily="'Merriweather', serif"
-            fontSize="20" fontWeight="700">{portfolio.profile}</text>
-          <text x={cx} y={cy + 26} textAnchor="middle"
-            fill="rgba(255,255,255,0.35)"
+            fontSize="26" fontWeight="700">{portfolio.profile}</text>
+          <text x={cx} y={cy + 32} textAnchor="middle"
+            fill="rgba(255,255,255,0.32)"
             fontFamily="'Merriweather Sans', sans-serif"
-            fontSize="9" fontWeight="400">{portfolio.currency}</text>
+            fontSize="11">{portfolio.currency}</text>
         </svg>
       </div>
 
-      <div style={styles.tableWrap}>
-        <div style={styles.tableHeader}>
-          <span style={{ ...styles.col, flex: 2 }}>ASSET CLASS</span>
-          <span style={{ ...styles.col, flex: 3 }}>ALLOCATION</span>
-          <span style={{ ...styles.col, width: 56, textAlign: 'right' }}>NOW</span>
-          <span style={{ ...styles.col, width: 56, textAlign: 'right' }}>TARGET</span>
-          <span style={{ ...styles.col, width: 80, textAlign: 'right' }}>RANGE</span>
-          <span style={{ ...styles.col, width: 40, textAlign: 'center' }}>STATUS</span>
+      {/* Table — takes remaining space, vertically centred */}
+      <div style={styles.tableCol}>
+        <div style={styles.thead}>
+          <span style={{ ...styles.th, flex: 2 }}>ASSET CLASS</span>
+          <span style={{ ...styles.th, flex: 3 }}>ALLOCATION</span>
+          <span style={{ ...styles.th, width: 60, textAlign: 'right' }}>NOW</span>
+          <span style={{ ...styles.th, width: 60, textAlign: 'right' }}>TARGET</span>
+          <span style={{ ...styles.th, width: 82, textAlign: 'right' }}>RANGE</span>
+          <span style={{ ...styles.th, width: 36, textAlign: 'center' }}>●</span>
         </div>
-        <div style={styles.dividerLine} />
+        <div style={styles.divider} />
 
         {allocations.map(a => {
-          const compVal = getComparisonCurrent(a.id)
+          const comp = getComp(a.id)
           const label = a.label?.[lang] || a.label?.en
-          const maxBar = 65
-          const color = COLORS[a.id] || '#8A8A82'
+          const max = 65
+          const color = COLORS[a.id]
 
           return (
             <div key={a.id} style={styles.row}>
-              <div style={{ ...styles.cellLabel, flex: 2 }}>
-                <div style={{ ...styles.colorBar, background: color }} />
+              <div style={{ ...styles.labelCell, flex: 2 }}>
+                <div style={{ width: 4, height: 28, borderRadius: 2, background: color, flexShrink: 0 }} />
                 <span style={styles.assetName}>{label}</span>
               </div>
-              <div style={{ flex: 3, position: 'relative' }}>
+
+              <div style={{ flex: 3 }}>
                 <div style={styles.track}>
                   <div style={{
                     ...styles.rangeBand,
-                    left: `${(a.min / maxBar) * 100}%`,
-                    width: `${((a.max - a.min) / maxBar) * 100}%`,
+                    left: `${(a.min / max) * 100}%`,
+                    width: `${((a.max - a.min) / max) * 100}%`,
                   }} />
                   <div style={{
-                    ...styles.targetTick,
-                    left: `${(a.target / maxBar) * 100}%`,
+                    position: 'absolute', top: 0, bottom: 0,
+                    left: `${(a.target / max) * 100}%`,
+                    width: 2,
+                    background: 'rgba(255,255,255,0.22)',
+                    zIndex: 2,
                   }} />
-                  {compVal && (
+                  {comp !== null && (
                     <div style={{
                       ...styles.compBar,
-                      width: `${(compVal / maxBar) * 100}%`,
+                      width: `${(comp / max) * 100}%`,
                     }} />
                   )}
                   <div style={{
-                    ...styles.currentBar,
-                    width: `${(a.current / maxBar) * 100}%`,
+                    ...styles.bar,
+                    width: `${(a.current / max) * 100}%`,
                     background: color,
                   }} />
                 </div>
               </div>
-              <div style={{ width: 56, textAlign: 'right' }}>
-                <span style={styles.valCurrent}>{a.current}%</span>
-                {compVal && compVal !== a.current && (
+
+              <div style={{ width: 60, textAlign: 'right' }}>
+                <span style={styles.valNow}>{a.current}%</span>
+                {comp !== null && comp !== a.current && (
                   <span style={{
-                    ...styles.valDelta,
-                    color: compVal < a.current ? '#4ED596' : '#E01B41',
+                    display: 'block',
+                    fontFamily: "'Merriweather Sans', sans-serif",
+                    fontSize: '0.62rem', fontWeight: 700,
+                    color: comp < a.current ? '#4ED596' : '#E01B41',
                   }}>
-                    {compVal > a.current ? '+' : ''}{compVal - a.current}
+                    {comp > a.current ? '+' : ''}{comp - a.current}
                   </span>
                 )}
               </div>
-              <span style={{ ...styles.valMuted, width: 56, textAlign: 'right' }}>{a.target}%</span>
-              <span style={{ ...styles.valMuted, width: 80, textAlign: 'right', fontSize: '0.68rem' }}>
-                {a.min}–{a.max}%
-              </span>
-              <div style={{ width: 40, display: 'flex', justifyContent: 'center' }}>
+              <span style={{ ...styles.valMuted, width: 60 }}>{a.target}%</span>
+              <span style={{ ...styles.valMuted, width: 82, fontSize: '0.7rem' }}>{a.min}–{a.max}%</span>
+              <div style={{ width: 36, display: 'flex', justifyContent: 'center' }}>
                 <div style={{
-                  width: 11, height: 11, borderRadius: '50%',
-                  background: statusColor(a),
-                  boxShadow: `0 0 8px ${statusColor(a)}88`,
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: status(a),
+                  boxShadow: `0 0 8px ${status(a)}99`,
                 }} />
               </div>
             </div>
           )
         })}
 
-        <div style={styles.dividerLine} />
+        <div style={styles.divider} />
         <div style={styles.legend}>
-          <div style={styles.legendItem}>
-            <div style={styles.legendRangeSwatch} />
-            <span style={styles.legendText}>Bandwidth</span>
-          </div>
-          <div style={styles.legendItem}>
-            <div style={styles.legendTargetSwatch} />
-            <span style={styles.legendText}>Target</span>
-          </div>
-          {showComparison && scenario?.comparison && (
-            <div style={styles.legendItem}>
-              <div style={styles.legendCompSwatch} />
-              <span style={styles.legendText}>
-                {scenario.comparison.label?.[lang] || scenario.comparison.label?.en}
-              </span>
+          {[
+            { swatch: styles.rangeSwatch, label: 'Bandwidth' },
+            { swatch: styles.targetSwatch, label: 'Target' },
+            ...(showComparison && scenario?.comparison ? [{
+              swatch: styles.compSwatch,
+              label: scenario.comparison.label?.[lang] || scenario.comparison.label?.en,
+            }] : []),
+          ].map(l => (
+            <div key={l.label} style={styles.legendItem}>
+              <div style={l.swatch} />
+              <span style={styles.legendText}>{l.label}</span>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>
@@ -172,37 +170,49 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 }
 
 const styles = {
-  container: {
+  wrap: {
     display: 'flex',
     alignItems: 'center',
     gap: '40px',
     height: '100%',
     width: '100%',
   },
-  chartWrap: { flexShrink: 0 },
-  tableWrap: {
+  donutCol: {
+    flexShrink: 0,
+    width: '38%',
+    maxWidth: '340px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+  },
+  donutSvg: {
+    width: '100%',
+    height: '100%',
+    maxHeight: '320px',
+  },
+  tableCol: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
     justifyContent: 'center',
     gap: 0,
+    height: '100%',
   },
-  tableHeader: {
+  thead: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     paddingBottom: '8px',
   },
-  col: {
+  th: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    fontWeight: 800,
+    fontSize: '0.58rem', fontWeight: 800,
     color: 'rgba(255,255,255,0.3)',
     letterSpacing: '0.1em',
   },
-  dividerLine: {
-    height: '1px',
+  divider: {
+    height: 1,
     background: 'rgba(255,255,255,0.07)',
     margin: '4px 0',
   },
@@ -210,82 +220,58 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    padding: '11px 0',
+    padding: '12px 0',
     borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
-  cellLabel: {
+  labelCell: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
   },
-  colorBar: {
-    width: '3px',
-    height: '24px',
-    borderRadius: '2px',
-    flexShrink: 0,
-    opacity: 0.85,
-  },
   assetName: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.85rem',
-    fontWeight: 600,
+    fontSize: '0.88rem', fontWeight: 600,
     color: 'rgba(255,255,255,0.88)',
   },
   track: {
-    height: '26px',
+    height: '28px',
     background: 'rgba(255,255,255,0.05)',
-    borderRadius: '4px',
+    borderRadius: 4,
     position: 'relative',
     overflow: 'hidden',
   },
   rangeBand: {
-    position: 'absolute',
-    top: 0, bottom: 0,
+    position: 'absolute', top: 0, bottom: 0,
     background: 'rgba(255,255,255,0.07)',
   },
-  targetTick: {
+  bar: {
     position: 'absolute',
-    top: 0, bottom: 0,
-    width: '2px',
-    background: 'rgba(255,255,255,0.25)',
-    zIndex: 2,
-  },
-  currentBar: {
-    position: 'absolute',
-    top: '4px', bottom: '4px', left: 0,
-    borderRadius: '3px',
-    opacity: 0.82,
+    top: 5, bottom: 5, left: 0,
+    borderRadius: 3, opacity: 0.82,
     transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
     zIndex: 3,
   },
   compBar: {
     position: 'absolute',
-    top: '4px', bottom: '4px', left: 0,
-    borderRadius: '3px',
-    background: 'rgba(78,213,150,0.45)',
-    border: '1.5px solid rgba(78,213,150,0.7)',
+    top: 5, bottom: 5, left: 0,
+    borderRadius: 3,
+    background: 'rgba(78,213,150,0.42)',
+    border: '1.5px solid rgba(78,213,150,0.65)',
     transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
     zIndex: 2,
   },
-  valCurrent: {
+  valNow: {
     display: 'block',
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.9rem',
-    fontWeight: 800,
+    fontSize: '0.92rem', fontWeight: 800,
     color: '#FFFFFF',
-  },
-  valDelta: {
-    display: 'block',
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    fontWeight: 700,
   },
   valMuted: {
     display: 'block',
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.75rem',
-    fontWeight: 400,
+    fontSize: '0.75rem', fontWeight: 400,
     color: 'rgba(255,255,255,0.35)',
+    textAlign: 'right',
   },
   legend: {
     display: 'flex',
@@ -293,29 +279,27 @@ const styles = {
     paddingTop: '8px',
   },
   legendItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
+    display: 'flex', alignItems: 'center', gap: 6,
   },
-  legendRangeSwatch: {
-    width: '16px', height: '8px',
+  rangeSwatch: {
+    width: 16, height: 8,
     background: 'rgba(255,255,255,0.12)',
-    borderRadius: '2px',
+    borderRadius: 2,
   },
-  legendTargetSwatch: {
-    width: '2px', height: '12px',
-    background: 'rgba(255,255,255,0.3)',
-    borderRadius: '1px',
+  targetSwatch: {
+    width: 2, height: 14,
+    background: 'rgba(255,255,255,0.28)',
+    borderRadius: 1,
   },
-  legendCompSwatch: {
-    width: '16px', height: '8px',
-    background: 'rgba(78,213,150,0.45)',
-    border: '1px solid rgba(78,213,150,0.7)',
-    borderRadius: '2px',
+  compSwatch: {
+    width: 16, height: 8,
+    background: 'rgba(78,213,150,0.42)',
+    border: '1px solid rgba(78,213,150,0.65)',
+    borderRadius: 2,
   },
   legendText: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.35)',
+    color: 'rgba(255,255,255,0.32)',
   },
 }

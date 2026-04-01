@@ -1,142 +1,117 @@
 export default function ESGChart({ portfolio, scenario, showComparison }) {
   const esg = portfolio.esg
   const compEsg = showComparison && scenario?.comparison?.esg
-  const activeEsg = compEsg || esg
+  const active = compEsg || esg
 
-  const scorePercent = (activeEsg.score / esg.maxScore) * 100
-  const basePercent = (esg.score / esg.maxScore) * 100
-
-  // Large gauge
-  const r = 110, cx = 160, cy = 155
   const startAngle = 210, endAngle = 330
   const totalAng = endAngle - startAngle
+  const cx = 160, cy = 160, r = 120
 
-  function polarXY(angle) {
-    const rad = (angle * Math.PI) / 180
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
-  }
-
-  function arcPath(start, end, radius = r) {
-    const s = polarXY(start, radius), e = polarXY(end, radius)
-    // Recalculate with given radius
-    const sR = {
-      x: cx + radius * Math.cos(start * Math.PI / 180),
-      y: cy + radius * Math.sin(start * Math.PI / 180),
+  function pt(angle) {
+    return {
+      x: cx + r * Math.cos(angle * Math.PI / 180),
+      y: cy + r * Math.sin(angle * Math.PI / 180),
     }
-    const eR = {
-      x: cx + radius * Math.cos(end * Math.PI / 180),
-      y: cy + radius * Math.sin(end * Math.PI / 180),
-    }
-    const large = end - start > 180 ? 1 : 0
-    return `M ${sR.x} ${sR.y} A ${radius} ${radius} 0 ${large} 1 ${eR.x} ${eR.y}`
   }
 
-  const scoreAngle = startAngle + (scorePercent / 100) * totalAng
-  const baseAngle = startAngle + (basePercent / 100) * totalAng
-
-  // Score color based on value
-  const scoreColor = activeEsg.score >= 7 ? '#4ED596'
-    : activeEsg.score >= 5 ? '#F5A623' : '#E01B41'
-
-  const sfdr = activeEsg.sfdr || esg.sfdr
-  const sfdrColors = {
-    'Article 9': '#4ED596',
-    'Article 8': '#5B8DEF',
-    'Article 6': '#8A8A82',
+  function arcPath(start, end) {
+    const s = pt(start), e = pt(end)
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${end - start > 180 ? 1 : 0} 1 ${e.x} ${e.y}`
   }
+
+  const scoreAngle = startAngle + (active.score / esg.maxScore) * totalAng
+  const baseAngle = startAngle + (esg.score / esg.maxScore) * totalAng
+  const scoreColor = active.score >= 7 ? '#4ED596' : active.score >= 5 ? '#F5A623' : '#E01B41'
+
+  const sfdr = active.sfdr || esg.sfdr
+  const sfdrColors = { 'Article 9': '#4ED596', 'Article 8': '#5B8DEF', 'Article 6': '#8A8A82' }
 
   return (
-    <div style={styles.container}>
-      {/* Left: Gauge + metrics */}
-      <div style={styles.gaugeSection}>
-        <div style={styles.sectionTitle}>ESG SCORE</div>
-        <svg width="320" height="220" viewBox="0 0 320 220">
-          {/* Background track */}
+    <div style={s.wrap}>
+      {/* Gauge */}
+      <div style={s.gaugeCol}>
+        <div style={s.label}>ESG SCORE</div>
+        <svg viewBox="0 0 320 260" style={s.gaugeSvg}>
+          {/* Background arc */}
           <path d={arcPath(startAngle, endAngle)}
-            fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="18" strokeLinecap="round" />
+            fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="20" strokeLinecap="round" />
 
-          {/* Zone coloring: red → amber → green */}
+          {/* Zone coloring */}
           <path d={arcPath(startAngle, startAngle + totalAng * 0.4)}
-            fill="none" stroke="rgba(224,27,65,0.2)" strokeWidth="18" strokeLinecap="round" />
+            fill="none" stroke="rgba(224,27,65,0.18)" strokeWidth="20" strokeLinecap="round" />
           <path d={arcPath(startAngle + totalAng * 0.4, startAngle + totalAng * 0.7)}
-            fill="none" stroke="rgba(245,166,35,0.2)" strokeWidth="18" strokeLinecap="round" />
+            fill="none" stroke="rgba(245,166,35,0.18)" strokeWidth="20" strokeLinecap="round" />
           <path d={arcPath(startAngle + totalAng * 0.7, endAngle)}
-            fill="none" stroke="rgba(78,213,150,0.2)" strokeWidth="18" strokeLinecap="round" />
+            fill="none" stroke="rgba(78,213,150,0.18)" strokeWidth="20" strokeLinecap="round" />
 
-          {/* Base score arc (if comparing) */}
+          {/* Base arc when comparing */}
           {compEsg && (
             <path d={arcPath(startAngle, baseAngle)}
-              fill="none" stroke="rgba(255,255,255,0.15)"
-              strokeWidth="10" strokeLinecap="round" strokeDasharray="4 3" />
+              fill="none" stroke="rgba(255,255,255,0.18)"
+              strokeWidth="10" strokeLinecap="round" strokeDasharray="5 3" />
           )}
 
-          {/* Active score arc */}
+          {/* Score arc */}
           <path d={arcPath(startAngle, scoreAngle)}
             fill="none" stroke={scoreColor}
-            strokeWidth="18" strokeLinecap="round" />
+            strokeWidth="20" strokeLinecap="round" />
 
-          {/* Score needle dot */}
-          <circle
-            cx={cx + r * Math.cos(scoreAngle * Math.PI / 180)}
-            cy={cy + r * Math.sin(scoreAngle * Math.PI / 180)}
-            r="10" fill={scoreColor} stroke="#0C182E" strokeWidth="3" />
+          {/* Needle */}
+          <circle cx={pt(scoreAngle).x} cy={pt(scoreAngle).y}
+            r="12" fill={scoreColor} stroke="#0C182E" strokeWidth="3" />
 
-          {/* Center score */}
-          <text x={cx} y={cy - 24} textAnchor="middle"
+          {/* Score text */}
+          <text x={cx} y={cy - 20} textAnchor="middle"
             fontFamily="'Merriweather Sans', sans-serif"
-            fontSize="9" fontWeight="800" fill="rgba(255,255,255,0.35)"
-            letterSpacing="0.1em">ESG SCORE</text>
-          <text x={cx} y={cy + 16} textAnchor="middle"
-            fontFamily="'Merriweather', serif"
-            fontSize="52" fontWeight="700" fill={scoreColor}>
-            {activeEsg.score.toFixed(1)}
+            fontSize="11" fontWeight="800" fill="rgba(255,255,255,0.32)" letterSpacing="2">
+            ESG SCORE
           </text>
-          <text x={cx} y={cy + 36} textAnchor="middle"
+          <text x={cx} y={cy + 28} textAnchor="middle"
+            fontFamily="'Merriweather', serif"
+            fontSize="58" fontWeight="700" fill={scoreColor}>
+            {active.score.toFixed(1)}
+          </text>
+          <text x={cx} y={cy + 50} textAnchor="middle"
             fontFamily="'Merriweather Sans', sans-serif"
-            fontSize="10" fontWeight="400" fill="rgba(255,255,255,0.3)">
+            fontSize="11" fill="rgba(255,255,255,0.28)">
             out of {esg.maxScore}
           </text>
 
-          {/* Scale ticks */}
-          {[0, 2, 4, 6, 8, 10].map(val => {
-            const angle = startAngle + (val / esg.maxScore) * totalAng
-            const inner = r - 14, outer = r + 14
-            const x1 = cx + inner * Math.cos(angle * Math.PI / 180)
-            const y1 = cy + inner * Math.sin(angle * Math.PI / 180)
-            const x2 = cx + outer * Math.cos(angle * Math.PI / 180)
-            const y2 = cy + outer * Math.sin(angle * Math.PI / 180)
-            const tx = cx + (r + 26) * Math.cos(angle * Math.PI / 180)
-            const ty = cy + (r + 26) * Math.sin(angle * Math.PI / 180)
+          {/* Scale */}
+          {[0,2,4,6,8,10].map(v => {
+            const a = startAngle + (v / esg.maxScore) * totalAng
+            const p1 = { x: cx + (r-14)*Math.cos(a*Math.PI/180), y: cy + (r-14)*Math.sin(a*Math.PI/180) }
+            const p2 = { x: cx + (r+14)*Math.cos(a*Math.PI/180), y: cy + (r+14)*Math.sin(a*Math.PI/180) }
+            const pt2 = { x: cx + (r+28)*Math.cos(a*Math.PI/180), y: cy + (r+28)*Math.sin(a*Math.PI/180) }
             return (
-              <g key={val}>
-                <line x1={x1} y1={y1} x2={x2} y2={y2}
+              <g key={v}>
+                <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
                   stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                <text x={tx} y={ty + 3} textAnchor="middle"
-                  fontFamily="'Merriweather Sans'" fontSize="8"
-                  fill="rgba(255,255,255,0.25)">{val}</text>
+                <text x={pt2.x} y={pt2.y + 3} textAnchor="middle"
+                  fontFamily="'Merriweather Sans'" fontSize="9"
+                  fill="rgba(255,255,255,0.22)">{v}</text>
               </g>
             )
           })}
         </svg>
 
-        {/* Metrics below gauge */}
-        <div style={styles.metricsRow}>
-          <div style={styles.metricCard}>
-            <span style={styles.metricLabel}>Carbon Risk</span>
+        {/* Carbon metric */}
+        <div style={s.metricRow}>
+          <div style={s.metricCard}>
+            <span style={s.metricLabel}>Carbon Risk Score</span>
             <span style={{
-              ...styles.metricVal,
+              ...s.metricVal,
               color: esg.carbonRisk < 15 ? '#4ED596' : '#F5A623',
-            }}>
-              {esg.carbonRisk}
-            </span>
-            <span style={styles.metricSub}>lower = better</span>
+            }}>{esg.carbonRisk}</span>
+            <span style={s.metricSub}>lower = better</span>
           </div>
           {compEsg && (
-            <div style={styles.compareNote}>
-              <span style={styles.compareLabel}>Base score</span>
-              <span style={styles.compareVal}>{esg.score.toFixed(1)}</span>
+            <div style={s.compareCard}>
+              <span style={s.metricLabel}>Base score</span>
+              <span style={s.metricValMuted}>{esg.score.toFixed(1)}</span>
               <span style={{
-                ...styles.compareDelta,
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.82rem', fontWeight: 800,
                 color: compEsg.score > esg.score ? '#4ED596' : '#E01B41',
               }}>
                 {compEsg.score > esg.score ? '↑ +' : '↓ '}
@@ -147,61 +122,56 @@ export default function ESGChart({ portfolio, scenario, showComparison }) {
         </div>
       </div>
 
-      {/* Right: SFDR breakdown */}
-      <div style={styles.sfdrSection}>
-        <div style={styles.sectionTitle}>SFDR CLASSIFICATION</div>
+      {/* SFDR */}
+      <div style={s.sfdrCol}>
+        <div style={s.label}>SFDR CLASSIFICATION</div>
 
-        {/* Visual donut for SFDR */}
-        <div style={styles.sfdrVisual}>
-          {sfdr.map((s, i) => {
-            const color = sfdrColors[s.article] || '#8A8A82'
-            return (
-              <div key={s.article} style={styles.sfdrBlock}>
-                <div style={styles.sfdrBarRow}>
-                  <div style={styles.sfdrLabelGroup}>
-                    <div style={{ ...styles.sfdrDot, background: color }} />
-                    <span style={styles.sfdrName}>{s.article}</span>
-                  </div>
-                  <div style={styles.sfdrTrackOuter}>
-                    <div style={{
-                      ...styles.sfdrBar,
-                      width: `${s.weight}%`,
-                      background: color,
-                    }} />
-                  </div>
-                  <span style={{ ...styles.sfdrPct, color }}>{s.weight}%</span>
-                </div>
-                <div style={styles.sfdrDesc}>
-                  {s.article === 'Article 9' && 'Sustainable investment objective'}
-                  {s.article === 'Article 8' && 'Promotes environmental/social characteristics'}
-                  {s.article === 'Article 6' && 'No specific sustainability objective'}
+        {sfdr.map(item => (
+          <div key={item.article} style={s.sfdrItem}>
+            <div style={s.sfdrHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: 115 }}>
+                <div style={{ width: 11, height: 11, borderRadius: 3, background: sfdrColors[item.article], flexShrink: 0 }} />
+                <span style={s.sfdrName}>{item.article}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={s.sfdrTrack}>
+                  <div style={{
+                    height: '100%', borderRadius: 4,
+                    background: sfdrColors[item.article],
+                    width: `${item.weight}%`,
+                    opacity: 0.78,
+                    transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+                  }} />
                 </div>
               </div>
-            )
-          })}
-        </div>
+              <span style={{ ...s.sfdrPct, color: sfdrColors[item.article] }}>{item.weight}%</span>
+            </div>
+            <div style={s.sfdrDesc}>
+              {item.article === 'Article 9' && 'Sustainable investment objective'}
+              {item.article === 'Article 8' && 'Promotes environmental or social characteristics'}
+              {item.article === 'Article 6' && 'No specific sustainability objective'}
+            </div>
+          </div>
+        ))}
 
-        {/* Stacked bar summary */}
-        <div style={styles.stackedBarWrap}>
-          <div style={styles.stackedBarLabel}>PORTFOLIO DISTRIBUTION</div>
-          <div style={styles.stackedBar}>
-            {sfdr.map(s => (
-              <div key={s.article} style={{
-                width: `${s.weight}%`,
+        {/* Stacked bar */}
+        <div style={{ marginTop: 16 }}>
+          <div style={s.label}>PORTFOLIO DISTRIBUTION</div>
+          <div style={s.stackedBar}>
+            {sfdr.map(item => (
+              <div key={item.article} style={{
+                width: `${item.weight}%`,
                 height: '100%',
-                background: sfdrColors[s.article] || '#8A8A82',
-                opacity: 0.8,
+                background: sfdrColors[item.article],
+                opacity: 0.78,
                 transition: 'width 0.7s ease',
               }} />
             ))}
           </div>
-          <div style={styles.stackedLegend}>
-            {sfdr.map(s => (
-              <span key={s.article} style={{
-                ...styles.stackedLegendItem,
-                color: sfdrColors[s.article],
-              }}>
-                {s.article.replace('Article ', 'Art.')} {s.weight}%
+          <div style={s.stackedLegend}>
+            {sfdr.map(item => (
+              <span key={item.article} style={{ ...s.stackedItem, color: sfdrColors[item.article] }}>
+                {item.article.replace('Article ', 'Art.')} {item.weight}%
               </span>
             ))}
           </div>
@@ -211,181 +181,103 @@ export default function ESGChart({ portfolio, scenario, showComparison }) {
   )
 }
 
-const styles = {
-  container: {
-    display: 'flex',
-    gap: '40px',
-    height: '100%',
-    width: '100%',
+const s = {
+  wrap: {
+    display: 'flex', gap: 44,
+    height: '100%', width: '100%',
     alignItems: 'center',
   },
-  gaugeSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0',
-    flexShrink: 0,
-    width: '320px',
+  gaugeCol: {
+    flexShrink: 0, width: '42%', maxWidth: 340,
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 0,
+    height: '100%', justifyContent: 'center',
   },
-  sfdrSection: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-    justifyContent: 'center',
+  gaugeSvg: {
+    width: '100%', height: 'auto', maxHeight: '240px',
   },
-  sectionTitle: {
+  sfdrCol: {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    gap: 16, justifyContent: 'center',
+  },
+  label: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    fontWeight: 800,
-    color: 'rgba(255,255,255,0.3)',
-    letterSpacing: '0.1em',
-    alignSelf: 'flex-start',
+    fontSize: '0.58rem', fontWeight: 800,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    marginBottom: 4,
   },
-  metricsRow: {
-    display: 'flex',
-    gap: '12px',
-    width: '100%',
-    justifyContent: 'center',
+  metricRow: {
+    display: 'flex', gap: 10, marginTop: 4,
   },
   metricCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '2px',
-    padding: '12px 20px',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 2,
+    padding: '12px 18px',
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '8px',
+    borderRadius: 8,
+  },
+  compareCard: {
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: 2,
+    padding: '12px 18px',
+    background: 'rgba(78,213,150,0.06)',
+    border: '1px solid rgba(78,213,150,0.2)',
+    borderRadius: 8,
   },
   metricLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.4)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.38)',
   },
   metricVal: {
     fontFamily: "'Merriweather', serif",
-    fontSize: '1.6rem',
-    fontWeight: 700,
+    fontSize: '1.7rem', fontWeight: 700,
+  },
+  metricValMuted: {
+    fontFamily: "'Merriweather', serif",
+    fontSize: '1.3rem', fontWeight: 700,
+    color: 'rgba(255,255,255,0.45)',
   },
   metricSub: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    color: 'rgba(255,255,255,0.25)',
+    fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)',
   },
-  compareNote: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '2px',
-    padding: '12px 20px',
-    background: 'rgba(78,213,150,0.06)',
-    border: '1px solid rgba(78,213,150,0.2)',
-    borderRadius: '8px',
+  sfdrItem: {
+    display: 'flex', flexDirection: 'column', gap: 5,
   },
-  compareLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.4)',
-  },
-  compareVal: {
-    fontFamily: "'Merriweather', serif",
-    fontSize: '1.2rem',
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  compareDelta: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.85rem',
-    fontWeight: 800,
-  },
-  sfdrVisual: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  sfdrBlock: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  },
-  sfdrBarRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  sfdrLabelGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    width: '110px',
-    flexShrink: 0,
-  },
-  sfdrDot: {
-    width: '10px',
-    height: '10px',
-    borderRadius: '3px',
-    flexShrink: 0,
+  sfdrHeader: {
+    display: 'flex', alignItems: 'center', gap: 12,
   },
   sfdrName: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.8rem',
-    fontWeight: 700,
+    fontSize: '0.82rem', fontWeight: 700,
     color: 'rgba(255,255,255,0.85)',
   },
-  sfdrTrackOuter: {
-    flex: 1,
-    height: '28px',
+  sfdrTrack: {
+    height: 30,
     background: 'rgba(255,255,255,0.05)',
-    borderRadius: '4px',
-    overflow: 'hidden',
-  },
-  sfdrBar: {
-    height: '100%',
-    borderRadius: '4px',
-    opacity: 0.78,
-    transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
+    borderRadius: 4, overflow: 'hidden',
   },
   sfdrPct: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1rem',
-    fontWeight: 800,
-    width: '48px',
-    textAlign: 'right',
+    fontSize: '1.05rem', fontWeight: 800,
+    width: 50, textAlign: 'right',
   },
   sfdrDesc: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.3)',
-    paddingLeft: '118px',
-  },
-  stackedBarWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    marginTop: '8px',
-  },
-  stackedBarLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    fontWeight: 800,
-    color: 'rgba(255,255,255,0.25)',
-    letterSpacing: '0.1em',
+    fontSize: '0.63rem', color: 'rgba(255,255,255,0.28)',
+    paddingLeft: 123,
   },
   stackedBar: {
-    height: '10px',
-    display: 'flex',
-    borderRadius: '5px',
-    overflow: 'hidden',
-    gap: '1px',
+    height: 12, display: 'flex',
+    borderRadius: 6, overflow: 'hidden',
+    gap: 1, marginTop: 6,
   },
   stackedLegend: {
-    display: 'flex',
-    gap: '16px',
+    display: 'flex', gap: 16, marginTop: 6,
   },
-  stackedLegendItem: {
+  stackedItem: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.65rem',
-    fontWeight: 700,
+    fontSize: '0.65rem', fontWeight: 700,
   },
 }

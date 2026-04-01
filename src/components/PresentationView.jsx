@@ -26,66 +26,70 @@ export default function PresentationView({
 
   const ChartComponent = DIMENSIONS[activeDimension] || AssetClassChart
   const policyQuestion = scenario?.policyQuestion?.[lang] || scenario?.policyQuestion?.en
-  const speakerName = scenario?.speaker?.[lang] || scenario?.speaker?.en
   const themeName = scenario?.theme?.[lang] || scenario?.theme?.en
+  const compLabel = scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
+  const sp = scenario?.speakerProfile
 
   return (
-    <div style={styles.container}>
-      {/* Subtle background texture */}
-      <div style={styles.gridOverlay} />
-      <div style={styles.glowAccent} />
+    <div style={s.container}>
+      <div style={s.grid} />
+      <div style={s.glow} />
 
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.logoArea}>
-          <img
-            src="/io_horizontal_white@10x.png"
-            alt="Investment Officer"
-            style={styles.logo}
-            onError={e => {
-              e.target.style.display = 'none'
-              e.target.nextSibling.style.display = 'flex'
-            }}
-          />
-          <div style={{ display: 'none', alignItems: 'center', gap: '6px' }}>
-            <span style={styles.logoFallbackIo}>io</span>
-            <span style={styles.logoFallbackText}>investment<br/>officer</span>
-          </div>
-          <div style={styles.headerDivider} />
-          <div style={styles.eventMeta}>
-            <span style={styles.eventName}>{event.name}</span>
-            <span style={styles.eventDate}>{event.date} — {event.location}</span>
+      {/* ── HEADER ── */}
+      <div style={s.header}>
+        {/* Logo — left */}
+        <div style={s.logoWrap}>
+          <img src="/io_horizontal_white@10x.png" alt="Investment Officer"
+            style={s.logo}
+            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+          <div style={{ display: 'none', alignItems: 'center', gap: 8 }}>
+            <span style={s.fallbackIo}>io</span>
+            <span style={s.fallbackText}>investment officer</span>
           </div>
         </div>
-        <div style={styles.speakerMeta}>
-          <span style={styles.nowBadge}>NOW</span>
-          <span style={styles.speakerName}>{speakerName}</span>
-        </div>
+
+        {/* Event name — centre */}
+        <div style={s.eventName}>{event.name}</div>
+
+        {/* Speaker profile — right */}
+        {sp ? (
+          <div style={s.speakerBlock}>
+            <span style={s.nowDot}>● NOW</span>
+            <span style={s.speakerName}>{sp.name}</span>
+            <span style={s.speakerRole}>{sp.title}</span>
+            <span style={s.speakerOrg}>{sp.organisation}</span>
+          </div>
+        ) : (
+          <div style={{ minWidth: 220 }} />
+        )}
       </div>
 
       {/* Red accent line */}
-      <div style={styles.accentLine} />
+      <div style={s.redLine} />
 
-      {/* Policy question */}
+      {/* ── POLICY QUESTION ── */}
       <div style={{
-        ...styles.policyWrap,
+        ...s.policyBlock,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(8px)',
-        transition: 'opacity 0.4s ease, transform 0.4s ease',
+        transform: visible ? 'translateY(0)' : 'translateY(10px)',
+        transition: 'opacity 0.42s ease, transform 0.42s ease',
       }}>
-        <div style={styles.policyMeta}>
-          <span style={styles.policyLabel}>PORTFOLIO QUESTION</span>
-          <span style={styles.themeTag}>{themeName}</span>
+        <div style={s.policyMeta}>
+          <span style={s.policyLabel}>PORTFOLIO QUESTION</span>
+          <span style={s.themeTag}>{themeName}</span>
+          {showComparison && compLabel && (
+            <span style={s.compTag}>⟳ {compLabel}</span>
+          )}
         </div>
-        <div style={styles.policyQuestion}>{policyQuestion}</div>
+        <div style={s.policyQuestion}>{policyQuestion}</div>
       </div>
 
-      {/* Chart — takes ALL remaining space */}
+      {/* ── CHART ── */}
       <div style={{
-        ...styles.chartArea,
+        ...s.chartArea,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        transition: 'opacity 0.5s ease 0.06s, transform 0.5s ease 0.06s',
+        transform: visible ? 'translateY(0)' : 'translateY(14px)',
+        transition: 'opacity 0.52s ease 0.07s, transform 0.52s ease 0.07s',
       }}>
         <ChartComponent
           portfolio={portfolio}
@@ -95,231 +99,168 @@ export default function PresentationView({
         />
       </div>
 
-      {/* Comparison badge */}
-      {showComparison && scenario?.comparison && (
-        <div style={styles.compBadge}>
-          <span style={styles.compLabel}>COMPARING</span>
-          <span style={styles.compName}>
-            {scenario.comparison.label?.[lang] || scenario.comparison.label?.en}
-          </span>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={styles.footer}>
-        <span style={styles.footerLeft}>
+      {/* ── FOOTER ── */}
+      <div style={s.footer}>
+        <span style={s.footerLeft}>
           {portfolio.name} · {portfolio.profile} · {portfolio.currency}
         </span>
-        <span style={styles.footerRight}>investmentofficer.eu</span>
+        <span style={s.footerRight}>Investment Officer © 2026</span>
       </div>
     </div>
   )
 }
 
-const styles = {
+const s = {
   container: {
-    width: '100%',
-    height: '100%',
+    width: '100%', height: '100%',
     background: '#0C182E',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '18px 36px 12px',
-    position: 'relative',
-    overflow: 'hidden',
-    gap: '10px',
+    display: 'flex', flexDirection: 'column',
+    padding: '20px 40px 14px',
+    position: 'relative', overflow: 'hidden',
   },
-  gridOverlay: {
-    position: 'absolute',
-    inset: 0,
+  grid: {
+    position: 'absolute', inset: 0,
     backgroundImage: `
-      linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px)
+      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px)
     `,
-    backgroundSize: '64px 64px',
-    pointerEvents: 'none',
-    zIndex: 0,
+    backgroundSize: '72px 72px',
+    pointerEvents: 'none', zIndex: 0,
   },
-  glowAccent: {
-    position: 'absolute',
-    top: '-80px',
-    right: '8%',
-    width: '600px',
-    height: '350px',
+  glow: {
+    position: 'absolute', top: '-100px', right: '5%',
+    width: '700px', height: '400px',
     background: 'radial-gradient(ellipse, rgba(224,27,65,0.05) 0%, transparent 65%)',
-    pointerEvents: 'none',
-    zIndex: 0,
+    pointerEvents: 'none', zIndex: 0,
   },
+
+  // Header: three-column layout
   header: {
-    display: 'flex',
+    display: 'flex', alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    position: 'relative',
-    zIndex: 1,
-    flexShrink: 0,
+    marginBottom: '10px',
+    position: 'relative', zIndex: 1, flexShrink: 0,
   },
-  logoArea: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
+  logoWrap: {
+    display: 'flex', alignItems: 'center',
+    minWidth: '220px',
   },
   logo: {
-    height: '26px',
-    width: 'auto',
-    objectFit: 'contain',
+    height: '44px',   // prominent but not dominating
+    width: 'auto', objectFit: 'contain',
   },
-  logoFallbackIo: {
+  fallbackIo: {
     fontFamily: "'Merriweather', serif",
-    fontSize: '1.6rem',
-    fontWeight: 700,
-    color: '#FFFFFF',
-    lineHeight: 1,
-    letterSpacing: '-0.04em',
+    fontSize: '2.2rem', fontWeight: 700,
+    color: '#fff', letterSpacing: '-0.05em',
   },
-  logoFallbackText: {
+  fallbackText: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    color: 'rgba(255,255,255,0.55)',
-    lineHeight: 1.4,
+    fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)',
   },
-  headerDivider: {
-    width: '1px',
-    height: '26px',
-    background: 'rgba(255,255,255,0.12)',
-  },
-  eventMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1px',
-  },
+
+  // Event name — centre, elegant but not overpowering
   eventName: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.76rem',
-    fontWeight: 700,
+    fontSize: '1.05rem', fontWeight: 800,
     color: '#FFFFFF',
-    letterSpacing: '0.01em',
+    letterSpacing: '0.04em',
+    textAlign: 'center',
+    flex: 1,
   },
-  eventDate: {
+
+  // Speaker block — right-aligned, compact 4-line card
+  speakerBlock: {
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'flex-end', gap: '2px',
+    minWidth: '220px',
+  },
+  nowDot: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem',
-    color: 'rgba(255,255,255,0.38)',
-  },
-  speakerMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: '2px',
-  },
-  nowBadge: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.52rem',
-    fontWeight: 800,
-    color: '#E01B41',
-    letterSpacing: '0.16em',
+    fontSize: '0.52rem', fontWeight: 800,
+    color: '#E01B41', letterSpacing: '0.16em',
   },
   speakerName: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.8rem',
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.72)',
+    fontSize: '0.9rem', fontWeight: 800,
+    color: '#FFFFFF',
   },
-  accentLine: {
-    height: '1.5px',
-    background: 'linear-gradient(90deg, #E01B41 0%, rgba(224,27,65,0.3) 60%, transparent 100%)',
-    flexShrink: 0,
-    position: 'relative',
-    zIndex: 1,
+  speakerRole: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.68rem', fontWeight: 400,
+    color: 'rgba(255,255,255,0.5)',
   },
-  policyWrap: {
-    position: 'relative',
-    zIndex: 1,
-    flexShrink: 0,
+  speakerOrg: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.68rem', fontWeight: 600,
+    color: 'rgba(255,255,255,0.38)',
+  },
+
+  redLine: {
+    height: '2px',
+    background: 'linear-gradient(90deg, #E01B41 0%, rgba(224,27,65,0.22) 65%, transparent 100%)',
+    marginBottom: '16px',
+    flexShrink: 0, position: 'relative', zIndex: 1,
+  },
+
+  // Policy block — generous space, the heart of the screen
+  policyBlock: {
+    marginBottom: '18px',
+    position: 'relative', zIndex: 1, flexShrink: 0,
   },
   policyMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '6px',
+    display: 'flex', alignItems: 'center', gap: '10px',
+    marginBottom: '9px',
   },
   policyLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem',
-    fontWeight: 800,
-    color: '#E01B41',
-    letterSpacing: '0.13em',
+    fontSize: '0.58rem', fontWeight: 800,
+    color: '#E01B41', letterSpacing: '0.13em',
   },
   themeTag: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    fontWeight: 600,
+    fontSize: '0.58rem', fontWeight: 600,
     color: 'rgba(255,255,255,0.32)',
-    letterSpacing: '0.07em',
-    textTransform: 'uppercase',
+    letterSpacing: '0.07em', textTransform: 'uppercase',
     background: 'rgba(255,255,255,0.05)',
-    padding: '2px 8px',
-    borderRadius: '3px',
-    border: '1px solid rgba(255,255,255,0.07)',
+    padding: '3px 9px', borderRadius: '3px',
+    border: '1px solid rgba(255,255,255,0.08)',
+  },
+  compTag: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.58rem', fontWeight: 700,
+    color: '#4ED596',
+    background: 'rgba(78,213,150,0.1)',
+    border: '1px solid rgba(78,213,150,0.28)',
+    padding: '3px 9px', borderRadius: '3px',
   },
   policyQuestion: {
     fontFamily: "'Merriweather', serif",
-    fontSize: 'clamp(1.2rem, 2.5vw, 1.75rem)',
-    fontWeight: 700,
-    color: '#FFFFFF',
-    lineHeight: 1.3,
-    letterSpacing: '-0.025em',
-    maxWidth: '82%',
+    fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)',
+    fontWeight: 700, color: '#FFFFFF',
+    lineHeight: 1.28, letterSpacing: '-0.025em',
+    maxWidth: '86%',
   },
+
   chartArea: {
-    flex: 1,
-    position: 'relative',
-    zIndex: 1,
-    minHeight: 0,
-    overflow: 'hidden',
+    flex: 1, position: 'relative', zIndex: 1,
+    minHeight: 0, overflow: 'hidden',
+    display: 'flex', alignItems: 'stretch',
   },
-  compBadge: {
-    position: 'absolute',
-    top: '18px',
-    right: '36px',
-    background: 'rgba(78,213,150,0.09)',
-    border: '1px solid rgba(78,213,150,0.32)',
-    borderRadius: '6px',
-    padding: '6px 12px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    gap: '2px',
-    zIndex: 10,
-  },
-  compLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.5rem',
-    fontWeight: 800,
-    color: '#4ED596',
-    letterSpacing: '0.14em',
-  },
-  compName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.7rem',
-    fontWeight: 600,
-    color: '#4ED596',
-  },
+
   footer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTop: '1px solid rgba(255,255,255,0.06)',
-    paddingTop: '8px',
-    flexShrink: 0,
-    position: 'relative',
-    zIndex: 1,
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    borderTop: '1px solid rgba(255,255,255,0.08)',
+    paddingTop: '10px', marginTop: '10px',
+    flexShrink: 0, position: 'relative', zIndex: 1,
   },
   footerLeft: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    color: 'rgba(255,255,255,0.22)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
   },
   footerRight: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem',
-    color: 'rgba(255,255,255,0.16)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)',
+    fontWeight: 500,
   },
 }
