@@ -25,11 +25,12 @@ function buildGeoMap(allocations) {
 }
 
 export default function GeographyChart({ portfolio, scenario, showComparison }) {
-  // geoOverride: aanwezig in explore mode — directe regio-gewichten
-  // zonder geoOverride: bereken proportioneel uit asset class allocaties
-  const geoMap = portfolio.geoOverride
+  // baseMap: altijd berekend uit de originele asset class allocaties
+  // activeMap: geoOverride (explore) of baseMap (normaal) of compMap (compare)
+  const baseMap = buildGeoMap(portfolio.allocations)
+  const activeMap = portfolio.geoOverride
     ? portfolio.geoOverride
-    : buildGeoMap(portfolio.allocations)
+    : baseMap
 
   const compMap = {}
   if (showComparison && scenario?.comparison?.allocations) {
@@ -44,16 +45,18 @@ export default function GeographyChart({ portfolio, scenario, showComparison }) 
   }
 
   const hasCompData = showComparison && Object.keys(compMap).length > 0
-  const activeMap = hasCompData ? compMap : geoMap
+  const displayMap = hasCompData ? compMap : activeMap
 
+  // geoMap voor filter/sort: gebruik baseMap zodat regio's niet wegvallen
+  // als override ze op 0 zet
   const regions = Object.keys(RC).map(r => ({
     id: r, color: RC[r],
-    base:   Math.round((geoMap[r]   || 0) * 10) / 10,
-    active: Math.round((activeMap[r] || 0) * 10) / 10,
+    base:   Math.round((baseMap[r]   || 0) * 10) / 10,
+    active: Math.round((displayMap[r] || 0) * 10) / 10,
     delta:  hasCompData
-      ? Math.round(((activeMap[r] || 0) - (geoMap[r] || 0)) * 10) / 10
-      : 0,
-  })).filter(r => r.base > 0 || r.active > 0)
+      ? Math.round(((compMap[r] || 0) - (baseMap[r] || 0)) * 10) / 10
+      : Math.round(((activeMap[r] || 0) - (baseMap[r] || 0)) * 10) / 10,
+  })).filter(r => r.base > 0)   // toon alle regio's die in de basisportefeuille zitten
     .sort((a, b) => b.base - a.base)
 
   const maxW = Math.max(...regions.map(r => Math.max(r.base, r.active)), 1)
@@ -93,21 +96,21 @@ export default function GeographyChart({ portfolio, scenario, showComparison }) 
             <rect x="0" y="0" width="500" height="260" fill="url(#geo-glow-na)" />
             <rect x="0" y="0" width="500" height="260" fill="url(#geo-glow-ap)" />
 
-            <ellipse cx="105" cy="95" rx="70" ry="52" fill={RC['North America']} fillOpacity={op(activeMap['North America']||0)} stroke={RC['North America']} strokeOpacity={activeMap['North America']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
-            <ellipse cx="118" cy="52" rx="45" ry="22" fill={RC['North America']} fillOpacity={op(activeMap['North America']||0)*0.5} stroke={RC['North America']} strokeOpacity="0.18" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="105" cy="95" rx="70" ry="52" fill={RC['North America']} fillOpacity={op(displayMap['North America']||0)} stroke={RC['North America']} strokeOpacity={displayMap['North America']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
+            <ellipse cx="118" cy="52" rx="45" ry="22" fill={RC['North America']} fillOpacity={op(displayMap['North America']||0)*0.5} stroke={RC['North America']} strokeOpacity="0.18" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
 
-            <ellipse cx="228" cy="70" rx="36" ry="28" fill={RC['Europe']} fillOpacity={op(activeMap['Europe']||0)} stroke={RC['Europe']} strokeOpacity={activeMap['Europe']>0?0.50:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
-            <ellipse cx="232" cy="42" rx="18" ry="16" fill={RC['Europe']} fillOpacity={op(activeMap['Europe']||0)*0.6} stroke={RC['Europe']} strokeOpacity="0.22" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
-            <ellipse cx="204" cy="60" rx="10" ry="12" fill={RC['Europe']} fillOpacity={op(activeMap['Europe']||0)*0.7} stroke={RC['Europe']} strokeOpacity="0.25" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="228" cy="70" rx="36" ry="28" fill={RC['Europe']} fillOpacity={op(displayMap['Europe']||0)} stroke={RC['Europe']} strokeOpacity={displayMap['Europe']>0?0.50:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
+            <ellipse cx="232" cy="42" rx="18" ry="16" fill={RC['Europe']} fillOpacity={op(displayMap['Europe']||0)*0.6} stroke={RC['Europe']} strokeOpacity="0.22" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="204" cy="60" rx="10" ry="12" fill={RC['Europe']} fillOpacity={op(displayMap['Europe']||0)*0.7} stroke={RC['Europe']} strokeOpacity="0.25" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
 
-            <ellipse cx="340" cy="50" rx="110" ry="30" fill={RC['Asia Pacific']} fillOpacity={op(activeMap['Asia Pacific']||0)*0.35} stroke={RC['Asia Pacific']} strokeOpacity="0.12" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
-            <ellipse cx="368" cy="92" rx="52" ry="38" fill={RC['Asia Pacific']} fillOpacity={op(activeMap['Asia Pacific']||0)} stroke={RC['Asia Pacific']} strokeOpacity={activeMap['Asia Pacific']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
-            <ellipse cx="432" cy="80" rx="16" ry="22" fill={RC['Asia Pacific']} fillOpacity={op(activeMap['Asia Pacific']||0)*0.7} stroke={RC['Asia Pacific']} strokeOpacity="0.25" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
-            <ellipse cx="420" cy="192" rx="40" ry="28" fill={RC['Asia Pacific']} fillOpacity={op(activeMap['Asia Pacific']||0)*0.62} stroke={RC['Asia Pacific']} strokeOpacity="0.22" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="340" cy="50" rx="110" ry="30" fill={RC['Asia Pacific']} fillOpacity={op(displayMap['Asia Pacific']||0)*0.35} stroke={RC['Asia Pacific']} strokeOpacity="0.12" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="368" cy="92" rx="52" ry="38" fill={RC['Asia Pacific']} fillOpacity={op(displayMap['Asia Pacific']||0)} stroke={RC['Asia Pacific']} strokeOpacity={displayMap['Asia Pacific']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
+            <ellipse cx="432" cy="80" rx="16" ry="22" fill={RC['Asia Pacific']} fillOpacity={op(displayMap['Asia Pacific']||0)*0.7} stroke={RC['Asia Pacific']} strokeOpacity="0.25" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="420" cy="192" rx="40" ry="28" fill={RC['Asia Pacific']} fillOpacity={op(displayMap['Asia Pacific']||0)*0.62} stroke={RC['Asia Pacific']} strokeOpacity="0.22" strokeWidth="0.5" style={{transition:'fill-opacity 0.8s ease'}} />
 
-            <ellipse cx="138" cy="178" rx="38" ry="52" fill={RC['Emerging Markets']} fillOpacity={op(activeMap['Emerging Markets']||0)*0.75} stroke={RC['Emerging Markets']} strokeOpacity="0.25" strokeWidth="0.8" style={{transition:'fill-opacity 0.8s ease'}} />
-            <ellipse cx="242" cy="168" rx="42" ry="58" fill={RC['Emerging Markets']} fillOpacity={op(activeMap['Emerging Markets']||0)} stroke={RC['Emerging Markets']} strokeOpacity={activeMap['Emerging Markets']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
-            <ellipse cx="292" cy="118" rx="28" ry="32" fill={RC['Emerging Markets']} fillOpacity={op(activeMap['Emerging Markets']||0)*0.75} stroke={RC['Emerging Markets']} strokeOpacity="0.25" strokeWidth="0.8" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="138" cy="178" rx="38" ry="52" fill={RC['Emerging Markets']} fillOpacity={op(displayMap['Emerging Markets']||0)*0.75} stroke={RC['Emerging Markets']} strokeOpacity="0.25" strokeWidth="0.8" style={{transition:'fill-opacity 0.8s ease'}} />
+            <ellipse cx="242" cy="168" rx="42" ry="58" fill={RC['Emerging Markets']} fillOpacity={op(displayMap['Emerging Markets']||0)} stroke={RC['Emerging Markets']} strokeOpacity={displayMap['Emerging Markets']>0?0.45:0.10} strokeWidth="1" style={{transition:'fill-opacity 0.8s ease,stroke-opacity 0.8s ease'}} />
+            <ellipse cx="292" cy="118" rx="28" ry="32" fill={RC['Emerging Markets']} fillOpacity={op(displayMap['Emerging Markets']||0)*0.75} stroke={RC['Emerging Markets']} strokeOpacity="0.25" strokeWidth="0.8" style={{transition:'fill-opacity 0.8s ease'}} />
 
             {regions.map(r => {
               const pos = LABEL_POS[r.id]

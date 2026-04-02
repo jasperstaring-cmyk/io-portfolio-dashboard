@@ -43,7 +43,20 @@ export default function App() {
   }
 
   function handleEnterExplore() {
-    setExplorePortfolio(clonePortfolio(config.portfolio))
+    const base = clonePortfolio(config.portfolio)
+    // Bereken initiële geo-override zodat alle regio-sliders direct kloppen
+    const geoOverride = {}
+    base.allocations.forEach(a => {
+      if (!a.geographic?.length) return
+      const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
+      if (!geoSum) return
+      const scale = a.current / geoSum
+      a.geographic.forEach(g => {
+        geoOverride[g.region] = Math.round(((geoOverride[g.region] || 0) + g.weight * scale) * 10) / 10
+      })
+    })
+    base.geoOverride = geoOverride
+    setExplorePortfolio(base)
     setExploreDimension(activeDimension || activeScenario.dimension)
     setExploreMode(true)
   }
