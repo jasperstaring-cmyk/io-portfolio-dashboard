@@ -106,8 +106,8 @@
         "label": {
           "en": "Cash",
           "nl": "Liquide",
-          "fr": "Liquidit\u00e9s",
-          "de": "Liquidit\u00e4t"
+          "fr": "Liquidités",
+          "de": "Liquidität"
         },
         "target": 4,
         "current": 4,
@@ -144,15 +144,7 @@
       "maxDrawdown": -12.3
     },
     "costs": {
-      "weightedTer": 0.42,
-      "marketAvg": 0.68,
-      "breakdown": [
-        { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.35 },
-        { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.22 },
-        { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.58 },
-        { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 1.05 },
-        { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.08 }
-      ]
+      "weightedTer": 0.42
     },
     "sectors": [
       {
@@ -309,23 +301,73 @@
         "en": "Opening",
         "nl": "Opening",
         "fr": "Ouverture",
-        "de": "Er\u00f6ffnung"
+        "de": "Eröffnung"
       },
       "theme": {
         "en": "Portfolio Overview",
         "nl": "Portefeuille Overzicht",
         "fr": "Vue d'ensemble",
-        "de": "\u00dcbersicht"
+        "de": "Übersicht"
       },
       "policyQuestion": {
-        "en": "Does your portfolio reflect the world as it is today \u2014 or the world as it was?",
-        "nl": "Weerspiegelt uw portefeuille de wereld zoals die nu is \u2014 of zoals die was?",
-        "fr": "Votre portefeuille refl\u00e8te-t-il le monde tel qu'il est aujourd'hui?",
-        "de": "Spiegelt Ihr Portfolio die Welt von heute wider \u2014 oder die von gestern?"
+        "en": "Does your portfolio reflect the world as it is today — or the world as it was?",
+        "nl": "Weerspiegelt uw portefeuille de wereld zoals die nu is — of zoals die was?",
+        "fr": "Votre portefeuille reflète-t-il le monde tel qu'il est aujourd'hui?",
+        "de": "Spiegelt Ihr Portfolio die Welt von heute wider — oder die von gestern?"
       },
       "dimension": "asset_class",
       "state": "base",
       "comparison": null
+    },
+    {
+      "id": "gold_allocation",
+      "speakerProfile": {
+        "name": "Jeroen Blokland",
+        "title": "Portfolio Manager",
+        "organisation": "Smart Multi Asset Fund"
+      },
+      "speaker": {
+        "en": "Jeroen Blokland",
+        "nl": "Jeroen Blokland",
+        "fr": "Jeroen Blokland",
+        "de": "Jeroen Blokland"
+      },
+      "theme": {
+        "en": "Gold & Alternatives",
+        "nl": "Goud & Alternatieven",
+        "fr": "Or & Alternatifs",
+        "de": "Gold & Alternativen"
+      },
+      "policyQuestion": {
+        "en": "Is your gold position large enough to matter — or too small to make a difference?",
+        "nl": "Is uw goudpositie groot genoeg om iets voor te stellen — of te klein om impact te maken?",
+        "fr": "Votre position en or est-elle assez importante pour peser — ou trop petite pour changer quoi que ce soit?",
+        "de": "Ist Ihre Goldposition groß genug um zu zählen — oder zu klein um einen Unterschied zu machen?"
+      },
+      "dimension": "asset_class",
+      "state": "base",
+      "comparison": {
+        "label": {
+          "en": "Meaningful gold allocation",
+          "nl": "Betekenisvolle goudpositie",
+          "fr": "Position or significative",
+          "de": "Bedeutende Goldposition"
+        },
+        "allocations": [
+          {
+            "id": "equities",
+            "current": 43
+          },
+          {
+            "id": "alternatives",
+            "current": 14
+          },
+          {
+            "id": "cash",
+            "current": 4
+          }
+        ]
+      }
     },
     {
       "id": "geopolitics",
@@ -337,19 +379,19 @@
       "speaker": {
         "en": "Macro Economist",
         "nl": "Macro-econoom",
-        "fr": "Macro-\u00e9conomiste",
-        "de": "Makro\u00f6konom"
+        "fr": "Macro-économiste",
+        "de": "Makroökonom"
       },
       "theme": {
         "en": "Geopolitics & Allocation",
         "nl": "Geopolitiek & Allocatie",
-        "fr": "G\u00e9opolitique",
+        "fr": "Géopolitique",
         "de": "Geopolitik"
       },
       "policyQuestion": {
         "en": "How vulnerable is your portfolio to further escalation of trade conflicts?",
         "nl": "Hoe kwetsbaar is uw portefeuille voor verdere escalatie van handelsconflicten?",
-        "fr": "Dans quelle mesure votre portefeuille est-il vuln\u00e9rable \u00e0 une escalade des conflits commerciaux?",
+        "fr": "Dans quelle mesure votre portefeuille est-il vulnérable à une escalade des conflits commerciaux?",
         "de": "Wie verwundbar ist Ihr Portfolio bei weiterer Eskalation von Handelskonflikten?"
       },
       "dimension": "geography",
@@ -358,7 +400,7 @@
         "label": {
           "en": "Reduced US exposure",
           "nl": "Afgebouwde VS-positie",
-          "fr": "Exposition US r\u00e9duite",
+          "fr": "Exposition US réduite",
           "de": "Reduzierte US-Exposition"
         },
         "allocations": [
@@ -397,7 +439,7 @@
       "speaker": {
         "en": "Fixed Income Specialist",
         "nl": "Fixed Income Specialist",
-        "fr": "Sp\u00e9cialiste Obligataire",
+        "fr": "Spécialiste Obligataire",
         "de": "Anleihenexperte"
       },
       "theme": {
@@ -409,8 +451,8 @@
       "policyQuestion": {
         "en": "Do you have enough protection if interest rates rise further?",
         "nl": "Heeft u genoeg bescherming als de rente verder stijgt?",
-        "fr": "\u00cates-vous suffisamment prot\u00e9g\u00e9 si les taux continuent de monter?",
-        "de": "Sind Sie ausreichend gesch\u00fctzt wenn die Zinsen weiter steigen?"
+        "fr": "Êtes-vous suffisamment protégé si les taux continuent de monter?",
+        "de": "Sind Sie ausreichend geschützt wenn die Zinsen weiter steigen?"
       },
       "dimension": "asset_class",
       "state": "base",
@@ -419,7 +461,7 @@
           "en": "Higher bond weight",
           "nl": "Hoger obligatiegewicht",
           "fr": "Poids obligataire accru",
-          "de": "H\u00f6herer Anleihenanteil"
+          "de": "Höherer Anleihenanteil"
         },
         "allocations": [
           {
@@ -449,13 +491,13 @@
       "theme": {
         "en": "Sustainability & SFDR",
         "nl": "Duurzaamheid & SFDR",
-        "fr": "Durabilit\u00e9 & SFDR",
+        "fr": "Durabilité & SFDR",
         "de": "Nachhaltigkeit & SFDR"
       },
       "policyQuestion": {
         "en": "Does your portfolio still match what you promised your clients?",
         "nl": "Voldoet uw portefeuille nog aan wat u uw klanten heeft beloofd?",
-        "fr": "Votre portefeuille correspond-il encore \u00e0 ce que vous avez promis \u00e0 vos clients?",
+        "fr": "Votre portefeuille correspond-il encore à ce que vous avez promis à vos clients?",
         "de": "Entspricht Ihr Portfolio noch dem was Sie Ihren Kunden versprochen haben?"
       },
       "dimension": "esg",
@@ -464,8 +506,8 @@
         "label": {
           "en": "Full Article 9",
           "nl": "Volledig Art. 9",
-          "fr": "Int\u00e9gral Article 9",
-          "de": "Vollst\u00e4ndig Artikel 9"
+          "fr": "Intégral Article 9",
+          "de": "Vollständig Artikel 9"
         },
         "esg": {
           "score": 8.4,
@@ -502,14 +544,14 @@
       "theme": {
         "en": "Implementation",
         "nl": "Beleggingsinstrumenten",
-        "fr": "Impl\u00e9mentation",
+        "fr": "Implémentation",
         "de": "Umsetzung"
       },
       "policyQuestion": {
         "en": "Are you paying for alpha that isn't there?",
         "nl": "Betaalt u voor alpha die er niet is?",
         "fr": "Payez-vous pour une alpha qui n'existe pas?",
-        "de": "Bezahlen Sie f\u00fcr Alpha das gar nicht existiert?"
+        "de": "Bezahlen Sie für Alpha das gar nicht existiert?"
       },
       "dimension": "implementation",
       "state": "base",
@@ -517,8 +559,8 @@
         "label": {
           "en": "Passive equivalent",
           "nl": "Passief equivalent",
-          "fr": "\u00c9quivalent passif",
-          "de": "Passives \u00c4quivalent"
+          "fr": "Équivalent passif",
+          "de": "Passives Äquivalent"
         },
         "implementation": {
           "active": 10,
@@ -526,15 +568,7 @@
           "individual": 5
         },
         "costs": {
-          "weightedTer": 0.18,
-          "marketAvg": 0.68,
-          "breakdown": [
-            { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.12 },
-            { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.09 },
-            { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.20 },
-            { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 0.35 },
-            { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.06 }
-          ]
+          "weightedTer": 0.18
         }
       }
     },
@@ -548,7 +582,7 @@
       "speaker": {
         "en": "Equity Strategist",
         "nl": "Aandelenstrateg",
-        "fr": "Strat\u00e9giste Actions",
+        "fr": "Stratégiste Actions",
         "de": "Aktienstrategin"
       },
       "theme": {
@@ -560,8 +594,8 @@
       "policyQuestion": {
         "en": "Are you positioned for the next phase of the economic cycle?",
         "nl": "Zit u in de juiste sectoren voor de volgende fase van de economische cyclus?",
-        "fr": "\u00cates-vous positionn\u00e9 pour la prochaine phase du cycle \u00e9conomique?",
-        "de": "Sind Sie f\u00fcr die n\u00e4chste Phase des Wirtschaftszyklus positioniert?"
+        "fr": "Êtes-vous positionné pour la prochaine phase du cycle économique?",
+        "de": "Sind Sie für die nächste Phase des Wirtschaftszyklus positioniert?"
       },
       "dimension": "sector",
       "state": "base",
@@ -569,7 +603,7 @@
         "label": {
           "en": "Defensive rotation",
           "nl": "Defensieve rotatie",
-          "fr": "Rotation d\u00e9fensive",
+          "fr": "Rotation défensive",
           "de": "Defensive Rotation"
         },
         "sectors": [
@@ -610,20 +644,20 @@
       "speaker": {
         "en": "FX Strategist",
         "nl": "Valutastrateg",
-        "fr": "Strat\u00e9giste FX",
-        "de": "W\u00e4hrungsstratege"
+        "fr": "Stratégiste FX",
+        "de": "Währungsstratege"
       },
       "theme": {
         "en": "Currency Risk",
         "nl": "Valutarisico",
         "fr": "Risque de change",
-        "de": "W\u00e4hrungsrisiko"
+        "de": "Währungsrisiko"
       },
       "policyQuestion": {
         "en": "How much of your return is being eroded by currency movements?",
         "nl": "Welk deel van uw rendement verdwijnt door valutabewegingen?",
-        "fr": "Quelle part de votre rendement est \u00e9rod\u00e9e par les mouvements de change?",
-        "de": "Wie viel Ihrer Rendite wird durch W\u00e4hrungsbewegungen aufgezehrt?"
+        "fr": "Quelle part de votre rendement est érodée par les mouvements de change?",
+        "de": "Wie viel Ihrer Rendite wird durch Währungsbewegungen aufgezehrt?"
       },
       "dimension": "currency",
       "state": "base",
@@ -631,8 +665,8 @@
         "label": {
           "en": "Fully hedged",
           "nl": "Volledig afgedekt",
-          "fr": "Enti\u00e8rement couvert",
-          "de": "Vollst\u00e4ndig abgesichert"
+          "fr": "Entièrement couvert",
+          "de": "Vollständig abgesichert"
         },
         "currencies": [
           {
@@ -668,7 +702,7 @@
       "speaker": {
         "en": "Factor Specialist",
         "nl": "Factor Specialist",
-        "fr": "Sp\u00e9cialiste Facteurs",
+        "fr": "Spécialiste Facteurs",
         "de": "Faktor-Spezialistin"
       },
       "theme": {
@@ -678,10 +712,10 @@
         "de": "Anlagestil"
       },
       "policyQuestion": {
-        "en": "Is your style exposure a deliberate choice \u2014 or an accident of allocation?",
-        "nl": "Is uw stijlpositie een bewuste keuze \u2014 of een bijproduct van uw allocatie?",
-        "fr": "Votre exposition au style est-elle un choix d\u00e9lib\u00e9r\u00e9 \u2014 ou un accident d'allocation?",
-        "de": "Ist Ihre Stilpositionierung eine bewusste Entscheidung \u2014 oder ein Zufallsprodukt?"
+        "en": "Is your style exposure a deliberate choice — or an accident of allocation?",
+        "nl": "Is uw stijlpositie een bewuste keuze — of een bijproduct van uw allocatie?",
+        "fr": "Votre exposition au style est-elle un choix délibéré — ou un accident d'allocation?",
+        "de": "Ist Ihre Stilpositionierung eine bewusste Entscheidung — oder ein Zufallsprodukt?"
       },
       "dimension": "style",
       "state": "base",
@@ -693,63 +727,43 @@
           "de": "Value-Ausrichtung"
         },
         "style": [
-          { "id": "large_value",  "weight": 22 },
-          { "id": "large_blend",  "weight": 16 },
-          { "id": "large_growth", "weight": 12 },
-          { "id": "mid_value",    "weight": 14 },
-          { "id": "mid_blend",    "weight": 10 },
-          { "id": "mid_growth",   "weight": 7  },
-          { "id": "small_value",  "weight": 10 },
-          { "id": "small_blend",  "weight": 6  },
-          { "id": "small_growth", "weight": 3  }
+          {
+            "id": "large_value",
+            "weight": 22
+          },
+          {
+            "id": "large_blend",
+            "weight": 16
+          },
+          {
+            "id": "large_growth",
+            "weight": 12
+          },
+          {
+            "id": "mid_value",
+            "weight": 14
+          },
+          {
+            "id": "mid_blend",
+            "weight": 10
+          },
+          {
+            "id": "mid_growth",
+            "weight": 7
+          },
+          {
+            "id": "small_value",
+            "weight": 10
+          },
+          {
+            "id": "small_blend",
+            "weight": 6
+          },
+          {
+            "id": "small_growth",
+            "weight": 3
+          }
         ]
-      }
-    },
-    {
-      "id": "cost_efficiency",
-      "speakerProfile": {
-        "name": "Mark de Vries",
-        "title": "Head of Manager Selection",
-        "organisation": "APG Asset Management"
-      },
-      "speaker": {
-        "en": "Cost Efficiency",
-        "nl": "Kostenefficiëntie",
-        "fr": "Efficience des coûts",
-        "de": "Kosteneffizienz"
-      },
-      "theme": {
-        "en": "Cost & TER",
-        "nl": "Kosten & TER",
-        "fr": "Coûts & TER",
-        "de": "Kosten & TER"
-      },
-      "policyQuestion": {
-        "en": "How much of your gross return are you giving away in costs — and is it worth it?",
-        "nl": "Hoeveel van uw brutorendement geeft u weg aan kosten — en is dat de moeite waard?",
-        "fr": "Quelle part de votre rendement brut cédez-vous en frais — et est-ce justifié?",
-        "de": "Wie viel Ihrer Bruttorendite verlieren Sie durch Kosten — und lohnt es sich?"
-      },
-      "dimension": "cost",
-      "state": "base",
-      "comparison": {
-        "label": {
-          "en": "Passive ETF equivalent",
-          "nl": "Passief ETF equivalent",
-          "fr": "Équivalent ETF passif",
-          "de": "Passives ETF-Äquivalent"
-        },
-        "costs": {
-          "weightedTer": 0.18,
-          "marketAvg": 0.68,
-          "breakdown": [
-            { "id": "equities",     "label": "Equities",     "color": "#E01B41", "weight": 48, "ter": 0.12 },
-            { "id": "fixed_income", "label": "Fixed Income", "color": "#4ED596", "weight": 32, "ter": 0.09 },
-            { "id": "real_estate",  "label": "Real Estate",  "color": "#5B8DEF", "weight": 8,  "ter": 0.20 },
-            { "id": "alternatives", "label": "Alternatives", "color": "#F5A623", "weight": 8,  "ter": 0.35 },
-            { "id": "cash",         "label": "Cash / MM",    "color": "#94A3B8", "weight": 4,  "ter": 0.06 }
-          ]
-        }
       }
     }
   ]
