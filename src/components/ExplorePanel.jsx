@@ -9,7 +9,6 @@ const DIMENSIONS = [
   { id: 'sector',         label: 'Sector',         icon: '⬡' },
   { id: 'currency',       label: 'Currency',       icon: '€' },
   { id: 'style',          label: 'Style',          icon: '▦' },
-  { id: 'cost',           label: 'Cost',           icon: '₀' },
 ]
 
 function TotalBadge({ values, target = 100 }) {
@@ -64,7 +63,7 @@ export default function ExplorePanel({
   const showImpl = activeDimension === 'implementation'
   const showSector = activeDimension === 'sector'
   const showCurrency = activeDimension === 'currency'
-  const noSliders = activeDimension === 'performance' || activeDimension === 'style' || activeDimension === 'cost'
+  const noSliders = activeDimension === 'performance' || activeDimension === 'style'
 
   return (
     <div style={s.panel}>
@@ -199,7 +198,7 @@ export default function ExplorePanel({
                 const exploreWeight = explorePortfolio.currencies?.[i]?.weight ?? cur.weight
                 return (
                   <SliderRow key={cur.currency} label={cur.currency}
-                    color={cur.currency === 'EUR' ? '#4ED596' : cur.currency === 'USD' ? '#E01B41' : '#5B8DEF'}
+                    color={cur.currency === 'EUR' ? '#5B8DEF' : cur.currency === 'USD' ? '#F5A623' : cur.currency === 'GBP' ? '#A78BFA' : '#8A8A82'}
                     value={exploreWeight} base={cur.weight}
                     onChange={v => onUpdateCurrency(i, v)} />
                 )

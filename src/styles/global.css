@@ -86,3 +86,25 @@ html, body, #root {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* ── IdleView animaties ───────────────────────────────────────────────────── */
+
+@keyframes idleOuterRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes idleLineDraw {
+  from { stroke-dashoffset: 900; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes idleHb {
+  0%, 100% { opacity: 0.60; }
+  50%      { opacity: 1.00; }
+}
+
+@keyframes idleRedPulse {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1.00; }
+}

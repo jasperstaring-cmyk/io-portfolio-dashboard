@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import PresentationView from './components/PresentationView'
 import ExplorePresentationView from './components/ExplorePresentationView'
+import IdleView from './components/IdleView'
 import OperatorPanel from './components/OperatorPanel'
 import ExplorePanel from './components/ExplorePanel'
 import Configurator from './components/Configurator'
@@ -17,6 +18,7 @@ export default function App() {
   const [showComparison, setShowComparison] = useState(false)
   const [activeDimension, setActiveDimension] = useState(null)
   const [showConfig, setShowConfig] = useState(false)
+  const [idleMode, setIdleMode] = useState(true)
 
   const [exploreMode, setExploreMode] = useState(false)
   const [explorePortfolio, setExplorePortfolio] = useState(() => clonePortfolio(defaultConfig.portfolio))
@@ -97,7 +99,9 @@ export default function App() {
   return (
     <div className="app">
       <div className="presentation-wrapper">
-        {exploreMode ? (
+        {idleMode ? (
+          <IdleView event={config.event} />
+        ) : exploreMode ? (
           <ExplorePresentationView
             event={config.event}
             portfolio={explorePortfolio}
@@ -162,6 +166,27 @@ export default function App() {
             onMouseLeave={e => e.target.style.opacity = 0.6}
           >
             ⚙ Configure
+          </button>
+        )}
+        {!exploreMode && (
+          <button
+            onClick={() => setIdleMode(prev => !prev)}
+            style={{
+              position: 'absolute', bottom: 10, right: 108,
+              padding: '4px 10px', background: 'none',
+              border: `1px solid ${idleMode ? '#E01B41' : '#C5C5BF'}`,
+              borderRadius: 4, cursor: 'pointer',
+              fontFamily: "'Merriweather Sans', sans-serif",
+              fontSize: '0.58rem', fontWeight: 700,
+              color: idleMode ? '#E01B41' : '#8A8A82',
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              opacity: 0.8, transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => e.target.style.opacity = 1}
+            onMouseLeave={e => e.target.style.opacity = 0.8}
+            title={idleMode ? 'Startscherm actief — klik om dashboard te starten' : 'Dashboard actief — klik voor startscherm'}
+          >
+            {idleMode ? '▶ Start' : '⏸ Idle'}
           </button>
         )}
       </div>
