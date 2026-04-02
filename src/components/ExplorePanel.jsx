@@ -50,10 +50,18 @@ function SliderRow({ label, color, value, base, min = 0, max = 70, onChange }) {
   )
 }
 
+// Regiokleuren conform GeographyChart
+const GEO_COLORS = {
+  'Europe':          '#5B8DEF',
+  'North America':   '#F5A623',
+  'Asia Pacific':    '#A78BFA',
+  'Emerging Markets':'#8A8A82',
+}
+
 export default function ExplorePanel({
   portfolio, explorePortfolio,
   onUpdateAlloc, onUpdateESG, onUpdateImpl, onUpdateSector, onUpdateCurrency,
-  onResetAlloc,
+  onUpdateGeo, onResetAlloc,
   activeDimension, onSelectDimension, onExitExplore,
 }) {
   // Determine which sliders to show based on active dimension
@@ -102,20 +110,43 @@ export default function ExplorePanel({
         {showGeo && (
           <>
             <div style={s.sectionLabel}>
-              ASSET ALLOCATION
-              <span style={{ fontSize: '0.52rem', color: '#8A8A82', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
-                — shifts geographic exposure
-              </span>
-              <TotalBadge values={explorePortfolio.allocations.map(a => a.current)} />
+              REGIONAL EXPOSURE
+              <TotalBadge values={Object.values(
+                explorePortfolio.geoOverride || (() => {
+                  const m = {}
+                  portfolio.allocations.forEach(a => {
+                    if (!a.geographic?.length) return
+                    const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
+                    if (!geoSum) return
+                    const scale = a.current / geoSum
+                    a.geographic.forEach(g => { m[g.region] = (m[g.region] || 0) + Math.round(g.weight * scale * 10) / 10 })
+                  })
+                  return m
+                })()
+              )} />
             </div>
             <div style={s.sliders}>
-              {explorePortfolio.allocations.map(a => {
-                const base = portfolio.allocations.find(x => x.id === a.id)?.current ?? a.current
+              {Object.keys(GEO_COLORS).map(region => {
+                // Bereken base-waarde uit portfolio (proportioneel geschaald)
+                const baseMap = {}
+                portfolio.allocations.forEach(a => {
+                  if (!a.geographic?.length) return
+                  const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
+                  if (!geoSum) return
+                  const scale = a.current / geoSum
+                  a.geographic.forEach(g => { baseMap[g.region] = (baseMap[g.region] || 0) + Math.round(g.weight * scale * 10) / 10 })
+                })
+                const base = Math.round((baseMap[region] || 0))
+                if (base === 0 && !(explorePortfolio.geoOverride?.[region])) return null
+                const value = Math.round(explorePortfolio.geoOverride?.[region] ?? base)
                 return (
-                  <SliderRow key={a.id}
-                    label={a.label?.en || a.id} color={a.color}
-                    value={a.current} base={base}
-                    onChange={v => onUpdateAlloc(a.id, v)} />
+                  <SliderRow key={region}
+                    label={region}
+                    color={GEO_COLORS[region]}
+                    value={value}
+                    base={base}
+                    max={80}
+                    onChange={v => onUpdateGeo(region, v)} />
                 )
               })}
             </div>

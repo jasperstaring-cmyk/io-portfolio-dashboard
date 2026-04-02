@@ -25,7 +25,11 @@ function buildGeoMap(allocations) {
 }
 
 export default function GeographyChart({ portfolio, scenario, showComparison }) {
-  const geoMap = buildGeoMap(portfolio.allocations)
+  // geoOverride: aanwezig in explore mode — directe regio-gewichten
+  // zonder geoOverride: bereken proportioneel uit asset class allocaties
+  const geoMap = portfolio.geoOverride
+    ? portfolio.geoOverride
+    : buildGeoMap(portfolio.allocations)
 
   const compMap = {}
   if (showComparison && scenario?.comparison?.allocations) {

@@ -92,6 +92,14 @@ export default function App() {
     }))
   }
 
+  // Geo explore: directe regio-gewichten aanpassen, los van asset class allocaties
+  function handleUpdateGeo(region, val) {
+    setExplorePortfolio(prev => ({
+      ...prev,
+      geoOverride: { ...(prev.geoOverride || {}), [region]: val },
+    }))
+  }
+
   function handleResetAlloc() {
     setExplorePortfolio(clonePortfolio(config.portfolio))
   }
@@ -130,6 +138,7 @@ export default function App() {
             onUpdateImpl={handleUpdateImpl}
             onUpdateSector={handleUpdateSector}
             onUpdateCurrency={handleUpdateCurrency}
+            onUpdateGeo={handleUpdateGeo}
             onResetAlloc={handleResetAlloc}
             activeDimension={exploreDimension}
             onSelectDimension={setExploreDimension}
