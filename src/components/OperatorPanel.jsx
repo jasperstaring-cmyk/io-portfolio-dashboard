@@ -34,7 +34,7 @@ const DIMENSIONS = [
   { id: 'sector',         label: 'Sector',         icon: '⬡' },
   { id: 'currency',       label: 'Currency',       icon: '€' },
   { id: 'style',          label: 'Style',          icon: '▦' },
-  { id: 'cost',           label: 'Cost',           icon: '₀' },
+  { id: 'cost',           label: 'Cost',           icon: '€€' },
 ]
 
 export default function OperatorPanel({

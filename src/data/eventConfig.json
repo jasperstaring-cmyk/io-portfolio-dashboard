@@ -356,14 +356,22 @@
         "allocations": [
           {
             "id": "equities",
-            "current": 43
+            "current": 35
+          },
+          {
+            "id": "fixed_income",
+            "current": 42
           },
           {
             "id": "alternatives",
-            "current": 14
+            "current": 15
           },
           {
             "id": "cash",
+            "current": 4
+          },
+          {
+            "id": "real_estate",
             "current": 4
           }
         ]
@@ -410,19 +418,19 @@
             "geographic": [
               {
                 "region": "Europe",
-                "weight": 26
+                "weight": 34
               },
               {
                 "region": "North America",
-                "weight": 10
-              },
-              {
-                "region": "Asia Pacific",
                 "weight": 6
               },
               {
-                "region": "Emerging Markets",
+                "region": "Asia Pacific",
                 "weight": 4
+              },
+              {
+                "region": "Emerging Markets",
+                "weight": 2
               }
             ]
           }
@@ -466,11 +474,23 @@
         "allocations": [
           {
             "id": "equities",
-            "current": 40
+            "current": 30
           },
           {
             "id": "fixed_income",
-            "current": 40
+            "current": 50
+          },
+          {
+            "id": "cash",
+            "current": 8
+          },
+          {
+            "id": "real_estate",
+            "current": 8
+          },
+          {
+            "id": "alternatives",
+            "current": 4
           }
         ]
       }
@@ -510,15 +530,15 @@
           "de": "Vollständig Artikel 9"
         },
         "esg": {
-          "score": 8.4,
+          "score": 8.8,
           "sfdr": [
             {
               "article": "Article 9",
-              "weight": 80
+              "weight": 85
             },
             {
               "article": "Article 8",
-              "weight": 20
+              "weight": 15
             },
             {
               "article": "Article 6",
@@ -563,12 +583,12 @@
           "de": "Passives Äquivalent"
         },
         "implementation": {
-          "active": 10,
-          "passive": 85,
+          "active": 5,
+          "passive": 90,
           "individual": 5
         },
         "costs": {
-          "weightedTer": 0.18
+          "weightedTer": 0.14
         }
       }
     },
@@ -609,27 +629,43 @@
         "sectors": [
           {
             "id": "technology",
-            "weight": 12
+            "weight": 8
           },
           {
             "id": "financials",
-            "weight": 10
+            "weight": 8
           },
           {
             "id": "healthcare",
-            "weight": 20
+            "weight": 22
           },
           {
             "id": "utilities",
-            "weight": 14
+            "weight": 18
           },
           {
             "id": "consumer_staples",
-            "weight": 14
+            "weight": 20
           },
           {
             "id": "energy",
-            "weight": 5
+            "weight": 8
+          },
+          {
+            "id": "industrials",
+            "weight": 7
+          },
+          {
+            "id": "consumer_disc",
+            "weight": 4
+          },
+          {
+            "id": "materials",
+            "weight": 3
+          },
+          {
+            "id": "real_estate_sec",
+            "weight": 2
           }
         ]
       }
@@ -671,15 +707,15 @@
         "currencies": [
           {
             "currency": "EUR",
-            "weight": 90
+            "weight": 88
           },
           {
             "currency": "USD",
-            "weight": 4
+            "weight": 5
           },
           {
             "currency": "GBP",
-            "weight": 2
+            "weight": 3
           },
           {
             "currency": "JPY",
@@ -729,7 +765,7 @@
         "style": [
           {
             "id": "large_value",
-            "weight": 22
+            "weight": 28
           },
           {
             "id": "large_blend",
@@ -737,11 +773,11 @@
           },
           {
             "id": "large_growth",
-            "weight": 12
+            "weight": 6
           },
           {
             "id": "mid_value",
-            "weight": 14
+            "weight": 18
           },
           {
             "id": "mid_blend",
@@ -749,7 +785,7 @@
           },
           {
             "id": "mid_growth",
-            "weight": 7
+            "weight": 4
           },
           {
             "id": "small_value",
@@ -757,13 +793,41 @@
           },
           {
             "id": "small_blend",
-            "weight": 6
+            "weight": 5
           },
           {
             "id": "small_growth",
             "weight": 3
           }
         ]
+      }
+    },
+    {
+      "id": "cost_scenario",
+      "dimension": "cost",
+      "theme": {
+        "en": "Cost Pressure",
+        "nl": "Kostenbeheer",
+        "fr": "Pression des coûts",
+        "de": "Kostendruck"
+      },
+      "policyQuestion": {
+        "en": "How much of your gross return are you giving away in costs?",
+        "nl": "Hoeveel van uw brutorendement geeft u weg aan kosten?",
+        "fr": "Quelle part de votre rendement brut cédez-vous en frais?",
+        "de": "Wie viel Ihres Bruttovertrags geben Sie an Kosten ab?"
+      },
+      "comparison": {
+        "label": {
+          "en": "Passive ETF equivalent",
+          "nl": "Passief ETF-equivalent",
+          "fr": "Équivalent ETF passif",
+          "de": "Passives ETF-Äquivalent"
+        },
+        "costs": {
+          "weightedTer": 0.12,
+          "breakdown": []
+        }
       }
     }
   ]

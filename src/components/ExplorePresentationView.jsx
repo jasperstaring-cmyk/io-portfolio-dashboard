@@ -30,7 +30,6 @@ const DIM_LABELS = {
   sector: 'Sector Allocation',
   currency: 'Currency Exposure',
   style: 'Investment Style',
-  cost: 'Cost & TER',
 }
 
 export default function ExplorePresentationView({

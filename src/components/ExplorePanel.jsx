@@ -9,6 +9,7 @@ const DIMENSIONS = [
   { id: 'sector',         label: 'Sector',         icon: '⬡' },
   { id: 'currency',       label: 'Currency',       icon: '€' },
   { id: 'style',          label: 'Style',          icon: '▦' },
+  { id: 'cost',           label: 'Cost',           icon: '€€' },
 ]
 
 function TotalBadge({ values, target = 100 }) {
@@ -71,7 +72,7 @@ export default function ExplorePanel({
   const showImpl = activeDimension === 'implementation'
   const showSector = activeDimension === 'sector'
   const showCurrency = activeDimension === 'currency'
-  const noSliders = activeDimension === 'performance' || activeDimension === 'style'
+  const noSliders = activeDimension === 'performance' || activeDimension === 'style' || activeDimension === 'cost'
 
   return (
     <div style={s.panel}>
