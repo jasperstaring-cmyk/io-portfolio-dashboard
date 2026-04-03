@@ -78,9 +78,9 @@ export default function SectorChart({ portfolio, scenario, showComparison, lang 
       {/* ── TOP 3 kaarten ── */}
       <div style={s.topRow}>
         {top.map(sec => {
-          const deltaColor = sec.delta < 0 ? '#4ED596' : '#E01B41'
+          const deltaColor = sec.delta < 0 ? '#E01B41' : '#4ED596'
           const borderCol  = sec.hasChange
-            ? (sec.delta < 0 ? 'rgba(78,213,150,0.35)' : 'rgba(224,27,65,0.35)')
+            ? (sec.delta < 0 ? 'rgba(224,27,65,0.35)' : 'rgba(78,213,150,0.35)')
             : 'rgba(255,255,255,0.07)'
 
           return (
@@ -146,7 +146,7 @@ export default function SectorChart({ portfolio, scenario, showComparison, lang 
       {/* ── Rest — compact tweekoloms grid ── */}
       <div style={s.restGrid}>
         {rest.map(sec => {
-          const deltaColor = sec.delta < 0 ? '#4ED596' : '#E01B41'
+          const deltaColor = sec.delta < 0 ? '#E01B41' : '#4ED596'
           return (
             <div key={sec.id} style={s.restRow}>
               {/* Kleurstreep */}

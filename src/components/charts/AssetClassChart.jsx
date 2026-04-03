@@ -237,7 +237,7 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
           const delta      = sl.compVal - sl.current
           const { ex, ey } = explodeOffset(sl)
           const { bx, by } = deltaBadgePos(sl.midDeg, ex, ey)
-          const badgeColor = delta < 0 ? '#4ED596' : '#E01B41'
+          const badgeColor = delta < 0 ? '#E01B41' : '#4ED596'
           const badgeText  = (delta > 0 ? '+' : '') + delta + '%'
 
           // Badge achtergrond rect (geclampt binnen viewport)

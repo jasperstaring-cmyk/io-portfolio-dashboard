@@ -111,7 +111,7 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
               <div style={{
                 ...s.labelPct,
                 color: hasChange
-                  ? seg.delta < 0 ? '#4ED596' : '#E01B41'
+                  ? seg.delta < 0 ? '#E01B41' : '#4ED596'
                   : seg.color,
                 transition: 'color 0.5s ease',
               }}>
@@ -132,7 +132,7 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
               {hasChange && (
                 <div style={{
                   ...s.labelDelta,
-                  color: seg.delta < 0 ? '#4ED596' : '#E01B41',
+                  color: seg.delta < 0 ? '#E01B41' : '#4ED596',
                 }}>
                   {seg.delta > 0 ? '+' : ''}{seg.delta}%
                 </div>
