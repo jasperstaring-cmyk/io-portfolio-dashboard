@@ -264,11 +264,13 @@ const s = {
   },
   footerLeft: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
+    fontSize: '0.72rem', fontWeight: 600,
+    color: 'rgba(255,255,255,0.65)',
+    letterSpacing: '0.01em',
   },
   footerRight: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)',
     fontWeight: 500,
   },
 }
