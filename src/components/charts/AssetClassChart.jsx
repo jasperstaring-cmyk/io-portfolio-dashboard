@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from 'react'
 import ChartTooltip, { useTooltip } from './ChartTooltip'
 
 // Kleurlogica conform IO-stijl:
-// Rood   = equities (dominant, grootste positie)
+// Rood   = equities (dominant)
 // Blauw  = fixed income
 // Amber  = real estate
-// Paars  = alternatives (gewijzigd van grijs — beter onderscheidbaar van cash)
-// Wit    = cash (minste gewicht, minste kleur)
-// Groen is GERESERVEERD voor compare/positieve delta — nooit voor asset class
+// Paars  = alternatives
+// Wit    = cash
+// Groen/Rood = GERESERVEERD voor compare delta
 const COLORS = {
   equities:     '#E01B41',
   fixed_income: '#5B8DEF',
@@ -16,35 +16,72 @@ const COLORS = {
   cash:         'rgba(255,255,255,0.55)',
 }
 
-const GAP_DEG  = 1.2   // gap tussen segmenten
-const EXPLODE  = 18    // pixels uitspringen bij selectie
-const CX = 160, CY = 160, R = 148
+const GAP_DEG      = 1.4
+const EXPLODE_SEL  = 22   // explode bij segment-selectie
+const EXPLODE_COMP = 12   // explode alle segmenten bij compare
+const VW = 680, VH = 460
+const CX = VW / 2, CY = VH / 2 + 8
+const R  = 152
+
+// Callout-lijn afstanden
+const R_EDGE = R + 14
+const R_KNIK = R + 48
+const H_EXT  = 46
+
+// Veilige marges voor label-clamp (viewport-coördinaten)
+const SAFE_LEFT = 22, SAFE_RIGHT = VW - 22
+const SAFE_TOP  = 18, SAFE_BOTTOM = VH - 18
 
 function polar(cx, cy, r, deg) {
   const rad = (deg - 90) * Math.PI / 180
   return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
 }
 
-function piePath(startDeg, endDeg, exploded, midDeg) {
-  const g  = GAP_DEG / 2
-  const ex = exploded ? Math.cos((midDeg - 90) * Math.PI / 180) * EXPLODE : 0
-  const ey = exploded ? Math.sin((midDeg - 90) * Math.PI / 180) * EXPLODE : 0
-  const [x1, y1] = polar(CX + ex, CY + ey, R, startDeg + g)
-  const [x2, y2] = polar(CX + ex, CY + ey, R, endDeg   - g)
-  const large = (endDeg - startDeg - GAP_DEG) > 180 ? 1 : 0
-  return `M ${CX + ex},${CY + ey} L ${x1},${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`
+function piePath(startDeg, endDeg, ex, ey) {
+  const g       = GAP_DEG / 2
+  const [x1,y1] = polar(CX + ex, CY + ey, R, startDeg + g)
+  const [x2,y2] = polar(CX + ex, CY + ey, R, endDeg   - g)
+  const large   = (endDeg - startDeg - GAP_DEG) > 180 ? 1 : 0
+  return `M ${CX+ex},${CY+ey} L ${x1},${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`
+}
+
+// Knik-lijn + label met viewport-clamp
+function callout(midDeg, ex, ey) {
+  const rad     = (midDeg - 90) * Math.PI / 180
+  const goRight = Math.cos(rad) >= 0
+
+  const p1 = polar(CX + ex, CY + ey, R_EDGE, midDeg)
+  const p2 = polar(CX + ex, CY + ey, R_KNIK, midDeg)
+
+  // Horizontale extensie, geclampt zodat label niet buiten viewport loopt
+  const rawP3x = p2[0] + (goRight ? H_EXT : -H_EXT)
+  const p3x    = Math.max(SAFE_LEFT + 60, Math.min(SAFE_RIGHT - 60, rawP3x))
+  const p3     = [p3x, Math.max(SAFE_TOP + 24, Math.min(SAFE_BOTTOM - 36, p2[1]))]
+
+  const actualRight = p3[0] > CX
+  return {
+    p1, p2, p3,
+    anchor: actualRight ? 'start' : 'end',
+    labelX: p3[0] + (actualRight ? 8 : -8),
+    labelY: p3[1],
+  }
+}
+
+// Delta-badge positie: net buiten segment, op mid-hoek
+function deltaBadgePos(midDeg, ex, ey) {
+  const r = R + 28
+  const [bx, by] = polar(CX + ex, CY + ey, r, midDeg)
+  return { bx, by }
 }
 
 export default function AssetClassChart({ portfolio, scenario, showComparison, lang }) {
   const { tooltip, showTooltip, hideTooltip } = useTooltip()
-  const [animated, setAnimated]   = useState(false)
+  const [animated,   setAnimated]   = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const prevCompare = useRef(showComparison)
 
-  // Animatie bij mount en bij compare-toggle
   useEffect(() => {
     setAnimated(false)
-    // Bij compare-toggle: reset selectie zodat de pie opnieuw animeert
     if (prevCompare.current !== showComparison) {
       setSelectedId(null)
       prevCompare.current = showComparison
@@ -67,242 +104,244 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 
   const total = activeAllocs.reduce((s, a) => s + a.displayVal, 0)
 
-  // Bouw pie-segmenten
   let cum = 0
   const slices = activeAllocs.map(a => {
-    const deg    = (a.displayVal / total) * 360
-    const start  = cum
-    const end    = cum + deg
-    const mid    = (start + end) / 2
+    const deg   = (a.displayVal / total) * 360
+    const start = cum, end = cum + deg, mid = (start + end) / 2
     cum += deg
     return { ...a, startDeg: start, endDeg: end, midDeg: mid, color: COLORS[a.id] }
   })
 
-  const selected = selectedId ? slices.find(s => s.id === selectedId) : null
-  const hasSelection = !!selected
+  const hasSelection = !!selectedId
+  const labelLang    = a => a.label?.[lang] || a.label?.en || a.id
 
-  function handleSegmentClick(id) {
-    setSelectedId(prev => prev === id ? null : id)
+  function statusInfo(a) {
+    const val = a.displayVal
+    if (val < a.min || val > a.max) return { label: 'Outside range', color: '#E01B41' }
+    if (Math.abs(val - a.target) > 5) return { label: 'Off target', color: '#F5A623' }
+    return { label: 'Within policy', color: '#4ED596' }
   }
 
-  // Status helper
-  function statusColor(a) {
-    const val = a.compVal !== null ? a.compVal : a.current
-    if (val < a.min || val > a.max) return '#E01B41'
-    if (Math.abs(val - a.target) > 5) return '#F5A623'
-    return '#4ED596'
-  }
+  // Explode-offset per segment:
+  // - compare aan: alle segmenten exploderen klein uit elkaar
+  // - segment geselecteerd: dat segment explodeert verder
+  function explodeOffset(sl) {
+    const rad = (sl.midDeg - 90) * Math.PI / 180
+    const isSelected = sl.id === selectedId
 
-  function statusLabel(a) {
-    const val = a.compVal !== null ? a.compVal : a.current
-    if (val < a.min)  return 'Below range'
-    if (val > a.max)  return 'Above range'
-    if (Math.abs(val - a.target) > 5) return 'Off target'
-    return 'Within policy'
+    if (isSelected) {
+      // Selectie-explode domineert
+      const dist = EXPLODE_SEL + (showComparison ? EXPLODE_COMP : 0)
+      return { ex: Math.cos(rad) * dist, ey: Math.sin(rad) * dist }
+    }
+    if (showComparison) {
+      // Compare: alle segmenten licht uit elkaar
+      return { ex: Math.cos(rad) * EXPLODE_COMP, ey: Math.sin(rad) * EXPLODE_COMP }
+    }
+    return { ex: 0, ey: 0 }
   }
-
-  const labelLang = a => a.label?.[lang] || a.label?.en || a.id
 
   return (
     <div style={s.wrap}>
+      <svg
+        viewBox={`0 0 ${VW} ${VH}`}
+        preserveAspectRatio="xMidYMid meet"
+        style={{
+          ...s.svg,
+          opacity:   animated ? 1 : 0,
+          transform: animated ? 'scale(1)' : 'scale(0.93)',
+          transition: 'opacity 0.5s ease, transform 0.55s cubic-bezier(0.34,1.26,0.64,1)',
+          transformOrigin: 'center',
+        }}
+      >
+        <defs>
+          <radialGradient id="ac-bg-base" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#E01B41" stopOpacity="0.07" />
+            <stop offset="100%" stopColor="#E01B41" stopOpacity="0"    />
+          </radialGradient>
+          <radialGradient id="ac-bg-comp" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#4ED596" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#4ED596" stopOpacity="0"    />
+          </radialGradient>
+          {/* Diepte-schaduw filter onder de pie — iets sterker voor groot scherm */}
+          <filter id="pie-depth" x="-20%" y="-15%" width="140%" height="145%">
+            <feDropShadow dx="0" dy="14" stdDeviation="18" floodColor="#000000" floodOpacity="0.55" />
+            <feDropShadow dx="0" dy="5"  stdDeviation="6"  floodColor="#000000" floodOpacity="0.30" />
+          </filter>
+        </defs>
 
-      {/* ── Pie ───────────────────────────────────────────────────────── */}
-      <div style={s.pieCol}>
-        <svg
-          viewBox="0 0 320 320"
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            ...s.svg,
-            opacity:   animated ? 1 : 0,
-            transform: animated ? 'scale(1)' : 'scale(0.92)',
-            transition: 'opacity 0.5s ease, transform 0.55s cubic-bezier(0.34,1.26,0.64,1)',
-            transformOrigin: 'center',
-          }}
-        >
-          <defs>
-            <radialGradient id="ac-glow-base" cx="50%" cy="50%" r="50%">
-              <stop offset="20%" stopColor="#E01B41" stopOpacity="0.08" />
-              <stop offset="100%" stopColor="#E01B41" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="ac-glow-comp" cx="50%" cy="50%" r="50%">
-              <stop offset="20%" stopColor="#4ED596" stopOpacity="0.07" />
-              <stop offset="100%" stopColor="#4ED596" stopOpacity="0" />
-            </radialGradient>
-          </defs>
+        {/* Klik buiten pie → deselecteer */}
+        <rect
+          x="0" y="0" width={VW} height={VH}
+          fill="transparent"
+          style={{ cursor: hasSelection ? 'default' : 'auto' }}
+          onClick={() => setSelectedId(null)}
+        />
 
-          {/* Achtergrondgloed */}
-          <circle cx={CX} cy={CY} r={R + 24}
-            fill={showComparison ? 'url(#ac-glow-comp)' : 'url(#ac-glow-base)'}
-            style={{ transition: 'fill 0.6s ease' }}
-          />
+        {/* Achtergrondgloed */}
+        <circle cx={CX} cy={CY} r={R + 48}
+          fill={showComparison ? 'url(#ac-bg-comp)' : 'url(#ac-bg-base)'}
+          style={{ transition: 'fill 0.6s ease' }}
+        />
 
-          {/* Subtiele buitenring */}
-          <circle cx={CX} cy={CY} r={R + 6}
+        {/* Subtiele buitenring */}
+        <circle cx={CX} cy={CY} r={R + 5}
+          fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"
+        />
+
+        {/* Compare stippelring */}
+        {showComparison && (
+          <circle cx={CX} cy={CY} r={R + 7}
             fill="none"
-            stroke="rgba(255,255,255,0.04)"
-            strokeWidth="0.5"
+            stroke="rgba(78,213,150,0.28)"
+            strokeWidth="1.2"
+            strokeDasharray="5 4"
           />
+        )}
 
-          {/* Compare-ring gestippeld groen */}
-          {showComparison && (
-            <circle cx={CX} cy={CY} r={R + 8}
-              fill="none"
-              stroke="rgba(78,213,150,0.40)"
-              strokeWidth="1.5"
-              strokeDasharray="6 4"
-            />
-          )}
-
-          {/* Pie segmenten */}
+        {/* ── Pie segmenten — met diepte-filter ── */}
+        <g filter="url(#pie-depth)">
           {slices.map(sl => {
-            const exploded = sl.id === selectedId
-            const dimmed   = hasSelection && !exploded
+            const { ex, ey } = explodeOffset(sl)
+            const isSelected = sl.id === selectedId
+            const dimmed     = hasSelection && !isSelected
             return (
               <path
                 key={sl.id}
-                d={piePath(sl.startDeg, sl.endDeg, exploded, sl.midDeg)}
+                d={piePath(sl.startDeg, sl.endDeg, ex, ey)}
                 fill={sl.color}
-                fillOpacity={dimmed ? 0.22 : showComparison ? 0.80 : 0.90}
+                fillOpacity={dimmed ? 0.42 : showComparison ? 0.82 : 0.92}
                 stroke="#0C182E"
-                strokeWidth="1"
+                strokeWidth="1.0"
                 style={{
                   cursor: 'pointer',
-                  transition: 'fill-opacity 0.35s ease, d 0.35s cubic-bezier(0.4,0,0.2,1)',
-                  filter: exploded ? `drop-shadow(0 0 8px ${sl.color}88)` : 'none',
+                  transition: 'all 0.45s cubic-bezier(0.4,0,0.2,1)',
+                  filter: isSelected ? `drop-shadow(0 0 6px ${sl.color}44)` : 'none',
                 }}
-                onClick={() => handleSegmentClick(sl.id)}
+                onClick={() => setSelectedId(prev => prev === sl.id ? null : sl.id)}
                 onMouseEnter={e => !hasSelection && showTooltip(e, {
                   label: labelLang(sl),
                   value: `${sl.displayVal}%`,
                   color: sl.color,
-                  sub:   `Target: ${sl.target}%`,
-                  delta: sl.compVal !== null && sl.compVal !== sl.current
-                    ? `${sl.compVal > sl.current ? '+' : ''}${sl.compVal - sl.current}%`
-                    : null,
                 })}
                 onMouseLeave={hideTooltip}
               />
             )
           })}
-        </svg>
-      </div>
+        </g>
 
-      {/* ── Info paneel ───────────────────────────────────────────────── */}
-      <div style={s.infoCol}>
+        {/* ── Delta-badges bij compare — buiten segmenten ── */}
+        {showComparison && slices.map(sl => {
+          const hasChange = sl.compVal !== null && sl.compVal !== sl.current
+          if (!hasChange) return null
+          const delta      = sl.compVal - sl.current
+          const { ex, ey } = explodeOffset(sl)
+          const { bx, by } = deltaBadgePos(sl.midDeg, ex, ey)
+          const badgeColor = delta < 0 ? '#4ED596' : '#E01B41'
+          const badgeText  = (delta > 0 ? '+' : '') + delta + '%'
 
-        {/* ── OVERZICHT — geen selectie ── */}
-        {!hasSelection && (
-          <div style={s.overview}>
-            <div style={s.overviewLabel}>ASSET CLASS</div>
-            {slices.map(sl => {
-              const hasChange = sl.compVal !== null && sl.compVal !== sl.current
-              const delta     = hasChange ? sl.compVal - sl.current : 0
-              return (
-                <div
-                  key={sl.id}
-                  style={s.ovRow}
-                  onClick={() => handleSegmentClick(sl.id)}
-                >
-                  <div style={{
-                    ...s.ovDot,
-                    background:  sl.color,
-                    boxShadow:   `0 0 6px ${sl.color}66`,
-                  }} />
-                  <span style={s.ovName}>{labelLang(sl)}</span>
-                  <span style={{
-                    ...s.ovPct,
-                    color: hasChange
-                      ? delta < 0 ? '#4ED596' : '#E01B41'
-                      : sl.color,
-                    transition: 'color 0.4s ease',
-                  }}>
-                    {sl.displayVal}%
-                  </span>
-                  {hasChange && (
-                    <span style={{
-                      ...s.ovDelta,
-                      color: delta < 0 ? '#4ED596' : '#E01B41',
-                    }}>
-                      {delta > 0 ? '+' : ''}{delta}%
-                    </span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
+          // Badge achtergrond rect (geclampt binnen viewport)
+          const bw = 38, bh = 20
+          const rx = Math.max(SAFE_LEFT, Math.min(SAFE_RIGHT - bw, bx - bw / 2))
+          const ry = Math.max(SAFE_TOP,  Math.min(SAFE_BOTTOM - bh, by - bh / 2))
 
-        {/* ── DETAIL — segment geselecteerd ── */}
-        {hasSelection && selected && (
-          <div style={{
-            ...s.detail,
-            opacity:   animated ? 1 : 0,
-            transform: animated ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-          }}>
-            {/* Terugknop */}
-            <button
-              style={s.backBtn}
-              onClick={() => setSelectedId(null)}
+          return (
+            <g key={sl.id + '-delta'} style={{ pointerEvents: 'none' }}>
+              <rect
+                x={rx} y={ry} width={bw} height={bh} rx="3"
+                fill={badgeColor} fillOpacity="0.15"
+                stroke={badgeColor} strokeWidth="0.8" strokeOpacity="0.6"
+              />
+              <text
+                x={rx + bw / 2} y={ry + bh / 2 + 5}
+                textAnchor="middle"
+                fontFamily="'Merriweather Sans', sans-serif"
+                fontSize="11" fontWeight="800"
+                fill={badgeColor}
+              >
+                {badgeText}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* ── Callout lijntjes + labels ── */}
+        {slices.map(sl => {
+          const { ex, ey }                       = explodeOffset(sl)
+          const { p1, p2, p3, anchor, labelX, labelY } = callout(sl.midDeg, ex, ey)
+          const isSelected = sl.id === selectedId
+          const isDimmed   = hasSelection && !isSelected
+          const st         = statusInfo(sl)
+
+          const lineStroke  = isSelected ? sl.color : 'rgba(255,255,255,0.40)'
+          const lineW       = isSelected ? '1.0' : '0.7'
+          const lineOpacity = isDimmed ? 0.07 : isSelected ? 0.75 : 0.32
+
+          const pctSize  = isSelected ? 30 : 19
+          const nameSize = isSelected ? 14 : 12
+
+          const pctY    = labelY - 4
+          const nameY   = labelY + nameSize + 4
+          const statusY = nameY + 17
+
+          return (
+            <g
+              key={sl.id}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedId(prev => prev === sl.id ? null : sl.id)}
             >
-              ← all categories
-            </button>
+              <polyline
+                points={`${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`}
+                fill="none"
+                stroke={lineStroke}
+                strokeWidth={lineW}
+                strokeOpacity={lineOpacity}
+                style={{ transition: 'all 0.35s ease' }}
+              />
 
-            <div style={s.detailSublabel}>ASSET CLASS</div>
+              {/* Percentage */}
+              <text
+                x={labelX} y={pctY}
+                textAnchor={anchor}
+                fontFamily="'Merriweather Sans', sans-serif"
+                fontSize={pctSize} fontWeight="800"
+                fill={sl.color}
+                fillOpacity={isDimmed ? 0.14 : 1}
+                style={{ transition: 'all 0.35s ease' }}
+              >
+                {sl.displayVal}%
+              </text>
 
-            {/* Groot percentage */}
-            <div style={{
-              ...s.detailPct,
-              color: selected.color,
-              transition: 'color 0.4s ease',
-            }}>
-              {selected.displayVal}%
-            </div>
+              {/* Naam */}
+              <text
+                x={labelX} y={nameY}
+                textAnchor={anchor}
+                fontFamily="'Merriweather Sans', sans-serif"
+                fontSize={nameSize} fontWeight={isSelected ? '600' : '500'}
+                fill="rgba(255,255,255,0.65)"
+                fillOpacity={isDimmed ? 0.14 : 1}
+                style={{ transition: 'all 0.35s ease' }}
+              >
+                {labelLang(sl)}
+              </text>
 
-            <div style={s.detailName}>{labelLang(selected)}</div>
-
-            {/* Target rij */}
-            <div style={s.detailRow}>
-              <span style={s.detailRowLabel}>TARGET</span>
-              <span style={s.detailRowVal}>{selected.target}%</span>
-            </div>
-
-            {/* Status pill */}
-            <div style={{
-              ...s.statusPill,
-              background: `${statusColor(selected)}18`,
-              color:       statusColor(selected),
-              boxShadow:  `0 0 12px ${statusColor(selected)}22`,
-            }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: statusColor(selected),
-                flexShrink: 0,
-              }} />
-              {statusLabel(selected)}
-            </div>
-
-            {/* Compare delta */}
-            {showComparison && selected.compVal !== null && selected.compVal !== selected.current && (
-              <div style={s.compareBlock}>
-                <div style={s.compareBlockLabel}>SCENARIO SHIFT</div>
-                <div style={{
-                  ...s.compareDelta,
-                  color: selected.compVal < selected.current ? '#4ED596' : '#E01B41',
-                }}>
-                  {selected.compVal > selected.current ? '+' : ''}
-                  {selected.compVal - selected.current}%
-                </div>
-                <div style={s.compareFrom}>
-                  was {selected.current}%
-                  {' '}→{' '}
-                  now {selected.compVal}%
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+              {/* Status pill — alleen bij selectie */}
+              {isSelected && (
+                <text
+                  x={labelX} y={statusY}
+                  textAnchor={anchor}
+                  fontFamily="'Merriweather Sans', sans-serif"
+                  fontSize="11" fontWeight="700"
+                  fill={st.color}
+                  letterSpacing="0.05em"
+                >
+                  {st.label}
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </svg>
 
       <ChartTooltip tooltip={tooltip} />
     </div>
@@ -311,121 +350,11 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
 
 const s = {
   wrap: {
-    display: 'flex', alignItems: 'stretch',
-    gap: 36, height: '100%', width: '100%',
-  },
-  pieCol: {
-    flexShrink: 0, width: '44%', maxWidth: 340,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: 0,
+    height: '100%', width: '100%',
   },
-  svg: { width: '100%', height: '100%', display: 'block' },
-
-  // Info kolom
-  infoCol: {
-    flex: 1, display: 'flex', flexDirection: 'column',
-    justifyContent: 'center', minWidth: 0,
-  },
-
-  // Overzicht
-  overview: { display: 'flex', flexDirection: 'column', gap: 10 },
-  overviewLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
-    marginBottom: 6,
-  },
-  ovRow: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    cursor: 'pointer', padding: '6px 4px', borderRadius: 4,
-    transition: 'background 0.2s ease',
-  },
-  ovDot: {
-    width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
-  },
-  ovName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.85rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.72)', flex: 1,
-  },
-  ovPct: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.1rem', fontWeight: 800,
-    minWidth: 48, textAlign: 'right',
-  },
-  ovDelta: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', fontWeight: 700,
-    minWidth: 36, textAlign: 'right',
-  },
-
-  // Detail
-  detail: {
-    display: 'flex', flexDirection: 'column', gap: 0,
-  },
-  backBtn: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
-    color: 'rgba(255,255,255,0.30)',
-    padding: '0 0 14px 0', textAlign: 'left',
-    transition: 'color 0.2s ease',
-  },
-  detailSublabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.12em',
-    marginBottom: 8,
-  },
-  detailPct: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '4.2rem', fontWeight: 800, lineHeight: 1,
-    marginBottom: 2,
-  },
-  detailName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.62)', marginBottom: 18,
-  },
-  detailRow: {
-    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4,
-  },
-  detailRowLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em',
-    color: 'rgba(255,255,255,0.30)', width: 56,
-  },
-  detailRowVal: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1rem', fontWeight: 700,
-    color: 'rgba(255,255,255,0.55)',
-  },
-  statusPill: {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em',
-    padding: '5px 12px', borderRadius: 3,
-    alignSelf: 'flex-start', marginTop: 12,
-  },
-
-  // Compare block
-  compareBlock: {
-    marginTop: 20, paddingTop: 16,
-    borderTop: '0.5px solid rgba(255,255,255,0.08)',
-  },
-  compareBlockLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.25)', letterSpacing: '0.10em',
-    marginBottom: 4,
-  },
-  compareDelta: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.8rem', fontWeight: 800, lineHeight: 1.1,
-  },
-  compareFrom: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem', fontWeight: 400,
-    color: 'rgba(255,255,255,0.30)', marginTop: 4,
+  svg: {
+    width: '100%', height: '100%', display: 'block',
+    overflow: 'visible',
   },
 }
