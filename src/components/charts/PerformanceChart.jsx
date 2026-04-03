@@ -181,8 +181,33 @@ export default function PerformanceChart({ portfolio }) {
       {/* ── Metrics column ────────────────────────────────────────────── */}
       <div style={s.metricsCol}>
         <div style={s.topLabel}>KEY METRICS</div>
+
+        {/* ── Alpha card — prominent, apart van het grid ── */}
+        {(() => {
+          const alphaMet = metrics.find(m => m.label === 'vs Benchmark')
+          const alphaPos = parseFloat(alpha) >= 0
+          return (
+            <div style={{
+              ...s.alphaCard,
+              borderColor: alphaPos ? 'rgba(78,213,150,0.35)' : 'rgba(224,27,65,0.35)',
+              background:  alphaPos ? 'rgba(78,213,150,0.07)' : 'rgba(224,27,65,0.07)',
+            }}>
+              <span style={s.alphaLabel}>Alpha vs Benchmark</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ ...s.alphaVal, color: alphaMet.color }}>
+                  {alphaMet.value}
+                </span>
+                <span style={{ ...s.alphaSub, color: alphaMet.color }}>
+                  {alphaPos ? 'outperformance' : 'underperformance'}
+                </span>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── Overige 5 metrics in grid ── */}
         <div style={s.grid}>
-          {metrics.map(m => (
+          {metrics.filter(m => m.label !== 'vs Benchmark').map(m => (
             <div key={m.label} style={{
               ...s.card,
               borderColor: m.color === C.green
@@ -190,7 +215,6 @@ export default function PerformanceChart({ portfolio }) {
                 : m.color === C.red
                   ? 'rgba(224,27,65,0.18)'
                   : 'rgba(255,255,255,0.08)',
-              // Subtiele achtergrondgloed per kaart op basis van kleur
               background: m.color === C.green
                 ? 'rgba(78,213,150,0.05)'
                 : m.color === C.red
@@ -242,6 +266,31 @@ const s = {
     width: 220, flexShrink: 0,
     display: 'flex', flexDirection: 'column',
     gap: 10, justifyContent: 'flex-start',
+  },
+  // Alpha — prominente kaart bovenaan, vol breed
+  alphaCard: {
+    border: '1px solid',
+    borderRadius: 8,
+    padding: '12px 16px',
+    flexShrink: 0,
+    display: 'flex', flexDirection: 'column', gap: 4,
+    transition: 'border-color 0.4s ease, background 0.4s ease',
+  },
+  alphaLabel: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.55rem', fontWeight: 700,
+    color: 'rgba(255,255,255,0.35)',
+    letterSpacing: '0.08em', textTransform: 'uppercase',
+  },
+  alphaVal: {
+    fontFamily: "'Merriweather', serif",
+    fontSize: '2.2rem', fontWeight: 700,
+    lineHeight: 1, letterSpacing: '-0.02em',
+  },
+  alphaSub: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.62rem', fontWeight: 600,
+    opacity: 0.7,
   },
   grid: {
     display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
