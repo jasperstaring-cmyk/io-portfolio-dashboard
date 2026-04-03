@@ -12,8 +12,8 @@ const FX_COLORS = {
 const HOME_COLOR = '#5B8DEF'
 
 const BAR_WIDTH    = 520   // px — vaste breedte
-const TOTAL_HEIGHT = 300   // px — vaste hoogte
-const MIN_SEG_H    = 26    // px — minimum segmenthoogte
+const TOTAL_HEIGHT = 340   // px — iets hoger voor meer ruimte kleine segmenten
+const MIN_SEG_H    = 40    // px — ruimer minimum zodat labels leesbaar blijven
 
 export default function CurrencyChart({ portfolio, scenario, showComparison }) {
   const [animated, setAnimated] = useState(false)
@@ -152,7 +152,7 @@ export default function CurrencyChart({ portfolio, scenario, showComparison }) {
                     transition: 'background 0.5s ease',
                   }}>
                     {/* Label in segment */}
-                    {rawHeights[i] >= 34 && (
+                    {rawHeights[i] >= 28 && (
                       <div style={{
                         position: 'absolute', left: 14,
                         display: 'flex', alignItems: 'center', gap: 6,
@@ -246,6 +246,7 @@ const s = {
     height: '100%', width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: '6%',
   },
 
   // Hele compositie als één blok gecentreerd
