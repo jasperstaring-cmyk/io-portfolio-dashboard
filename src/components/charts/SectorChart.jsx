@@ -207,6 +207,7 @@ const s = {
     display: 'flex', flexDirection: 'column',
     height: '100%', width: '100%',
     justifyContent: 'center', gap: 0,
+    paddingTop: '6%',
   },
 
   sublabel: {
