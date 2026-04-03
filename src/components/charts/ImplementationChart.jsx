@@ -1,299 +1,344 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // Categoriekleuren — neutraal, geen statusoordeel
 // Active/Passive/Individual zijn implementatiekeuzes, niet goed/slecht
-// Groen (#4ED596) is GERESERVEERD voor compare/delta
+// Groen (#4ED596) is GERESERVEERD voor compare/delta/besparingen
 const IMPL_COLORS = {
-  active:     '#E01B41',  // rood — dominant, grootste categorie in de meeste portefeuilles
-  passive:    '#5B8DEF',  // blauw — tweede categorie
-  individual: '#F5A623',  // amber — kleinste categorie
+  active:     '#E01B41',
+  passive:    '#5B8DEF',
+  individual: '#F5A623',
 }
 
+const ITEMS = [
+  { id: 'active',     label: 'Active Management',    sub: 'Alpha-seeking, manager discretion' },
+  { id: 'passive',    label: 'Passive / ETF',         sub: 'Index-tracking, market beta'       },
+  { id: 'individual', label: 'Individual Securities', sub: 'Direct stock & bond holdings'      },
+]
+
+const PORTFOLIO_SIZE = 1_000_000
+
+// Drempelwaarden voor labels in de balk en boven de balk
+const MIN_PCT_FOR_SUBLABEL  = 18   // sub-omschrijving verdwijnt onder dit %
+const MIN_PCT_FOR_NAMELABEL = 10   // naam verdwijnt onder dit %
+const MIN_PCT_FOR_TER       = 14   // TER in balk verdwijnt onder dit %
+
 export default function ImplementationChart({ portfolio, scenario, showComparison }) {
-  const [animated, setAnimated] = useState(false)
+  const [animated,    setAnimated]    = useState(false)
+  const [costVisible, setCostVisible] = useState(false)
+  const prevCompare = useRef(showComparison)
 
   useEffect(() => {
     setAnimated(false)
+    if (prevCompare.current !== showComparison) {
+      prevCompare.current = showComparison
+    }
     const t = setTimeout(() => setAnimated(true), 60)
     return () => clearTimeout(t)
   }, [showComparison])
 
-  const impl = portfolio.implementation
+  useEffect(() => {
+    setCostVisible(false)
+    if (showComparison) {
+      const t = setTimeout(() => setCostVisible(true), 500)
+      return () => clearTimeout(t)
+    }
+  }, [showComparison])
+
+  const impl      = portfolio.implementation
   const compImpl  = showComparison ? scenario?.comparison?.implementation : null
   const costs     = portfolio.costs
   const compCosts = showComparison ? scenario?.comparison?.costs : null
 
-  const active      = compImpl  || impl
-  const activeCosts = compCosts || costs
+  const activeImpl = compImpl || impl
 
-  const items = [
-    { id: 'active',     label: 'Active Management',    sub: 'Alpha-seeking, manager discretion',  color: IMPL_COLORS.active },
-    { id: 'passive',    label: 'Passive / ETF',         sub: 'Index-tracking, market beta',         color: IMPL_COLORS.passive },
-    { id: 'individual', label: 'Individual Securities', sub: 'Direct stock & bond holdings',        color: IMPL_COLORS.individual },
-  ]
+  // FIX 1: proportionele schaling — altijd optellen tot 100%
+  // zodat explore-mode met totaal ≠ 100 geen lege balk geeft
+  const rawVals  = ITEMS.map(item => activeImpl[item.id] || 0)
+  const rawTotal = rawVals.reduce((a, b) => a + b, 0) || 100
+  const rawBase  = ITEMS.map(item => impl[item.id] || 0)
+  const rawBaseTotal = rawBase.reduce((a, b) => a + b, 0) || 100
 
-  // Arc-donut — zelfde techniek als AssetClassChart
-  const cx = 130, cy = 130, R = 96, STROKE = 24, inner = R - STROKE / 2 - 2
-  const GAP_DEG = 1.4
+  const segments = ITEMS.map((item, i) => ({
+    ...item,
+    color:    IMPL_COLORS[item.id],
+    base:     Math.round((rawBase[i] / rawBaseTotal) * 100),
+    val:      Math.round((rawVals[i] / rawTotal) * 100),
+    rawVal:   rawVals[i],   // originele waarde voor labels
+    delta:    showComparison ? (activeImpl[item.id] || 0) - (impl[item.id] || 0) : 0,
+    ter:      costs?.breakdown?.find(b => b.id === item.id)?.ter ?? null,
+  }))
 
-  function arcParams(startDeg, endDeg) {
-    const gapRad = (GAP_DEG / 2) * Math.PI / 180
-    const startRad = (startDeg - 90) * Math.PI / 180 + gapRad
-    const endRad   = (endDeg   - 90) * Math.PI / 180 - gapRad
-    return {
-      x1: cx + R * Math.cos(startRad), y1: cy + R * Math.sin(startRad),
-      x2: cx + R * Math.cos(endRad),   y2: cy + R * Math.sin(endRad),
-      large: (endDeg - startDeg - GAP_DEG) > 180 ? 1 : 0,
-    }
+  // Afrondingscorrectie: zorg dat som exact 100 is
+  const scaledTotal = segments.reduce((a, s) => a + s.val, 0)
+  if (scaledTotal !== 100 && segments.length > 0) {
+    segments[0].val += 100 - scaledTotal
   }
 
-  let cum = 0
-  const slices = items.map(item => {
-    const val = active[item.id] || 0
-    const deg = (val / 100) * 360
-    const sl = { ...item, val, startDeg: cum, endDeg: cum + deg }
-    cum += deg
-    return sl
-  })
-
-  const saving = compCosts ? costs.weightedTer - compCosts.weightedTer : 0
+  const baseTer   = costs?.weightedTer   ?? 0
+  const activeTer = compCosts?.weightedTer ?? baseTer
+  const saving    = baseTer - activeTer
+  const baseEur   = Math.round(baseTer   / 100 * PORTFOLIO_SIZE)
+  const activeEur = Math.round(activeTer / 100 * PORTFOLIO_SIZE)
+  const saveEur   = Math.round(Math.abs(saving) / 100 * PORTFOLIO_SIZE)
 
   return (
     <div style={s.wrap}>
 
-      {/* ── Donut ─────────────────────────────────────────────────────── */}
-      <div style={s.donutCol}>
-        <div style={s.label}>PORTFOLIO CONSTRUCTION</div>
-        <div style={s.donutSvgWrap}>
-          <svg
-            key={showComparison ? 'comp' : 'base'}
-            viewBox="0 0 260 260"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              ...s.donutSvg,
-              opacity: animated ? 1 : 0,
-              transform: animated ? 'scale(1)' : 'scale(0.92)',
-              transition: 'opacity 0.5s ease, transform 0.55s cubic-bezier(0.34,1.26,0.64,1)',
-              transformOrigin: 'center',
-            }}
-          >
-            <defs>
-              <radialGradient id="impl-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="30%" stopColor={IMPL_COLORS.active} stopOpacity="0.07" />
-                <stop offset="100%" stopColor={IMPL_COLORS.active} stopOpacity="0" />
-              </radialGradient>
-              <radialGradient id="impl-glow-comp" cx="50%" cy="50%" r="50%">
-                <stop offset="30%" stopColor="#4ED596" stopOpacity="0.07" />
-                <stop offset="100%" stopColor="#4ED596" stopOpacity="0" />
-              </radialGradient>
-            </defs>
+      {/* ── Sublabel ── */}
+      <div style={s.sublabel}>PORTFOLIO CONSTRUCTION</div>
 
-            {/* Achtergrondgloed */}
-            <circle cx={cx} cy={cy} r={R + 20}
-              fill={showComparison ? 'url(#impl-glow-comp)' : 'url(#impl-glow)'}
-              style={{ transition: 'fill 0.6s ease' }} />
-
-            {/* Gidsring */}
-            <circle cx={cx} cy={cy} r={R + STROKE / 2 + 6}
-              fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
-
-            {/* Track */}
-            <circle cx={cx} cy={cy} r={R}
-              fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={STROKE} />
-
-            {/* Arc-segmenten */}
-            {slices.map(sl => {
-              if (sl.val <= 0) return null
-              const { x1, y1, x2, y2, large } = arcParams(sl.startDeg, sl.endDeg)
-              return (
-                <path key={sl.id}
-                  d={`M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}`}
-                  fill="none" stroke={sl.color} strokeWidth={STROKE} strokeLinecap="butt"
-                  opacity={showComparison ? 0.70 : 0.88}
-                  style={{ transition: 'opacity 0.5s ease' }} />
-              )
-            })}
-
-            {/* Compare-ring */}
-            {showComparison && (
-              <circle cx={cx} cy={cy} r={R + STROKE / 2 + 2}
-                fill="none" stroke="rgba(78,213,150,0.45)"
-                strokeWidth="2" strokeDasharray="7 4" />
-            )}
-
-            {/* Centerveld */}
-            <circle cx={cx} cy={cy} r={inner} fill="#0C182E" />
-            <circle cx={cx} cy={cy} r={inner - 1}
-              fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-
-            <text x={cx} y={cx - 8} textAnchor="middle"
-              fontFamily="'Merriweather Sans', sans-serif"
-              fontSize="9" fontWeight="700"
-              fill="rgba(255,255,255,0.28)" letterSpacing="1">
-              {showComparison ? 'SCENARIO' : 'CURRENT'}
-            </text>
-            <text x={cx} y={cx + 12} textAnchor="middle"
-              fontFamily="'Merriweather', serif"
-              fontSize="14" fontWeight="700"
-              fill={showComparison ? '#4ED596' : 'white'}
-              style={{ transition: 'fill 0.5s ease' }}>
-              mix
-            </text>
-          </svg>
-        </div>
-      </div>
-
-      {/* ── Breakdown ─────────────────────────────────────────────────── */}
-      <div style={s.breakdownCol}>
-        <div style={s.label}>BREAKDOWN</div>
-        {items.map(item => {
-          const base  = impl[item.id] || 0
-          const curr  = active[item.id] || 0
-          const delta = curr - base
-          const hasChange = showComparison && delta !== 0
+      {/* ── Segment-labels boven de balk ── */}
+      <div style={{
+        ...s.labelsRow,
+        opacity:   animated ? 1 : 0,
+        transform: animated ? 'translateY(0)' : 'translateY(6px)',
+        transition: 'opacity 0.5s ease 0.05s, transform 0.5s ease 0.05s',
+      }}>
+        {segments.map((seg, i) => {
+          const hasChange = showComparison && seg.delta !== 0
+          // FIX 2: labels schalen mee met segmentbreedte
+          const showName = seg.val >= MIN_PCT_FOR_NAMELABEL
+          const showSub  = seg.val >= MIN_PCT_FOR_SUBLABEL
 
           return (
-            <div key={item.id} style={{
-              ...s.itemBlock,
-              background: hasChange ? 'rgba(255,255,255,0.03)' : 'transparent',
-              borderRadius: 6, padding: '5px 8px',
-              transition: 'background 0.5s ease',
+            <div key={seg.id} style={{
+              ...s.labelCol,
+              width: `${seg.val}%`,
+              transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+              paddingRight: i < segments.length - 1 ? 14 : 0,
             }}>
-              <div style={s.itemRow}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: item.color, flexShrink: 0,
-                    boxShadow: `0 0 5px ${item.color}66`,
-                  }} />
-                  <div>
-                    <div style={s.itemLabel}>{item.label}</div>
-                    <div style={s.itemSub}>{item.sub}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
-                    ...s.itemPct,
-                    color: hasChange ? (delta < 0 ? '#4ED596' : '#E01B41') : item.color,
-                    transition: 'color 0.5s ease',
-                  }}>
-                    {curr}%
-                  </span>
-                  {hasChange && (
-                    <span style={{
-                      ...s.delta,
-                      color: delta < 0 ? '#4ED596' : '#E01B41',
-                      background: delta < 0 ? 'rgba(78,213,150,0.10)' : 'rgba(224,27,65,0.10)',
-                    }}>
-                      {delta > 0 ? '+' : ''}{delta}
-                    </span>
-                  )}
-                </div>
+              {/* Percentage — altijd zichtbaar */}
+              <div style={{
+                ...s.labelPct,
+                color: hasChange
+                  ? seg.delta < 0 ? '#4ED596' : '#E01B41'
+                  : seg.color,
+                transition: 'color 0.5s ease',
+              }}>
+                {seg.rawVal}%
               </div>
-              <div style={s.track}>
-                {showComparison && (
-                  <div style={{
-                    position: 'absolute', top: 0, bottom: 0, left: 0,
-                    borderRadius: 5, background: item.color, opacity: 0.16,
-                    width: `${base}%`,
-                  }} />
-                )}
+
+              {/* Naam — verdwijnt bij kleine segmenten */}
+              {showName && (
+                <div style={s.labelName}>{seg.label}</div>
+              )}
+
+              {/* Sub-omschrijving — verdwijnt eerder */}
+              {showSub && (
+                <div style={s.labelSub}>{seg.sub}</div>
+              )}
+
+              {/* Delta bij compare */}
+              {hasChange && (
                 <div style={{
-                  position: 'absolute', top: 0, bottom: 0, left: 0,
-                  borderRadius: 5, opacity: 0.78,
-                  background: hasChange ? (delta < 0 ? '#4ED596' : '#E01B41') : item.color,
-                  width: `${curr}%`,
-                  transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1), background 0.5s ease',
-                  boxShadow: hasChange
-                    ? delta < 0
-                      ? '0 0 8px rgba(78,213,150,0.3)'
-                      : '0 0 8px rgba(224,27,65,0.3)'
-                    : 'none',
-                }} />
-              </div>
+                  ...s.labelDelta,
+                  color: seg.delta < 0 ? '#4ED596' : '#E01B41',
+                }}>
+                  {seg.delta > 0 ? '+' : ''}{seg.delta}%
+                </div>
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* ── Cost kaart ────────────────────────────────────────────────── */}
-      <div style={s.costCol}>
-        <div style={s.label}>COST IMPACT (TER)</div>
-        <div style={{
-          ...s.costCard,
-          borderColor: showComparison && saving > 0
-            ? 'rgba(78,213,150,0.35)'
-            : 'rgba(255,255,255,0.10)',
-          transition: 'border-color 0.6s ease',
-        }}>
-          <div>
-            <div style={s.terLabel}>Weighted avg. TER</div>
-            <div style={{
-              ...s.terVal,
-              color: showComparison && saving > 0 ? '#4ED596' : '#FFFFFF',
-              transition: 'color 0.6s ease',
+      {/* ── Gestapelde balk ── */}
+      <div style={{
+        ...s.trackWrap,
+        opacity:   animated ? 1 : 0,
+        transform: animated ? 'scaleY(1)' : 'scaleY(0.7)',
+        transition: 'opacity 0.45s ease 0.1s, transform 0.45s cubic-bezier(0.34,1.26,0.64,1) 0.1s',
+        transformOrigin: 'top',
+      }}>
+        {/* Ghost balk: originele verdeling als dunne streep bovenin bij compare */}
+        {showComparison && (
+          <div style={s.ghostTrack}>
+            {segments.map((seg, i) => (
+              <div key={seg.id} style={{
+                width: `${seg.base}%`,
+                background: seg.color,
+                transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+                borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
+              }} />
+            ))}
+          </div>
+        )}
+
+        {/* Actieve balk */}
+        <div style={s.activeTrack}>
+          {segments.map((seg, i) => (
+            <div key={seg.id} style={{
+              width: `${seg.val}%`,
+              background: seg.color,
+              opacity: 0.90,
+              transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
             }}>
-              {activeCosts.weightedTer.toFixed(2)}%
+              {/* FIX 3: TER met werkelijke waarde, alleen als segment breed genoeg */}
+              {seg.val >= MIN_PCT_FOR_TER && seg.ter !== null && (
+                <span style={s.terInBar}>
+                  TER {seg.ter.toFixed(2)}%
+                </span>
+              )}
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Kostenblok — alleen bij compare ── */}
+      {showComparison && (
+        <div style={{
+          ...s.costBlock,
+          opacity:   costVisible ? 1 : 0,
+          transform: costVisible ? 'translateY(0)' : 'translateY(12px)',
+          transition: 'opacity 0.5s ease, transform 0.5s ease',
+        }}>
+          <div style={s.costCell}>
+            <div style={s.costCellLabel}>CURRENT TER</div>
+            <div style={s.costCellVal}>{baseTer.toFixed(2)}%</div>
+            <div style={s.costCellSub}>~€{baseEur.toLocaleString('nl-NL')}/yr on €1M</div>
           </div>
-          {compCosts && saving !== 0 && (
-            <>
-              <div style={s.divider} />
-              <div style={s.savingRow}>
-                <span style={s.savingLabel}>
-                  {saving > 0 ? '↓ Annual saving' : '↑ Extra cost'}
-                </span>
-                <span style={{ ...s.savingVal, color: saving > 0 ? '#4ED596' : '#E01B41' }}>
-                  {Math.abs(saving).toFixed(2)}% p.a.
-                </span>
+
+          <div style={s.costArrow}>→</div>
+
+          <div style={s.costCell}>
+            <div style={{ ...s.costCellLabel, color: 'rgba(78,213,150,0.55)' }}>SCENARIO TER</div>
+            <div style={{ ...s.costCellVal, color: '#4ED596' }}>{activeTer.toFixed(2)}%</div>
+            <div style={s.costCellSub}>~€{activeEur.toLocaleString('nl-NL')}/yr on €1M</div>
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {saving !== 0 && (
+            <div style={s.savingBlock}>
+              <div style={{ ...s.costCellLabel, color: saving > 0 ? 'rgba(78,213,150,0.55)' : 'rgba(224,27,65,0.55)' }}>
+                {saving > 0 ? 'ANNUAL SAVING' : 'EXTRA COST'}
               </div>
-            </>
-          )}
-          <div style={s.divider} />
-          <div style={s.exRow}>
-            <span style={s.exLabel}>On €1M portfolio</span>
-            <span style={s.exVal}>
-              ~€{(activeCosts.weightedTer / 100 * 1_000_000).toLocaleString('nl-NL')}/yr
-            </span>
-          </div>
-          {compCosts && saving !== 0 && (
-            <div style={s.exRow}>
-              <span style={s.exLabel}>vs current</span>
-              <span style={{ ...s.exVal, fontSize: '0.78rem', color: saving > 0 ? '#4ED596' : '#E01B41' }}>
-                {saving > 0 ? 'saves ' : 'costs '}
-                €{Math.abs(saving / 100 * 1_000_000).toLocaleString('nl-NL')}/yr
-              </span>
+              <div style={{
+                ...s.savingVal,
+                color: saving > 0 ? '#4ED596' : '#E01B41',
+              }}>
+                {saving > 0 ? '+' : '-'}€{saveEur.toLocaleString('nl-NL')}
+              </div>
+              <div style={s.costCellSub}>per year on €1M portfolio</div>
             </div>
           )}
         </div>
-      </div>
+      )}
+
     </div>
   )
 }
 
 const s = {
-  wrap:         { display: 'flex', gap: 36, height: '100%', width: '100%', alignItems: 'stretch' },
-  donutCol:     { flexShrink: 0, width: '28%', maxWidth: 265, display: 'flex', flexDirection: 'column', gap: 8 },
-  donutSvgWrap: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 },
-  donutSvg:     { width: '100%', height: '100%', display: 'block' },
-  breakdownCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, justifyContent: 'center', minWidth: 0 },
-  costCol:      { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center' },
-  label:        { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em' },
-  itemBlock:    { display: 'flex', flexDirection: 'column', gap: 7 },
-  itemRow:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  itemLabel:    { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.88)' },
-  itemSub:      { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.62rem', color: 'rgba(255,255,255,0.28)' },
-  itemPct:      { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '1.1rem', fontWeight: 800 },
-  delta:        { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', borderRadius: 4 },
-  track:        { height: 10, background: 'rgba(255,255,255,0.06)', borderRadius: 5, position: 'relative', overflow: 'hidden' },
-  costCard:     { background: 'rgba(255,255,255,0.04)', border: '1px solid', borderRadius: 10, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 },
-  terLabel:     { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.38)', marginBottom: 4 },
-  terVal:       { fontFamily: "'Merriweather', serif", fontSize: '2.4rem', fontWeight: 700, lineHeight: 1 },
-  divider:      { height: 1, background: 'rgba(255,255,255,0.08)' },
-  savingRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  savingLabel:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.38)' },
-  savingVal:    { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.88rem', fontWeight: 800 },
-  exRow:        { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  exLabel:      { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.62rem', color: 'rgba(255,255,255,0.30)' },
-  exVal:        { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.68)' },
+  // FIX 4: verticale centrering via flex met padding
+  wrap: {
+    display: 'flex', flexDirection: 'column',
+    height: '100%', width: '100%',
+    justifyContent: 'center',
+    paddingTop: 8, paddingBottom: 8,
+  },
+
+  sublabel: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.58rem', fontWeight: 800,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    marginBottom: 18,
+  },
+
+  labelsRow: {
+    display: 'flex', width: '100%',
+    marginBottom: 10, alignItems: 'flex-end',
+  },
+  labelCol: {
+    overflow: 'hidden', flexShrink: 0,
+    display: 'flex', flexDirection: 'column', gap: 2,
+    minWidth: 0,
+  },
+  labelPct: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '2.4rem', fontWeight: 800, lineHeight: 1,
+  },
+  labelName: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.88rem', fontWeight: 600,
+    color: 'rgba(255,255,255,0.72)',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  labelSub: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.68rem', fontWeight: 400,
+    color: 'rgba(255,255,255,0.32)',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  labelDelta: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.88rem', fontWeight: 800,
+    marginTop: 2,
+  },
+
+  trackWrap: {
+    width: '100%', borderRadius: 10,
+    overflow: 'hidden',
+    background: 'rgba(255,255,255,0.04)',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25)',
+    marginBottom: 14,
+  },
+  ghostTrack: {
+    display: 'flex', height: 5,
+    opacity: 0.38,
+  },
+  activeTrack: {
+    display: 'flex', height: 72,
+  },
+  terInBar: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.72rem', fontWeight: 700,
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: '0.04em',
+    pointerEvents: 'none',
+  },
+
+  costBlock: {
+    display: 'flex', alignItems: 'center', gap: 24,
+    padding: '14px 20px',
+    borderRadius: 10,
+    background: 'rgba(255,255,255,0.03)',
+    border: '0.5px solid rgba(78,213,150,0.18)',
+  },
+  costCell: {
+    display: 'flex', flexDirection: 'column', gap: 3,
+  },
+  costCellLabel: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.58rem', fontWeight: 800,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.10em',
+  },
+  costCellVal: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '1.8rem', fontWeight: 800,
+    color: 'rgba(255,255,255,0.65)', lineHeight: 1,
+  },
+  costCellSub: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.68rem', color: 'rgba(255,255,255,0.32)',
+  },
+  costArrow: {
+    fontSize: '1.4rem',
+    color: 'rgba(78,213,150,0.45)',
+    flexShrink: 0,
+  },
+  savingBlock: {
+    display: 'flex', flexDirection: 'column', gap: 3,
+    textAlign: 'right',
+  },
+  savingVal: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '2.6rem', fontWeight: 800,
+    lineHeight: 1,
+  },
 }
