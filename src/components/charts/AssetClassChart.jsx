@@ -74,7 +74,7 @@ function deltaBadgePos(midDeg, ex, ey) {
   return { bx, by }
 }
 
-export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, lang }) {
+export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, framing, lang }) {
   const { tooltip, showTooltip, hideTooltip } = useTooltip()
   const [animated,   setAnimated]   = useState(false)
   const [selectedId, setSelectedId] = useState(null)
@@ -113,7 +113,14 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   })
 
   const hasSelection = !!selectedId
-  const labelLang    = a => a.label?.[lang] || a.label?.en || a.id
+  // Framing overschrijft label per asset class id voor deze use case
+  const labelLang = a => {
+    const catFraming = framing?.[a.id]
+    const labelVal = catFraming?.label ?? a.label
+    if (!labelVal) return a.id
+    if (typeof labelVal === 'string') return labelVal
+    return labelVal[lang] || labelVal.en || a.id
+  }
 
   function statusInfo(a) {
     const val = a.displayVal

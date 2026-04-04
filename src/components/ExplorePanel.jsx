@@ -59,20 +59,38 @@ const GEO_COLORS = {
   'Emerging Markets':'#8A8A82',
 }
 
+// Haal implementation categories op — ondersteunt v1.1 (categories[]) en v1.0 (plat object)
+function getImplCategories(implementation) {
+  if (!implementation) return []
+  if (Array.isArray(implementation.categories)) return implementation.categories
+  // v1.0 fallback
+  const LEGACY = {
+    active:     { label: { en: 'Active' },       color: '#E01B41' },
+    passive:    { label: { en: 'Passive / ETF' }, color: '#5B8DEF' },
+    individual: { label: { en: 'Individual' },    color: '#F5A623' },
+  }
+  return Object.entries(implementation)
+    .filter(([, v]) => typeof v === 'number')
+    .map(([id, weight]) => ({ id, weight, ...(LEGACY[id] || { label: { en: id }, color: '#8A8A82' }) }))
+}
+
 export default function ExplorePanel({
   portfolio, explorePortfolio,
   onUpdateAlloc, onUpdateESG, onUpdateImpl, onUpdateSector, onUpdateCurrency,
   onUpdateGeo, onResetAlloc,
   activeDimension, onSelectDimension, onExitExplore,
 }) {
-  // Determine which sliders to show based on active dimension
-  const showAlloc = activeDimension === 'asset_class'
-  const showGeo = activeDimension === 'geography'
-  const showESG = activeDimension === 'esg'
-  const showImpl = activeDimension === 'implementation'
-  const showSector = activeDimension === 'sector'
-  const showCurrency = activeDimension === 'currency'
-  const noSliders = activeDimension === 'performance' || activeDimension === 'style' || activeDimension === 'cost'
+  const showAlloc      = activeDimension === 'asset_class'
+  const showGeo        = activeDimension === 'geography'
+  const showESG        = activeDimension === 'esg'
+  const showImpl       = activeDimension === 'implementation'
+  const showSector     = activeDimension === 'sector'
+  const showCurrency   = activeDimension === 'currency'
+  const noSliders      = activeDimension === 'performance' || activeDimension === 'style' || activeDimension === 'cost'
+
+  // Implementation categories — uit explorePortfolio (v1.1) of portfolio (v1.0)
+  const baseImplCats    = getImplCategories(portfolio.implementation)
+  const exploreImplCats = getImplCategories(explorePortfolio.implementation)
 
   return (
     <div style={s.panel}>
@@ -128,7 +146,6 @@ export default function ExplorePanel({
             </div>
             <div style={s.sliders}>
               {Object.keys(GEO_COLORS).map(region => {
-                // Bereken base-waarde uit portfolio (proportioneel geschaald)
                 const baseMap = {}
                 portfolio.allocations.forEach(a => {
                   if (!a.geographic?.length) return
@@ -179,23 +196,24 @@ export default function ExplorePanel({
           <>
             <div style={s.sectionLabel}>
               IMPLEMENTATION MIX
-              <TotalBadge values={[
-                explorePortfolio.implementation?.active ?? portfolio.implementation.active,
-                explorePortfolio.implementation?.passive ?? portfolio.implementation.passive,
-                explorePortfolio.implementation?.individual ?? portfolio.implementation.individual,
-              ]} />
+              <TotalBadge values={exploreImplCats.map(c => c.weight)} />
             </div>
             <div style={s.sliders}>
-              {[
-                { key: 'active', label: 'Active', color: '#E01B41' },
-                { key: 'passive', label: 'Passive / ETF', color: '#4ED596' },
-                { key: 'individual', label: 'Individual', color: '#5B8DEF' },
-              ].map(f => (
-                <SliderRow key={f.key} label={f.label} color={f.color}
-                  value={explorePortfolio.implementation?.[f.key] ?? portfolio.implementation[f.key]}
-                  base={portfolio.implementation[f.key]}
-                  onChange={v => onUpdateImpl(f.key, v)} />
-              ))}
+              {baseImplCats.map(baseCat => {
+                const exploreCat = exploreImplCats.find(c => c.id === baseCat.id)
+                const value = exploreCat?.weight ?? baseCat.weight
+                const label = typeof baseCat.label === 'object'
+                  ? (baseCat.label.en || baseCat.id)
+                  : (baseCat.label || baseCat.id)
+                return (
+                  <SliderRow key={baseCat.id}
+                    label={label}
+                    color={baseCat.color}
+                    value={value}
+                    base={baseCat.weight}
+                    onChange={v => onUpdateImpl(baseCat.id, v)} />
+                )
+              })}
             </div>
           </>
         )}
@@ -209,8 +227,9 @@ export default function ExplorePanel({
             <div style={s.sliders}>
               {(portfolio.sectors || []).map((sec, i) => {
                 const exploreWeight = explorePortfolio.sectors?.[i]?.weight ?? sec.weight
+                const label = typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)
                 return (
-                  <SliderRow key={sec.id} label={sec.label} color={sec.color}
+                  <SliderRow key={sec.id} label={label} color={sec.color}
                     value={exploreWeight} base={sec.weight}
                     onChange={v => onUpdateSector(i, v)} />
                 )

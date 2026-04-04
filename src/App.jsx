@@ -79,9 +79,47 @@ export default function App() {
   }
 
   function handleEnterExplore() {
-    const base = clonePortfolio(config.portfolio)
+    // Stap 5: startFrom "base" of "compare" — bepaald door use case explore-configuratie
+    // Als startFrom "compare" is én compare actief is, start explore vanuit de compare-state
+    const exploreConfig = activeScenario?.explore
+    const startFrom = exploreConfig?.startFrom || 'base'
+    const useCompareAsStart = startFrom === 'compare' && showComparison
+
+    // Bepaal het startpunt: base portfolio of compare portfolio
+    // resolveUseCase is al aangeroepen in PresentationView — hier klonen we direct
+    let startPortfolio
+    if (useCompareAsStart && activeScenario?.comparison) {
+      // Deep merge van base portfolio met comparison-overrides als startpunt
+      const baseClone = clonePortfolio(config.portfolio)
+      const comp = activeScenario.comparison
+      // Pas compare-velden toe op het startpunt
+      if (comp.allocations) {
+        baseClone.allocations = baseClone.allocations.map(a => {
+          const c = comp.allocations.find(x => x.id === a.id)
+          return c ? { ...a, ...c } : a
+        })
+      }
+      if (comp.implementation) {
+        if (comp.implementation.categories) {
+          baseClone.implementation = { ...baseClone.implementation, categories: comp.implementation.categories.map(cc => {
+            const base = (baseClone.implementation.categories || []).find(b => b.id === cc.id)
+            return base ? { ...base, weight: cc.weight } : cc
+          })}
+        } else {
+          baseClone.implementation = { ...baseClone.implementation, ...comp.implementation }
+        }
+      }
+      if (comp.sectors)    baseClone.sectors    = baseClone.sectors.map(s => { const c = comp.sectors.find(x => x.id === s.id); return c ? { ...s, weight: c.weight } : s })
+      if (comp.currencies) baseClone.currencies = baseClone.currencies.map(c => { const cc = comp.currencies.find(x => x.currency === c.currency); return cc ? { ...c, weight: cc.weight } : c })
+      if (comp.esg)        baseClone.esg        = { ...baseClone.esg, ...comp.esg }
+      startPortfolio = baseClone
+    } else {
+      startPortfolio = clonePortfolio(config.portfolio)
+    }
+
+    // Bereken geo-override voor startpositie
     const geoOverride = {}
-    base.allocations.forEach(a => {
+    startPortfolio.allocations.forEach(a => {
       if (!a.geographic?.length) return
       const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
       if (!geoSum) return
@@ -92,8 +130,9 @@ export default function App() {
         ) / 10
       })
     })
-    base.geoOverride = geoOverride
-    setExplorePortfolio(base)
+    startPortfolio.geoOverride = geoOverride
+
+    setExplorePortfolio(startPortfolio)
     setExploreDimension(activeDimension || activeScenario.dimension)
     setExploreMode(true)
   }
@@ -124,11 +163,24 @@ export default function App() {
     })
   }
 
-  function handleUpdateImpl(key, val) {
-    setExplorePortfolio(prev => ({
-      ...prev,
-      implementation: { ...prev.implementation, [key]: val },
-    }))
+  function handleUpdateImpl(id, val) {
+    setExplorePortfolio(prev => {
+      const impl = prev.implementation
+      // v1.1: categories array
+      if (Array.isArray(impl?.categories)) {
+        return {
+          ...prev,
+          implementation: {
+            ...impl,
+            categories: impl.categories.map(c =>
+              c.id === id ? { ...c, weight: val } : c
+            ),
+          },
+        }
+      }
+      // v1.0 fallback: plat object
+      return { ...prev, implementation: { ...impl, [id]: val } }
+    })
   }
 
   function handleUpdateSector(idx, val) {
