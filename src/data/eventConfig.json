@@ -218,11 +218,11 @@
       "comparison": null
     },
     {
-      "id": "gold_allocation",
+      "id": "private_credit_liquidity",
       "speakerProfile": {
         "name": "Jeroen Blokland",
         "title": "Portfolio Manager",
-        "organisation": "Smart Multi Asset Fund"
+        "organisation": "True Insights"
       },
       "speaker": {
         "en": "Jeroen Blokland",
@@ -231,33 +231,31 @@
         "de": "Jeroen Blokland"
       },
       "theme": {
-        "en": "Gold & Alternatives",
-        "nl": "Goud & Alternatieven",
-        "fr": "Or & Alternatifs",
-        "de": "Gold & Alternativen"
+        "en": "Private Markets & Liquidity",
+        "nl": "Private Markets & Liquiditeit",
+        "fr": "Marchés privés & Liquidité",
+        "de": "Private Markets & Liquidität"
       },
       "policyQuestion": {
-        "en": "Is your gold position large enough to matter — or too small to make a difference?",
-        "nl": "Is uw goudpositie groot genoeg om iets voor te stellen — of te klein om impact te maken?",
-        "fr": "Votre position en or est-elle assez importante pour peser — ou trop petite pour changer quoi que ce soit?",
-        "de": "Ist Ihre Goldposition groß genug um zu zählen — oder zu klein um einen Unterschied zu machen?"
+        "en": "How much of your portfolio can you actually sell tomorrow if your client asks?",
+        "nl": "Hoeveel van uw portefeuille kunt u morgen verkopen als uw klant dat vraagt?",
+        "fr": "Quelle part de votre portefeuille pouvez-vous réellement vendre demain si votre client le demande?",
+        "de": "Wie viel Ihres Portfolios können Sie morgen verkaufen, wenn Ihr Kunde es verlangt?"
       },
-      "dimension": "asset_class",
+      "dimension": "implementation",
       "state": "base",
       "comparison": {
         "label": {
-          "en": "Meaningful gold allocation",
-          "nl": "Betekenisvolle goudpositie",
-          "fr": "Position or significative",
-          "de": "Bedeutende Goldposition"
+          "en": "Illiquid alternatives locked",
+          "nl": "Illiquide alternatieven bevroren",
+          "fr": "Alternatifs illiquides bloqués",
+          "de": "Illiquide Alternativen gesperrt"
         },
-        "allocations": [
-          { "id": "equities",     "current": 32 },
-          { "id": "fixed_income", "current": 28 },
-          { "id": "alternatives", "current": 26 },
-          { "id": "real_estate",  "current": 8  },
-          { "id": "cash",         "current": 6  }
-        ]
+        "implementation": {
+          "active": 45,
+          "passive": 35,
+          "individual": 20
+        }
       }
     },
     {
