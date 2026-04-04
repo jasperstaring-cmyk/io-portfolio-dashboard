@@ -1,26 +1,43 @@
 import { useState } from 'react'
 
-// ── useConfigDraft ─────────────────────────────────────────────────────────
-// Owns all draft state and exposes clean updater functions.
-// No JSX — pure logic only.
+// ── useConfigDraft v2 ──────────────────────────────────────────────────────
+// Owns all draft state for the configurator.
+// Works with registry.json format (v1.1) — backwards compatible with v1.0.
+// Exposes clean updater functions. No JSX — pure logic only.
+
+// Helper: get implementation categories regardless of format
+function getImplCats(implementation) {
+  if (!implementation) return []
+  if (Array.isArray(implementation.categories)) return implementation.categories
+  return Object.entries(implementation)
+    .filter(([, v]) => typeof v === 'number')
+    .map(([id, weight]) => ({ id, weight }))
+}
 
 export function useConfigDraft(initialConfig) {
   const [draft, setDraft] = useState(() => JSON.parse(JSON.stringify(initialConfig)))
+  const [savedDraft, setSavedDraft] = useState(() => JSON.parse(JSON.stringify(initialConfig)))
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  function mark(fn) {
+    setDraft(fn)
+    setHasUnsavedChanges(true)
+  }
 
   // ── Event ────────────────────────────────────────────────────────────────
 
   function upEvent(key, val) {
-    setDraft(d => ({ ...d, event: { ...d.event, [key]: val } }))
+    mark(d => ({ ...d, event: { ...d.event, [key]: val } }))
   }
 
   // ── Portfolio ────────────────────────────────────────────────────────────
 
   function upPortfolio(key, val) {
-    setDraft(d => ({ ...d, portfolio: { ...d.portfolio, [key]: val } }))
+    mark(d => ({ ...d, portfolio: { ...d.portfolio, [key]: val } }))
   }
 
   function upAlloc(id, key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -31,18 +48,24 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  function upImpl(key, val) {
-    setDraft(d => ({
+  // v1.1: update implementation category by id
+  function upImplCat(id, key, val) {
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
-        implementation: { ...d.portfolio.implementation, [key]: val },
+        implementation: {
+          ...d.portfolio.implementation,
+          categories: (d.portfolio.implementation.categories || []).map(c =>
+            c.id === id ? { ...c, [key]: val } : c
+          ),
+        },
       },
     }))
   }
 
   function upPerf(key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -52,7 +75,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upESG(key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -62,7 +85,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upSFDR(idx, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -76,9 +99,8 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-
   function upSector(idx, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -90,7 +112,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upCurrency(idx, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       portfolio: {
         ...d.portfolio,
@@ -101,10 +123,10 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // ── Scenarios ────────────────────────────────────────────────────────────
+  // ── Use cases (scenarios) ────────────────────────────────────────────────
 
   function upScenario(idx, key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) =>
         i === idx ? { ...s, [key]: val } : s
@@ -113,7 +135,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upScenarioLang(idx, field, lang, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) =>
         i === idx ? { ...s, [field]: { ...s[field], [lang]: val } } : s
@@ -122,7 +144,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upSpeaker(idx, key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) =>
         i === idx
@@ -132,10 +154,123 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+  // ── Base override ────────────────────────────────────────────────────────
+
+  function upBaseToggle(idx, useEventPortfolio) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) =>
+        i !== idx ? s : {
+          ...s,
+          base: useEventPortfolio
+            ? { useEventPortfolio: true }
+            : { useEventPortfolio: false, ...(s.base?.useEventPortfolio === false ? s.base : {}) },
+        }
+      ),
+    }))
+  }
+
+  function upBaseAlloc(idx, allocId, key, val) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx) return s
+        const base = s.base || { useEventPortfolio: false }
+        const allocs = base.allocations || []
+        const exists = allocs.find(a => a.id === allocId)
+        const newAllocs = exists
+          ? allocs.map(a => a.id === allocId ? { ...a, [key]: val } : a)
+          : [...allocs, { id: allocId, [key]: val }]
+        return { ...s, base: { ...base, allocations: newAllocs } }
+      }),
+    }))
+  }
+
+  function upBaseImplCat(idx, catId, val) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx) return s
+        const base = s.base || { useEventPortfolio: false }
+        const cats = base.implementation?.categories || []
+        const exists = cats.find(c => c.id === catId)
+        const newCats = exists
+          ? cats.map(c => c.id === catId ? { ...c, weight: val } : c)
+          : [...cats, { id: catId, weight: val }]
+        return {
+          ...s,
+          base: {
+            ...base,
+            implementation: { ...(base.implementation || {}), categories: newCats },
+          },
+        }
+      }),
+    }))
+  }
+
+  // ── Framing ──────────────────────────────────────────────────────────────
+
+  function upFraming(idx, dimension, catId, field, lang, val) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx) return s
+        const framing = s.framing || {}
+        const dimFraming = framing[dimension] || {}
+        const catFraming = dimFraming[catId] || {}
+        const fieldVal = catFraming[field] || {}
+        return {
+          ...s,
+          framing: {
+            ...framing,
+            [dimension]: {
+              ...dimFraming,
+              [catId]: {
+                ...catFraming,
+                [field]: { ...fieldVal, [lang]: val },
+              },
+            },
+          },
+        }
+      }),
+    }))
+  }
+
+  // ── Explore ──────────────────────────────────────────────────────────────
+
+  function upExploreToggle(idx, enabled) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) =>
+        i !== idx ? s : {
+          ...s,
+          explore: {
+            ...(s.explore || {}),
+            enabled,
+            startFrom: s.explore?.startFrom || 'base',
+            dimensions: s.explore?.dimensions || [s.dimension],
+          },
+        }
+      ),
+    }))
+  }
+
+  function upExploreStartFrom(idx, startFrom) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) =>
+        i !== idx ? s : {
+          ...s,
+          explore: { ...(s.explore || { enabled: true }), startFrom },
+        }
+      ),
+    }))
+  }
+
   // ── Comparison ───────────────────────────────────────────────────────────
 
   function upCompLabel(idx, lang, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) =>
         i !== idx ? s : {
@@ -149,7 +284,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upCompAlloc(idx, allocId, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) => {
         if (i !== idx || !s.comparison) return s
@@ -166,7 +301,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upCompESG(idx, key, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) =>
         i !== idx ? s : {
@@ -180,7 +315,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upCompSFDR(idx, sfdrIdx, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) => {
         if (i !== idx || !s.comparison) return s
@@ -198,40 +333,31 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  function upCompImpl(idx, key, val) {
-    setDraft(d => ({
+  function upCompImplCat(idx, catId, val) {
+    mark(d => ({
       ...d,
-      scenarios: d.scenarios.map((s, i) =>
-        i !== idx ? s : {
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx || !s.comparison) return s
+        const cats = s.comparison.implementation?.categories || []
+        const exists = cats.find(c => c.id === catId)
+        const newCats = val === ''
+          ? cats.filter(c => c.id !== catId)
+          : exists
+            ? cats.map(c => c.id === catId ? { ...c, weight: Number(val) } : c)
+            : [...cats, { id: catId, weight: Number(val) }]
+        return {
           ...s,
-          comparison: s.comparison
-            ? {
-                ...s.comparison,
-                implementation: { ...(s.comparison.implementation || {}), [key]: val },
-              }
-            : null,
+          comparison: {
+            ...s.comparison,
+            implementation: { ...(s.comparison.implementation || {}), categories: newCats },
+          },
         }
-      ),
+      }),
     }))
   }
-
-  function upCompCosts(idx, val) {
-    setDraft(d => ({
-      ...d,
-      scenarios: d.scenarios.map((s, i) =>
-        i !== idx ? s : {
-          ...s,
-          comparison: s.comparison
-            ? { ...s.comparison, costs: { weightedTer: val } }
-            : null,
-        }
-      ),
-    }))
-  }
-
 
   function upCompSector(idx, sectorId, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) => {
         if (i !== idx || !s.comparison) return s
@@ -248,7 +374,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function upCompCurrency(idx, currency, val) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) => {
         if (i !== idx || !s.comparison) return s
@@ -265,7 +391,7 @@ export function useConfigDraft(initialConfig) {
   }
 
   function toggleComparison(idx) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.map((s, i) => {
         if (i !== idx) return s
@@ -281,6 +407,8 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+  // ── Scenario CRUD ────────────────────────────────────────────────────────
+
   function addScenario(currentLength) {
     const newSc = {
       id: `sc_${Date.now()}`,
@@ -289,33 +417,54 @@ export function useConfigDraft(initialConfig) {
       theme: { en: 'Theme', nl: '', fr: '', de: '' },
       policyQuestion: { en: '', nl: '', fr: '', de: '' },
       dimension: 'asset_class',
-      state: 'base',
+      base: { useEventPortfolio: true },
       comparison: null,
     }
-    setDraft(d => ({ ...d, scenarios: [...d.scenarios, newSc] }))
-    return currentLength // caller uses this as new active index
+    mark(d => ({ ...d, scenarios: [...d.scenarios, newSc] }))
+    return currentLength
   }
 
   function removeScenario(idx) {
-    setDraft(d => ({
+    mark(d => ({
       ...d,
       scenarios: d.scenarios.filter((_, i) => i !== idx),
     }))
   }
 
+  // ── Registry / persistence ───────────────────────────────────────────────
+
+  function markSaved() {
+    setSavedDraft(JSON.parse(JSON.stringify(draft)))
+    setHasUnsavedChanges(false)
+  }
+
+  function discardChanges() {
+    setDraft(JSON.parse(JSON.stringify(savedDraft)))
+    setHasUnsavedChanges(false)
+  }
+
   return {
     draft,
+    hasUnsavedChanges,
     // Event
     upEvent,
     // Portfolio
-    upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR, upSector, upCurrency,
-    // Scenarios
+    upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency,
+    // Use cases
     upScenario, upScenarioLang, upSpeaker,
+    // Base override
+    upBaseToggle, upBaseAlloc, upBaseImplCat,
+    // Framing
+    upFraming,
+    // Explore
+    upExploreToggle, upExploreStartFrom,
     // Comparison
     upCompLabel, upCompAlloc, upCompESG, upCompSFDR,
-    upCompImpl, upCompCosts, toggleComparison,
+    upCompImplCat, toggleComparison,
     upCompSector, upCompCurrency,
     // Scenario CRUD
     addScenario, removeScenario,
+    // Persistence
+    markSaved, discardChanges,
   }
 }

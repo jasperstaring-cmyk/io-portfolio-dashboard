@@ -69,6 +69,16 @@ export default function App() {
     setActiveDimension(null)
   }
 
+  // Apply — update dashboard state, keep configurator open
+  function handleApplyConfig(newConfig) {
+    setConfig(newConfig)
+    setActiveScenarioIndex(0)
+    setShowComparison(false)
+    setActiveDimension(null)
+    setExplorePortfolio(clonePortfolio(newConfig.portfolio))
+  }
+
+  // Save — update dashboard state and close configurator
   function handleSaveConfig(newConfig) {
     setConfig(newConfig)
     setActiveScenarioIndex(0)
@@ -315,6 +325,7 @@ export default function App() {
       {showConfig && (
         <Configurator
           config={config}
+          onApply={handleApplyConfig}
           onSave={handleSaveConfig}
           onClose={() => setShowConfig(false)}
         />

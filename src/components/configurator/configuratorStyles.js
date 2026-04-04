@@ -254,6 +254,26 @@ export const c = {
     width: 6, height: 6, borderRadius: '50%',
     background: '#4ED596', flexShrink: 0,
   },
+
+  // Collapse toggle button
+  collapseBtn: {
+    padding: '4px 10px',
+    background: 'none',
+    border: '1px solid #E0E0DC',
+    borderRadius: 4, cursor: 'pointer',
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.65rem', fontWeight: 700, color: '#8A8A82',
+    marginBottom: 4,
+  },
+  // Discard changes button
+  btnDiscard: {
+    padding: '8px 14px',
+    background: 'none',
+    border: '1px solid rgba(255,255,255,0.18)',
+    borderRadius: 5, cursor: 'pointer',
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)',
+  },
   // Compare delta display
   deltaRow: {
     display: 'flex', alignItems: 'center', gap: 8,

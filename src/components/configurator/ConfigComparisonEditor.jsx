@@ -18,7 +18,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
   const {
     toggleComparison, upCompLabel,
     upCompAlloc, upCompESG, upCompSFDR,
-    upCompImpl, upCompCosts,
+    upCompImplCat,
     upCompSector, upCompCurrency,
   } = updaters
 
@@ -173,65 +173,50 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
           )}
 
           {/* Implementation override — shown when dimension is implementation */}
-          {sc.dimension === 'implementation' && (
-            <div style={{ marginTop: 14 }}>
-              <SubLabel>Implementation override</SubLabel>
-              <TotalBadge
-                values={[
-                  comp.implementation?.active ?? portfolio.implementation.active,
-                  comp.implementation?.passive ?? portfolio.implementation.passive,
-                  comp.implementation?.individual ?? portfolio.implementation.individual,
-                ]}
-                label="Mix total"
-              />
-              <div style={{ marginTop: 8 }}>
-                {[
-                  { key: 'active', label: 'Active %' },
-                  { key: 'passive', label: 'Passive %' },
-                  { key: 'individual', label: 'Individual %' },
-                ].map(f => {
-                  const base = portfolio.implementation[f.key]
-                  const compVal = comp.implementation?.[f.key] ?? base
-                  const delta = compVal - base
+          {sc.dimension === 'implementation' && (() => {
+            const implCats = Array.isArray(portfolio.implementation?.categories)
+              ? portfolio.implementation.categories
+              : Object.entries(portfolio.implementation || {})
+                  .filter(([, v]) => typeof v === 'number')
+                  .map(([id, weight]) => ({ id, weight, label: { en: id } }))
+            const compCats = comp.implementation?.categories || []
+            const total = implCats.map(cat => {
+              const cc = compCats.find(c => c.id === cat.id)
+              return cc ? cc.weight : cat.weight
+            })
+            return (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <SubLabel>Implementation override</SubLabel>
+                  <TotalBadge values={total} label="Mix total" />
+                </div>
+                {implCats.map(cat => {
+                  const label = typeof cat.label === 'object' ? (cat.label.en || cat.id) : (cat.label || cat.id)
+                  const compCat = compCats.find(c => c.id === cat.id)
+                  const compVal = compCat?.weight
+                  const delta = compVal !== undefined ? compVal - cat.weight : 0
                   return (
-                    <div key={f.key} style={c.deltaRow}>
-                      <span style={{ ...c.rowLabel, flex: 1 }}>{f.label}</span>
-                      <span style={c.deltaFrom}>{base}%</span>
+                    <div key={cat.id} style={c.deltaRow}>
+                      <span style={{ ...c.rowLabel, flex: 1 }}>{label}</span>
+                      <span style={c.deltaFrom}>{cat.weight}%</span>
                       <span style={c.deltaArrow}>→</span>
                       <NumInput small
-                        value={comp.implementation?.[f.key] ?? ''}
-                        onChange={v => upCompImpl(idx, f.key, v)} />
+                        value={compVal ?? ''}
+                        onChange={v => upCompImplCat(idx, cat.id, v)} />
                       <span style={{
                         ...c.deltaDiff,
                         color: delta > 0 ? '#4ED596' : delta < 0 ? '#E01B41' : '#8A8A82',
                       }}>
-                        {comp.implementation?.[f.key] !== undefined && delta !== 0
+                        {compVal !== undefined && delta !== 0
                           ? `${delta > 0 ? '+' : ''}${delta}%`
-                          : comp.implementation?.[f.key] !== undefined ? '=' : '—'}
+                          : compVal !== undefined ? '=' : '—'}
                       </span>
                     </div>
                   )
                 })}
-                <div style={{ marginTop: 8 }}>
-                  <Field label="Compare TER (%)" row>
-                    <NumInput small step={0.01}
-                      value={comp.costs?.weightedTer ?? ''}
-                      onChange={v => upCompCosts(idx, v)} />
-                    {comp.costs?.weightedTer !== undefined && (
-                      <span style={{
-                        ...c.deltaDiff,
-                        color: comp.costs.weightedTer < portfolio.costs?.weightedTer
-                          ? '#4ED596' : '#E01B41',
-                      }}>
-                        {comp.costs.weightedTer < portfolio.costs?.weightedTer ? '↓' : '↑'}
-                        {Math.abs((comp.costs.weightedTer - (portfolio.costs?.weightedTer || 0))).toFixed(2)}%
-                      </span>
-                    )}
-                  </Field>
-                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Sector override */}
           {sc.dimension === 'sector' && (
@@ -248,7 +233,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
                   <div key={sec.id} style={c.deltaRow}>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: sec.color }} />
-                      <span style={c.rowLabel}>{sec.label}</span>
+                      <span style={c.rowLabel}>{typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)}</span>
                       <span style={c.helpText}>({sec.weight}%)</span>
                     </div>
                     <span style={c.deltaArrow}>→</span>

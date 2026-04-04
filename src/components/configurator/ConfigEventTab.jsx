@@ -7,14 +7,27 @@ import { useState } from 'react'
 
 const LANGUAGES = ['en', 'nl', 'fr', 'de']
 
+// Haal implementation categories op ongeacht formaat
+function getImplCats(implementation) {
+  if (!implementation) return []
+  if (Array.isArray(implementation.categories)) return implementation.categories
+  return Object.entries(implementation)
+    .filter(([, v]) => typeof v === 'number')
+    .map(([id, weight]) => ({ id, weight,
+      label: { en: id.charAt(0).toUpperCase() + id.slice(1) }
+    }))
+}
+
 export default function ConfigEventTab({ draft, updaters }) {
   const [activeLang, setActiveLang] = useState('en')
-  const { upEvent, upPortfolio, upAlloc, upImpl, upPerf, upESG, upSFDR, upSector, upCurrency } = updaters
+  const { upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency } = updaters
   const p = draft.portfolio
 
-  const allocTotal = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
-  const targetTotal = p.allocations.reduce((s, a) => s + (Number(a.target) || 0), 0)
-  const sfdrTotal = p.esg.sfdr.reduce((s, x) => s + (Number(x.weight) || 0), 0)
+  const allocTotal  = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
+  const targetTotal = p.allocations.reduce((s, a) => s + (Number(a.target)  || 0), 0)
+  const sfdrTotal   = p.esg.sfdr.reduce((s, x) => s + (Number(x.weight) || 0), 0)
+  const implCats    = getImplCats(p.implementation)
+  const implTotal   = implCats.reduce((s, c) => s + (Number(c.weight) || 0), 0)
 
   return (
     <div style={c.grid2}>
@@ -104,9 +117,9 @@ export default function ConfigEventTab({ draft, updaters }) {
                 <span style={c.rowLabel}>{a.label?.en || a.id}</span>
               </div>
               <NumInput small value={a.current} onChange={v => upAlloc(a.id, 'current', v)} />
-              <NumInput small value={a.target} onChange={v => upAlloc(a.id, 'target', v)} />
-              <NumInput small value={a.min} onChange={v => upAlloc(a.id, 'min', v)} />
-              <NumInput small value={a.max} onChange={v => upAlloc(a.id, 'max', v)} />
+              <NumInput small value={a.target}  onChange={v => upAlloc(a.id, 'target',  v)} />
+              <NumInput small value={a.min}     onChange={v => upAlloc(a.id, 'min',     v)} />
+              <NumInput small value={a.max}     onChange={v => upAlloc(a.id, 'max',     v)} />
             </div>
           ))}
         </Section>
@@ -116,22 +129,23 @@ export default function ConfigEventTab({ draft, updaters }) {
       {/* ── Right column ── */}
       <div>
 
-        {/* Implementation mix */}
-        <Section title="Implementation Mix">
-          <TotalBadge
-            values={[p.implementation.active, p.implementation.passive, p.implementation.individual]}
-            label="Mix total"
-          />
+        {/* Implementation mix — reads from categories[] */}
+        <Section
+          title="Implementation Mix"
+          titleRight={<TotalBadge values={implCats.map(c => c.weight)} label="Mix total" />}
+        >
           <div style={{ marginTop: 8 }}>
-            {[
-              { key: 'active', label: 'Active management %' },
-              { key: 'passive', label: 'Passive / ETF %' },
-              { key: 'individual', label: 'Individual securities %' },
-            ].map(f => (
-              <Field key={f.key} label={f.label} row>
-                <NumInput small value={p.implementation[f.key]} onChange={v => upImpl(f.key, v)} />
-              </Field>
-            ))}
+            {implCats.map(cat => {
+              const label = typeof cat.label === 'object'
+                ? (cat.label.en || cat.id)
+                : (cat.label || cat.id)
+              return (
+                <Field key={cat.id} label={`${label} %`} row>
+                  <NumInput small value={cat.weight}
+                    onChange={v => upImplCat(cat.id, 'weight', v)} />
+                </Field>
+              )
+            })}
             <Field label="Weighted avg. TER (%)" row>
               <NumInput small step={0.01}
                 value={p.costs?.weightedTer}
@@ -180,11 +194,11 @@ export default function ConfigEventTab({ draft, updaters }) {
         <Section title="Performance Numbers">
           <div style={c.grid2mini}>
             {[
-              { key: 'ytd', label: 'YTD %' },
-              { key: 'oneYear', label: '1Y %' },
-              { key: 'threeYear', label: '3Y Ann. %' },
-              { key: 'benchmark', label: 'Benchmark %' },
-              { key: 'volatility', label: 'Volatility %' },
+              { key: 'ytd',         label: 'YTD %' },
+              { key: 'oneYear',     label: '1Y %' },
+              { key: 'threeYear',   label: '3Y Ann. %' },
+              { key: 'benchmark',   label: 'Benchmark %' },
+              { key: 'volatility',  label: 'Volatility %' },
               { key: 'maxDrawdown', label: 'Max Drawdown %' },
             ].map(f => (
               <Field key={f.key} label={f.label}>
@@ -201,12 +215,15 @@ export default function ConfigEventTab({ draft, updaters }) {
             <TotalBadge values={(p.sectors || []).map(s => s.weight)} label="Total" />
           }
         >
-          {(p.sectors || []).map((sec, i) => (
-            <Field key={sec.id} label={sec.label} row>
-              <NumInput small value={sec.weight} onChange={v => upSector(i, v)} />
-              <span style={c.unit}>%</span>
-            </Field>
-          ))}
+          {(p.sectors || []).map((sec, i) => {
+            const label = typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)
+            return (
+              <Field key={sec.id} label={label} row>
+                <NumInput small value={sec.weight} onChange={v => upSector(i, v)} />
+                <span style={c.unit}>%</span>
+              </Field>
+            )
+          })}
         </Section>
 
         {/* Currency weights */}
