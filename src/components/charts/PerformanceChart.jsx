@@ -12,7 +12,41 @@ const C = {
   bench:  'rgba(255,255,255,0.22)',
 }
 
-export default function PerformanceChart({ portfolio }) {
+// Genereer synthetische maanddata op basis van KPI-getallen
+// Wordt gebruikt als portfolio.performance.series ontbreekt
+function generateSyntheticSeries(p) {
+  const port  = [100,102.1,101.4,103.8,105.2,103.9,106.1,107.4,105.8,107.2,108.9,104.2 + p.ytd * 0.3]
+  const bench = [100,101.2,100.8,102.4,103.6,102.1,104.3,105.1,103.9,104.8,106.2,103.5 + p.benchmark * 0.3]
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  return { port, bench, labels: months }
+}
+
+// Verwerk echte tijdreeksdata uit portfolio.performance.series
+// Verwacht: [{ month: "2025-01", portfolio: 100.0, benchmark: 100.0 }, ...]
+function processRealSeries(series) {
+  if (!series?.length) return null
+
+  // Normaliseer naar index 100 op het eerste datapunt
+  const base    = series[0].portfolio
+  const baseBch = series[0].benchmark ?? series[0].portfolio
+
+  const port   = series.map(s => (s.portfolio  / base)    * 100)
+  const bench  = series.map(s => ((s.benchmark ?? s.portfolio) / baseBch) * 100)
+
+  // Maandlabels: "2025-01" → "Jan '25" of korte maandnaam
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const labels = series.map(s => {
+    if (!s.month) return ''
+    const parts = s.month.split('-')
+    const m = parseInt(parts[1], 10) - 1
+    const y = parts[0]?.slice(2)
+    return y ? `${MONTHS[m]} '${y}` : MONTHS[m]
+  })
+
+  return { port, bench, labels }
+}
+
+export default function PerformanceChart({ portfolio, comparisonPortfolio, showComparison }) {
   const [drawn, setDrawn] = useState(false)
   const pathRef = useRef(null)
 
@@ -20,70 +54,89 @@ export default function PerformanceChart({ portfolio }) {
     setDrawn(false)
     const t = setTimeout(() => setDrawn(true), 60)
     return () => clearTimeout(t)
-  }, [portfolio.performance.ytd])
+  }, [portfolio.performance.ytd, portfolio.performance.series?.length])
 
   const p = portfolio.performance
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  const port  = [100,102.1,101.4,103.8,105.2,103.9,106.1,107.4,105.8,107.2,108.9,104.2 + p.ytd * 0.3]
-  const bench = [100,101.2,100.8,102.4,103.6,102.1,104.3,105.1,103.9,104.8,106.2,103.5 + p.benchmark * 0.3]
 
-  const all  = [...port, ...bench]
+  // Gebruik echte tijdreeks als beschikbaar, anders synthetisch
+  const seriesData = p.series?.length
+    ? processRealSeries(p.series)
+    : generateSyntheticSeries(p)
+
+  const { port, bench, labels } = seriesData
+
+  // Als compare actief is en compare-portfolio ook een series heeft, toon die ook
+  const compP = showComparison ? comparisonPortfolio?.performance : null
+  const compSeriesRaw = compP?.series?.length ? processRealSeries(compP.series) : null
+
+  const all  = [...port, ...bench, ...(compSeriesRaw ? compSeriesRaw.port : [])]
   const minV = Math.min(...all) - 0.8
   const maxV = Math.max(...all) + 0.8
   const range = maxV - minV
 
   const W = 520, H = 200
   const pL = 46, pR = 36, pT = 16, pB = 36
+  const n = labels.length
 
-  function tx(i) { return pL + (i / (months.length - 1)) * (W - pL - pR) }
+  function tx(i) { return pL + (i / Math.max(n - 1, 1)) * (W - pL - pR) }
   function ty(v)  { return pT + (1 - (v - minV) / range) * (H - pT - pB) }
-  function linePath(data) { return data.map((v, i) => `${i === 0 ? 'M' : 'L'} ${tx(i)} ${ty(v)}`).join(' ') }
+  function linePath(data) {
+    return data.map((v, i) => `${i === 0 ? 'M' : 'L'} ${tx(i)} ${ty(v)}`).join(' ')
+  }
   function areaPath(data) {
-    return `${tx(0)},${H - pB} ${data.map((v, i) => `${tx(i)},${ty(v)}`).join(' ')} ${tx(months.length - 1)},${H - pB}`
+    return `${tx(0)},${H - pB} ${data.map((v, i) => `${tx(i)},${ty(v)}`).join(' ')} ${tx(n - 1)},${H - pB}`
   }
 
-  // Metrics: kleur op basis van werkelijke waarde, niet hardcoded
+  // Metrics
   const alpha = (p.ytd - p.benchmark).toFixed(1)
   const metrics = [
-    { label: 'YTD Return',    value: `${p.ytd >= 0 ? '+' : ''}${p.ytd}%`,         color: p.ytd >= 0 ? C.green : C.red },
-    { label: '1Y Return',     value: `${p.oneYear >= 0 ? '+' : ''}${p.oneYear}%`,  color: p.oneYear >= 0 ? C.green : C.red },
-    { label: '3Y Ann.',       value: `${p.threeYear >= 0 ? '+' : ''}${p.threeYear}%`, color: p.threeYear >= 0 ? C.green : C.red },
-    { label: 'vs Benchmark',  value: `${alpha >= 0 ? '+' : ''}${alpha}%`,          color: alpha >= 0 ? C.green : C.red },
-    { label: 'Volatility',    value: `${p.volatility}%`,                            color: C.white },
-    { label: 'Max Drawdown',  value: `${p.maxDrawdown}%`,                           color: C.red },
+    { label: 'YTD Return',   value: `${p.ytd >= 0 ? '+' : ''}${p.ytd}%`,            color: p.ytd >= 0 ? C.green : C.red },
+    { label: '1Y Return',    value: `${p.oneYear >= 0 ? '+' : ''}${p.oneYear}%`,     color: p.oneYear >= 0 ? C.green : C.red },
+    { label: '3Y Ann.',      value: `${p.threeYear >= 0 ? '+' : ''}${p.threeYear}%`, color: p.threeYear >= 0 ? C.green : C.red },
+    { label: 'vs Benchmark', value: `${alpha >= 0 ? '+' : ''}${alpha}%`,             color: alpha >= 0 ? C.green : C.red },
+    { label: 'Volatility',   value: `${p.volatility}%`,                              color: C.white },
+    { label: 'Max Drawdown', value: `${p.maxDrawdown}%`,                             color: C.red },
   ]
 
-  const endX = tx(months.length - 1)
+  const endX = tx(n - 1)
   const endY = ty(port[port.length - 1])
+
+  // Label: toon of data synthetisch of echt is
+  const isReal = !!p.series?.length
+  const chartLabel = isReal
+    ? `PORTFOLIO PERFORMANCE — ${labels[0]} → ${labels[labels.length - 1]} (INDEXED TO 100)`
+    : 'PORTFOLIO PERFORMANCE — YTD (INDEXED TO 100)'
 
   return (
     <div style={s.wrap}>
 
-      {/* ── Chart column ──────────────────────────────────────────────── */}
+      {/* ── Chart column ── */}
       <div style={s.chartCol}>
-        <div style={s.topLabel}>PORTFOLIO PERFORMANCE — YTD (INDEXED TO 100)</div>
+        <div style={s.topLabel}>{chartLabel}</div>
 
         <div style={s.svgWrap}>
           <svg viewBox={`0 0 ${W} ${H}`} style={s.svg} preserveAspectRatio="xMidYMid meet">
             <defs>
-              {/* Groene area-gradient */}
               <linearGradient id="perf-area" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stopColor={C.green} stopOpacity="0.20" />
                 <stop offset="100%" stopColor={C.green} stopOpacity="0" />
               </linearGradient>
-              {/* Radiale gloed achter eindpunt portfoliolijn */}
               <radialGradient id="perf-glow" cx="50%" cy="50%" r="50%">
                 <stop offset="0%"   stopColor={C.green} stopOpacity="0.22" />
                 <stop offset="100%" stopColor={C.green} stopOpacity="0" />
               </radialGradient>
-              {/* Achtergrondgloed over de gehele grafiek — subtiel, linksboven */}
               <radialGradient id="perf-bg-glow" cx="70%" cy="30%" r="55%">
                 <stop offset="0%"   stopColor={C.green} stopOpacity="0.04" />
                 <stop offset="100%" stopColor={C.green} stopOpacity="0" />
               </radialGradient>
+              {compSeriesRaw && (
+                <linearGradient id="perf-area-comp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#F5A623" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#F5A623" stopOpacity="0" />
+                </linearGradient>
+              )}
             </defs>
 
-            {/* Achtergrondgloed */}
             <rect x={pL} y={pT} width={W - pL - pR} height={H - pT - pB}
               fill="url(#perf-bg-glow)" />
 
@@ -103,25 +156,44 @@ export default function PerformanceChart({ portfolio }) {
               )
             })}
 
-            {/* Maandlabels */}
-            {months.map((m, i) => (
-              <text key={m} x={tx(i)} y={H - 8} textAnchor="middle"
-                fontFamily="'Merriweather Sans', sans-serif" fontSize="8"
-                fill={C.muted}>
-                {m}
-              </text>
-            ))}
+            {/* X-labels — toon subset als veel datapunten */}
+            {labels.map((m, i) => {
+              // Toon max 12 labels, altijd eerste en laatste
+              const step = Math.max(1, Math.floor(n / 12))
+              if (i % step !== 0 && i !== n - 1) return null
+              return (
+                <text key={i} x={tx(i)} y={H - 8} textAnchor="middle"
+                  fontFamily="'Merriweather Sans', sans-serif" fontSize="8"
+                  fill={C.muted}>
+                  {m}
+                </text>
+              )
+            })}
 
             {/* Baseline 100 */}
             <line x1={pL} y1={ty(100)} x2={W - pR} y2={ty(100)}
               stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="4 3" />
+
+            {/* Compare lijn — als vergelijkingsportfolio ook tijdreeks heeft */}
+            {compSeriesRaw && (
+              <>
+                <polygon points={areaPath(compSeriesRaw.port)} fill="url(#perf-area-comp)"
+                  opacity={drawn ? 0.6 : 0}
+                  style={{ transition: drawn ? 'opacity 0.9s ease 0.3s' : 'none' }} />
+                <path d={linePath(compSeriesRaw.port)} fill="none"
+                  stroke="#F5A623" strokeWidth="1.8"
+                  strokeDasharray="6 3" strokeLinecap="round"
+                  opacity={drawn ? 0.7 : 0}
+                  style={{ transition: drawn ? 'opacity 0.5s ease 0.2s' : 'none' }} />
+              </>
+            )}
 
             {/* Area onder portfoliolijn */}
             <polygon points={areaPath(port)} fill="url(#perf-area)"
               opacity={drawn ? 1 : 0}
               style={{ transition: drawn ? 'opacity 0.9s ease 0.3s' : 'none' }} />
 
-            {/* Benchmarklijn — gestippeld, teruggetrokken */}
+            {/* Benchmarklijn */}
             <path d={linePath(bench)} fill="none"
               stroke={C.bench} strokeWidth="1.5"
               strokeDasharray="5 3" strokeLinecap="round" />
@@ -175,17 +247,28 @@ export default function PerformanceChart({ portfolio }) {
             <div style={{ width: 22, height: 2, background: 'repeating-linear-gradient(90deg,rgba(255,255,255,0.22) 0,rgba(255,255,255,0.22) 5px,transparent 5px,transparent 8px)' }} />
             <span style={s.lt}>Benchmark</span>
           </div>
+          {compSeriesRaw && (
+            <div style={s.li}>
+              <div style={{ width: 22, height: 2, background: 'repeating-linear-gradient(90deg,#F5A623 0,#F5A623 6px,transparent 6px,transparent 9px)' }} />
+              <span style={s.lt}>Compare</span>
+            </div>
+          )}
+          {!isReal && (
+            <span style={{ ...s.lt, opacity: 0.45, fontStyle: 'italic' }}>
+              — indicative data
+            </span>
+          )}
         </div>
       </div>
 
-      {/* ── Metrics column ────────────────────────────────────────────── */}
+      {/* ── Metrics column ── */}
       <div style={s.metricsCol}>
         <div style={s.topLabel}>KEY METRICS</div>
 
-        {/* ── Alpha card — prominent, apart van het grid ── */}
+        {/* Alpha card */}
         {(() => {
-          const alphaMet = metrics.find(m => m.label === 'vs Benchmark')
-          const alphaPos = parseFloat(alpha) >= 0
+          const alphaMet  = metrics.find(m => m.label === 'vs Benchmark')
+          const alphaPos  = parseFloat(alpha) >= 0
           return (
             <div style={{
               ...s.alphaCard,
@@ -205,7 +288,7 @@ export default function PerformanceChart({ portfolio }) {
           )
         })()}
 
-        {/* ── Overige 5 metrics in grid ── */}
+        {/* Overige 5 metrics */}
         <div style={s.grid}>
           {metrics.filter(m => m.label !== 'vs Benchmark').map(m => (
             <div key={m.label} style={{
@@ -233,90 +316,42 @@ export default function PerformanceChart({ portfolio }) {
 }
 
 const s = {
-  wrap: {
-    display: 'flex', gap: 32,
-    height: '100%', width: '100%',
-    alignItems: 'stretch',
-  },
-  chartCol: {
-    flex: 1, display: 'flex', flexDirection: 'column',
-    gap: 10, minWidth: 0, minHeight: 0,
-  },
+  wrap: { display: 'flex', gap: 32, height: '100%', width: '100%', alignItems: 'stretch' },
+  chartCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0 },
   topLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
-    flexShrink: 0,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em', flexShrink: 0,
   },
-  svgWrap: {
-    flex: 1, minHeight: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-  },
+  svgWrap: { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   svg: { width: '100%', height: '100%', display: 'block', overflow: 'visible' },
-  legend: { display: 'flex', gap: 20, flexShrink: 0 },
-  li:     { display: 'flex', alignItems: 'center', gap: 7 },
-  ll:     { width: 22, height: 2.5, borderRadius: 1 },
-  lt:     {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)',
-  },
-
-  // Metrics
-  metricsCol: {
-    width: 220, flexShrink: 0,
-    display: 'flex', flexDirection: 'column',
-    gap: 10, justifyContent: 'flex-start',
-  },
-  // Alpha — prominente kaart bovenaan, vol breed
+  legend: { display: 'flex', gap: 20, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' },
+  li:  { display: 'flex', alignItems: 'center', gap: 7 },
+  ll:  { width: 22, height: 2.5, borderRadius: 1 },
+  lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)' },
+  metricsCol: { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
   alphaCard: {
-    border: '1px solid',
-    borderRadius: 8,
-    padding: '12px 16px',
-    flexShrink: 0,
+    border: '1px solid', borderRadius: 8, padding: '12px 16px', flexShrink: 0,
     display: 'flex', flexDirection: 'column', gap: 4,
     transition: 'border-color 0.4s ease, background 0.4s ease',
   },
   alphaLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.55rem', fontWeight: 700,
-    color: 'rgba(255,255,255,0.35)',
-    letterSpacing: '0.08em', textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase',
   },
-  alphaVal: {
-    fontFamily: "'Merriweather', serif",
-    fontSize: '2.2rem', fontWeight: 700,
-    lineHeight: 1, letterSpacing: '-0.02em',
-  },
-  alphaSub: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', fontWeight: 600,
-    opacity: 0.7,
-  },
-  grid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
-    flex: 1,
-  },
+  alphaVal:  { fontFamily: "'Merriweather', serif", fontSize: '2.2rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+  alphaSub:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.62rem', fontWeight: 600, opacity: 0.7 },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1 },
   card: {
-    border: '1px solid',
-    borderRadius: 8,
-    padding: '14px 14px 12px',
-    display: 'flex', flexDirection: 'column',
-    gap: 6,
+    border: '1px solid', borderRadius: 8, padding: '14px 14px 12px',
+    display: 'flex', flexDirection: 'column', gap: 6,
     transition: 'border-color 0.4s ease',
   },
   cLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.55rem', fontWeight: 700,
-    color: 'rgba(255,255,255,0.28)',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    lineHeight: 1.3,
+    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3,
   },
-  // Waarden zijn groot en dominant — dit is de kern van de metrics-kaart
-  cVal: {
-    fontFamily: "'Merriweather', serif",
-    fontSize: '1.55rem', fontWeight: 700,
-    lineHeight: 1,
-    letterSpacing: '-0.02em',
-  },
+  cVal: { fontFamily: "'Merriweather', serif", fontSize: '1.55rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
 }

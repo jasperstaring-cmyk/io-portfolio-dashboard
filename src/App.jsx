@@ -10,7 +10,11 @@ import { resolveRegistry } from './utils/resolveUseCase'
 import './styles/global.css'
 
 // Laad het actieve event uit de registry
-const { event: initialEvent, usecases: initialUsecases } = resolveRegistry(rawRegistry)
+const {
+  event: initialEvent,
+  usecases: initialUsecases,
+  allEvents: allRegistryEvents,
+} = resolveRegistry(rawRegistry)
 
 // Normaliseert een use case zodat zowel 'compare' (v1.1) als 'comparison' (v1.0)
 // altijd beide aanwezig zijn — bestaande componenten lezen nog 'comparison',
@@ -48,6 +52,8 @@ export default function App() {
   const [config, setConfig] = useState(
     buildLegacyConfig(initialEvent, initialUsecases)
   )
+  const [allEvents] = useState(allRegistryEvents || [])
+  const [activeEventId, setActiveEventId] = useState(initialEvent?.id || null)
   const [activeScenarioIndex, setActiveScenarioIndex] = useState(0)
   const [showComparison, setShowComparison] = useState(false)
   const [activeDimension, setActiveDimension] = useState(null)
@@ -67,6 +73,21 @@ export default function App() {
     setActiveScenarioIndex(i)
     setShowComparison(false)
     setActiveDimension(null)
+  }
+
+  // Select event from registry
+  function handleSelectEvent(eventId) {
+    if (!allEvents?.length) return
+    const event = allEvents.find(e => e.id === eventId)
+    if (!event) return
+    const usecases = event.usecases || event.scenarios || []
+    setConfig(buildLegacyConfig(event, usecases))
+    setActiveEventId(eventId)
+    setActiveScenarioIndex(0)
+    setShowComparison(false)
+    setActiveDimension(null)
+    setIdleMode(true)
+    setExplorePortfolio(clonePortfolio(event.portfolio))
   }
 
   // Apply — update dashboard state, keep configurator open
@@ -274,6 +295,9 @@ export default function App() {
             activeScenario={activeScenario}
             lang={lang}
             onEnterExplore={handleEnterExplore}
+            allEvents={allEvents}
+            activeEventId={activeEventId}
+            onSelectEvent={handleSelectEvent}
           />
         )}
 

@@ -41,10 +41,42 @@ export default function OperatorPanel({
   scenarios, activeIndex, onSelectScenario,
   showComparison, onToggleComparison,
   activeDimension, onSelectDimension,
-  activeScenario, lang, onEnterExplore
+  activeScenario, lang, onEnterExplore,
+  allEvents, activeEventId, onSelectEvent,
 }) {
   return (
     <div style={styles.panel}>
+
+      {/* ── Event selector — only shown if multiple events available ── */}
+      {allEvents?.length > 1 && (
+        <>
+          <div style={styles.section}>
+            <div style={styles.sectionLabel}>EVENT</div>
+            <div style={styles.row}>
+              <select
+                value={activeEventId || ''}
+                onChange={e => onSelectEvent(e.target.value)}
+                style={{
+                  fontFamily: "'Merriweather Sans', sans-serif",
+                  fontSize: '0.7rem', fontWeight: 700,
+                  color: '#0C182E', background: '#FFFFFF',
+                  border: '1.5px solid #E0E0DC', borderRadius: 6,
+                  padding: '6px 10px', cursor: 'pointer',
+                  minWidth: 160,
+                }}
+              >
+                {allEvents.map(e => (
+                  <option key={e.id} value={e.id}>
+                    {e.name || e.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={styles.vDivider} />
+        </>
+      )}
+
       <div style={styles.section}>
         <div style={styles.sectionLabel}>SCENARIOS</div>
         <div style={styles.row}>
