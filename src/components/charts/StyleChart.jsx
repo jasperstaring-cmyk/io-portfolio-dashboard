@@ -12,7 +12,7 @@ function heatColor(weight, max) {
   return `rgba(245,166,35,${0.28 + (t - 0.60) * 0.95})`
 }
 
-export default function StyleChart({ portfolio, scenario, showComparison }) {
+export default function StyleChart({ portfolio, comparisonPortfolio, showComparison }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -26,8 +26,8 @@ export default function StyleChart({ portfolio, scenario, showComparison }) {
   const styleData = portfolio.style?.matrix || []
 
   function getComp(id) {
-    if (!showComparison || !scenario?.comparison?.style) return null
-    const found = scenario.comparison.style.find(s => s.id === id)
+    if (!showComparison || !comparisonPortfolio?.style) return null
+    const found = comparisonPortfolio.style.find(s => s.id === id)
     return found != null ? found.weight : null
   }
 

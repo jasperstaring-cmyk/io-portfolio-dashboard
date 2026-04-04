@@ -22,7 +22,7 @@ const META = {
 // TOP_N: hoeveel sectoren groot worden getoond
 const TOP_N = 3
 
-export default function SectorChart({ portfolio, scenario, showComparison, lang }) {
+export default function SectorChart({ portfolio, comparisonPortfolio, showComparison, lang }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -38,8 +38,8 @@ export default function SectorChart({ portfolio, scenario, showComparison, lang 
   const sectors = portfolio.sectors || []
 
   function getComp(id) {
-    if (!showComparison || !scenario?.comparison?.sectors) return null
-    const found = scenario.comparison.sectors.find(s => s.id === id)
+    if (!showComparison || !comparisonPortfolio?.sectors) return null
+    const found = comparisonPortfolio.sectors.find(s => s.id === id)
     return found != null ? found.weight : null
   }
 

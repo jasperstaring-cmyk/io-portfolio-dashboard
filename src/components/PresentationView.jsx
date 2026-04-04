@@ -8,17 +8,18 @@ import SectorChart from './charts/SectorChart'
 import CurrencyChart from './charts/CurrencyChart'
 import StyleChart from './charts/StyleChart'
 import CostChart from './charts/CostChart'
+import { resolveUseCase } from '../utils/resolveUseCase'
 
 const DIMENSIONS = {
-  asset_class: AssetClassChart,
-  geography: GeographyChart,
-  esg: ESGChart,
+  asset_class:    AssetClassChart,
+  geography:      GeographyChart,
+  esg:            ESGChart,
   implementation: ImplementationChart,
-  performance: PerformanceChart,
-  sector: SectorChart,
-  currency: CurrencyChart,
-  style: StyleChart,
-  cost: CostChart,
+  performance:    PerformanceChart,
+  sector:         SectorChart,
+  currency:       CurrencyChart,
+  style:          StyleChart,
+  cost:           CostChart,
 }
 
 export default function PresentationView({
@@ -32,11 +33,23 @@ export default function PresentationView({
     return () => clearTimeout(t)
   }, [scenario?.id, activeDimension])
 
+  // Stap 3: resolveUseCase produceert opgeloste base en compare
+  // Event-object wordt geconstrueerd met de portfolio als baseline
+  const resolvedEvent = { ...event, portfolio }
+  const { resolvedBase, resolvedCompare, resolvedFraming } = resolveUseCase(
+    resolvedEvent,
+    scenario || {},
+    { activeDimension: activeDimension || scenario?.dimension }
+  )
+
   const ChartComponent = DIMENSIONS[activeDimension] || AssetClassChart
   const policyQuestion = scenario?.policyQuestion?.[lang] || scenario?.policyQuestion?.en
-  const themeName = scenario?.theme?.[lang] || scenario?.theme?.en
-  const compLabel = scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
-  const sp = scenario?.speakerProfile
+  const themeName      = scenario?.theme?.[lang]           || scenario?.theme?.en
+  const compLabel      = scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
+  const sp             = scenario?.speakerProfile
+
+  // comparisonPortfolio is null als compare uitstaat of niet beschikbaar
+  const comparisonPortfolio = showComparison ? resolvedCompare : null
 
   return (
     <div style={s.container}>
@@ -45,7 +58,6 @@ export default function PresentationView({
 
       {/* ── HEADER ── */}
       <div style={s.header}>
-        {/* Logo — left */}
         <div style={s.logoWrap}>
           <img src="/io_horizontal_white@10x.png" alt="Investment Officer"
             style={s.logo}
@@ -56,10 +68,8 @@ export default function PresentationView({
           </div>
         </div>
 
-        {/* Event name — centre */}
         <div style={s.eventName}>{event.name}</div>
 
-        {/* Speaker profile — right */}
         {sp ? (
           <div style={s.speakerBlock}>
             <span style={s.nowDot}>● NOW</span>
@@ -72,7 +82,6 @@ export default function PresentationView({
         )}
       </div>
 
-      {/* Red accent line */}
       <div style={s.redLine} />
 
       {/* ── POLICY QUESTION ── */}
@@ -100,9 +109,10 @@ export default function PresentationView({
         transition: 'opacity 0.52s ease 0.07s, transform 0.52s ease 0.07s',
       }}>
         <ChartComponent
-          portfolio={portfolio}
-          scenario={scenario}
-          showComparison={showComparison}
+          portfolio={resolvedBase}
+          comparisonPortfolio={comparisonPortfolio}
+          showComparison={showComparison && !!comparisonPortfolio}
+          framing={resolvedFraming}
           lang={lang}
         />
       </div>
@@ -141,8 +151,6 @@ const s = {
     background: 'radial-gradient(ellipse, rgba(224,27,65,0.05) 0%, transparent 65%)',
     pointerEvents: 'none', zIndex: 0,
   },
-
-  // Header: three-column layout
   header: {
     display: 'flex', alignItems: 'center',
     justifyContent: 'space-between',
@@ -154,7 +162,7 @@ const s = {
     minWidth: '220px',
   },
   logo: {
-    height: '44px',   // prominent but not dominating
+    height: '44px',
     width: 'auto', objectFit: 'contain',
   },
   fallbackIo: {
@@ -166,8 +174,6 @@ const s = {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)',
   },
-
-  // Event name — centre, elegant but not overpowering
   eventName: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '1.05rem', fontWeight: 800,
@@ -176,8 +182,6 @@ const s = {
     textAlign: 'center',
     flex: 1,
   },
-
-  // Speaker block — right-aligned, compact 4-line card
   speakerBlock: {
     display: 'flex', flexDirection: 'column',
     alignItems: 'flex-end', gap: '2px',
@@ -203,15 +207,12 @@ const s = {
     fontSize: '0.68rem', fontWeight: 600,
     color: 'rgba(255,255,255,0.38)',
   },
-
   redLine: {
     height: '2px',
     background: 'linear-gradient(90deg, #E01B41 0%, rgba(224,27,65,0.22) 65%, transparent 100%)',
     marginBottom: '16px',
     flexShrink: 0, position: 'relative', zIndex: 1,
   },
-
-  // Policy block — generous space, the heart of the screen
   policyBlock: {
     marginBottom: '18px',
     position: 'relative', zIndex: 1, flexShrink: 0,
@@ -249,13 +250,11 @@ const s = {
     lineHeight: 1.28, letterSpacing: '-0.025em',
     maxWidth: '86%',
   },
-
   chartArea: {
     flex: 1, position: 'relative', zIndex: 1,
     minHeight: 0, overflow: 'hidden',
     display: 'flex', alignItems: 'stretch',
   },
-
   footer: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -264,13 +263,11 @@ const s = {
   },
   footerLeft: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.65)',
-    letterSpacing: '0.01em',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
   },
   footerRight: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)',
+    fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)',
     fontWeight: 500,
   },
 }

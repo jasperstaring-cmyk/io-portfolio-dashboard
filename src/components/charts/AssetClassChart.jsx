@@ -74,7 +74,7 @@ function deltaBadgePos(midDeg, ex, ey) {
   return { bx, by }
 }
 
-export default function AssetClassChart({ portfolio, scenario, showComparison, lang }) {
+export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, lang }) {
   const { tooltip, showTooltip, hideTooltip } = useTooltip()
   const [animated,   setAnimated]   = useState(false)
   const [selectedId, setSelectedId] = useState(null)
@@ -93,8 +93,8 @@ export default function AssetClassChart({ portfolio, scenario, showComparison, l
   const allocations = portfolio.allocations
 
   function getComp(id) {
-    if (!showComparison || !scenario?.comparison?.allocations) return null
-    return scenario.comparison.allocations.find(a => a.id === id)?.current ?? null
+    if (!showComparison || !comparisonPortfolio?.allocations) return null
+    return comparisonPortfolio.allocations.find(a => a.id === id)?.current ?? null
   }
 
   const activeAllocs = allocations.map(a => {

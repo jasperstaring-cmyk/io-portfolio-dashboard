@@ -61,7 +61,7 @@ function getLabel(val, lang = 'en') {
   return val[lang] || val.en || Object.values(val)[0] || ''
 }
 
-export default function ImplementationChart({ portfolio, scenario, showComparison, lang = 'en' }) {
+export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, lang = 'en' }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -77,10 +77,8 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
   // Haal base categories op
   const baseCategories = getCategories(portfolio.implementation)
 
-  // Haal compare categories op — ondersteunt zowel comparison (v1.0) als compare (v1.1)
-  const compImpl = showComparison
-    ? (scenario?.comparison?.implementation || scenario?.compare?.implementation)
-    : null
+  // Haal compare categories op uit comparisonPortfolio
+  const compImpl = showComparison ? comparisonPortfolio?.implementation : null
   const compCategories = compImpl ? getCategories(compImpl) : null
 
   // Bouw segmenten — base categories zijn leidend voor volgorde en labels

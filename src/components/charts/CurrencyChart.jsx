@@ -15,7 +15,7 @@ const BAR_WIDTH    = 520   // px — vaste breedte
 const TOTAL_HEIGHT = 340   // px — iets hoger voor meer ruimte kleine segmenten
 const MIN_SEG_H    = 40    // px — ruimer minimum zodat labels leesbaar blijven
 
-export default function CurrencyChart({ portfolio, scenario, showComparison }) {
+export default function CurrencyChart({ portfolio, comparisonPortfolio, showComparison }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -28,7 +28,7 @@ export default function CurrencyChart({ portfolio, scenario, showComparison }) {
 
   const homeCurrency   = portfolio.currency || 'EUR'
   const rawCurrencies  = portfolio.currencies || []
-  const compCurrencies = showComparison ? scenario?.comparison?.currencies : null
+  const compCurrencies = showComparison ? comparisonPortfolio?.currencies : null
 
   // Schaal altijd naar 100%
   const rawActive = rawCurrencies.map(c => {

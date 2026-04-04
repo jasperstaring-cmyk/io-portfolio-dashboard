@@ -31,7 +31,7 @@ function scoreColor(s) {
   return '#E01B41'
 }
 
-export default function ESGChart({ portfolio, scenario, showComparison }) {
+export default function ESGChart({ portfolio, comparisonPortfolio, showComparison }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -45,7 +45,7 @@ export default function ESGChart({ portfolio, scenario, showComparison }) {
   }, [showComparison])
 
   const esg     = portfolio.esg
-  const compEsg = showComparison ? scenario?.comparison?.esg : null
+  const compEsg = showComparison ? comparisonPortfolio?.esg : null
   const active  = compEsg || esg
 
   // Gauge geometrie

@@ -83,7 +83,7 @@ function loadDeps() {
   return Promise.all([d3Promise, topojsonPromise, worldPromise])
 }
 
-export default function GeographyChart({ portfolio, scenario, showComparison }) {
+export default function GeographyChart({ portfolio, comparisonPortfolio, showComparison }) {
   const svgRef = useRef(null)
 
   // baseMap: altijd berekend uit originele allocaties
@@ -91,15 +91,8 @@ export default function GeographyChart({ portfolio, scenario, showComparison }) 
   const activeMap = portfolio.geoOverride ? portfolio.geoOverride : baseMap
 
   const compMap = {}
-  if (showComparison && scenario?.comparison?.allocations) {
-    const compAllocs = portfolio.allocations.map(a => {
-      const comp = scenario.comparison.allocations.find(c => c.id === a.id)
-      return {
-        current:    comp?.current ?? a.current,
-        geographic: comp?.geographic || a.geographic,
-      }
-    })
-    Object.assign(compMap, buildGeoMap(compAllocs))
+  if (showComparison && comparisonPortfolio?.allocations) {
+    Object.assign(compMap, buildGeoMap(comparisonPortfolio.allocations))
   }
 
   const hasCompData = showComparison && Object.keys(compMap).length > 0

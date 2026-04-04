@@ -20,7 +20,7 @@ function resolveLabel(label, lang = 'en') {
 const MAX_TER = 1.2
 const PORTFOLIO_SIZE = 1_000_000
 
-export default function CostChart({ portfolio, scenario, showComparison, lang = 'en' }) {
+export default function CostChart({ portfolio, comparisonPortfolio, showComparison, lang = 'en' }) {
   const [animated, setAnimated] = useState(false)
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function CostChart({ portfolio, scenario, showComparison, lang = 
   }, [showComparison])
 
   const costs        = portfolio?.costs ?? {}
-  const compCosts    = showComparison ? scenario?.comparison?.costs : null
+  const compCosts    = showComparison ? comparisonPortfolio?.costs : null
   const activeCosts  = compCosts || costs
 
   const baseBreakdown = costs?.breakdown || []
