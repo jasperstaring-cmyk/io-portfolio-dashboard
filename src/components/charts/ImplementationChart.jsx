@@ -61,7 +61,7 @@ function getLabel(val, lang = 'en') {
   return val[lang] || val.en || Object.values(val)[0] || ''
 }
 
-export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, lang = 'en' }) {
+export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, framing, lang = 'en' }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -92,10 +92,15 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
       ? compCategories.reduce((s, c) => s + (c.weight || 0), 0) || 100
       : baseTotal
 
+    // Framing overschrijft label/sub voor deze use case
+    const catFraming = framing?.[cat.id]
+    const labelVal = catFraming?.label ?? cat.label
+    const subVal   = catFraming?.sub   ?? cat.sub
+
     return {
       id:       cat.id,
-      label:    getLabel(cat.label, lang),
-      sub:      getLabel(cat.sub,   lang),
+      label:    getLabel(labelVal, lang),
+      sub:      getLabel(subVal,   lang),
       color:    cat.color || FALLBACK_COLORS[cat.id] || '#8A8A82',
       baseVal:  Math.round((cat.weight / baseTotal) * 100),
       val:      Math.round((activeWeight / compTotal) * 100),
