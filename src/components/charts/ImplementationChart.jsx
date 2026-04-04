@@ -1,30 +1,68 @@
 import { useState, useEffect, useRef } from 'react'
 
-// Categoriekleuren — neutraal, geen statusoordeel
-// Active/Passive/Individual zijn implementatiekeuzes, niet goed/slecht
-// Groen (#4ED596) is GERESERVEERD voor compare/delta/besparingen
-const IMPL_COLORS = {
+// ImplementationChart — v1.1
+//
+// Leest implementation.categories[] uit de portfolio (v1.1 formaat).
+// Labels, sub-omschrijvingen en kleuren komen volledig uit de config —
+// geen hardcoded ITEMS meer. Framing per use case wordt ondersteund
+// via de resolvedFraming prop (optioneel, toekomstige stap).
+//
+// Kostenvergelijking is de verantwoordelijkheid van CostChart.
+// Het TER-blok is verwijderd uit deze component.
+//
+// Kleurlogica:
+// Groen (#4ED596) = stijging (delta > 0)
+// Rood  (#E01B41) = daling  (delta < 0)
+// Categoriekleuren komen uit de config — geen statusoordeel
+
+const PORTFOLIO_SIZE = 1_000_000
+
+// Drempelwaarden voor labels boven de balk
+const MIN_PCT_FOR_SUBLABEL  = 18
+const MIN_PCT_FOR_NAMELABEL = 10
+
+// Fallback-kleuren voor bekende ids als color ontbreekt in de config
+const FALLBACK_COLORS = {
   active:     '#E01B41',
   passive:    '#5B8DEF',
   individual: '#F5A623',
 }
 
-const ITEMS = [
-  { id: 'active',     label: 'Active Management',    sub: 'Alpha-seeking, manager discretion' },
-  { id: 'passive',    label: 'Passive / ETF',         sub: 'Index-tracking, market beta'       },
-  { id: 'individual', label: 'Individual Securities', sub: 'Direct stock & bond holdings'      },
-]
+// Haal categories op uit implementation — ondersteunt zowel v1.1 (categories[])
+// als v1.0 (plat object met active/passive/individual als getallen)
+function getCategories(implementation) {
+  if (!implementation) return []
 
-const PORTFOLIO_SIZE = 1_000_000
+  // v1.1 formaat
+  if (Array.isArray(implementation.categories)) {
+    return implementation.categories
+  }
 
-// Drempelwaarden voor labels in de balk en boven de balk
-const MIN_PCT_FOR_SUBLABEL  = 18   // sub-omschrijving verdwijnt onder dit %
-const MIN_PCT_FOR_NAMELABEL = 10   // naam verdwijnt onder dit %
-const MIN_PCT_FOR_TER       = 14   // TER in balk verdwijnt onder dit %
+  // v1.0 formaat — converteer naar categories-structuur met fallback labels
+  const LEGACY_LABELS = {
+    active:     { label: { en: 'Active Management'    }, sub: { en: 'Alpha-seeking, manager discretion' }, color: '#E01B41' },
+    passive:    { label: { en: 'Passive / ETF'         }, sub: { en: 'Index-tracking, market beta'       }, color: '#5B8DEF' },
+    individual: { label: { en: 'Individual Securities' }, sub: { en: 'Direct stock & bond holdings'      }, color: '#F5A623' },
+  }
 
-export default function ImplementationChart({ portfolio, scenario, showComparison }) {
-  const [animated,    setAnimated]    = useState(false)
-  const [costVisible, setCostVisible] = useState(false)
+  return Object.entries(implementation)
+    .filter(([key]) => typeof implementation[key] === 'number')
+    .map(([id, weight]) => ({
+      id,
+      weight,
+      ...(LEGACY_LABELS[id] || { label: { en: id }, sub: { en: '' }, color: '#8A8A82' }),
+    }))
+}
+
+// Haal een gelokaliseerde string op uit een i18n-object of directe string
+function getLabel(val, lang = 'en') {
+  if (!val) return ''
+  if (typeof val === 'string') return val
+  return val[lang] || val.en || Object.values(val)[0] || ''
+}
+
+export default function ImplementationChart({ portfolio, scenario, showComparison, lang = 'en' }) {
+  const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
   useEffect(() => {
@@ -36,50 +74,43 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
     return () => clearTimeout(t)
   }, [showComparison])
 
-  useEffect(() => {
-    setCostVisible(false)
-    if (showComparison) {
-      const t = setTimeout(() => setCostVisible(true), 500)
-      return () => clearTimeout(t)
+  // Haal base categories op
+  const baseCategories = getCategories(portfolio.implementation)
+
+  // Haal compare categories op — ondersteunt zowel comparison (v1.0) als compare (v1.1)
+  const compImpl = showComparison
+    ? (scenario?.comparison?.implementation || scenario?.compare?.implementation)
+    : null
+  const compCategories = compImpl ? getCategories(compImpl) : null
+
+  // Bouw segmenten — base categories zijn leidend voor volgorde en labels
+  const baseTotal = baseCategories.reduce((s, c) => s + (c.weight || 0), 0) || 100
+
+  const segments = baseCategories.map(cat => {
+    const compCat = compCategories?.find(c => c.id === cat.id)
+    const compWeight = compCat?.weight ?? cat.weight
+    const activeWeight = showComparison ? compWeight : cat.weight
+    const compTotal = compCategories
+      ? compCategories.reduce((s, c) => s + (c.weight || 0), 0) || 100
+      : baseTotal
+
+    return {
+      id:       cat.id,
+      label:    getLabel(cat.label, lang),
+      sub:      getLabel(cat.sub,   lang),
+      color:    cat.color || FALLBACK_COLORS[cat.id] || '#8A8A82',
+      baseVal:  Math.round((cat.weight / baseTotal) * 100),
+      val:      Math.round((activeWeight / compTotal) * 100),
+      rawVal:   activeWeight,
+      delta:    showComparison ? compWeight - cat.weight : 0,
     }
-  }, [showComparison])
+  })
 
-  const impl      = portfolio.implementation
-  const compImpl  = showComparison ? scenario?.comparison?.implementation : null
-  const costs     = portfolio.costs
-  const compCosts = showComparison ? scenario?.comparison?.costs : null
-
-  const activeImpl = compImpl || impl
-
-  // FIX 1: proportionele schaling — altijd optellen tot 100%
-  // zodat explore-mode met totaal ≠ 100 geen lege balk geeft
-  const rawVals  = ITEMS.map(item => activeImpl[item.id] || 0)
-  const rawTotal = rawVals.reduce((a, b) => a + b, 0) || 100
-  const rawBase  = ITEMS.map(item => impl[item.id] || 0)
-  const rawBaseTotal = rawBase.reduce((a, b) => a + b, 0) || 100
-
-  const segments = ITEMS.map((item, i) => ({
-    ...item,
-    color:    IMPL_COLORS[item.id],
-    base:     Math.round((rawBase[i] / rawBaseTotal) * 100),
-    val:      Math.round((rawVals[i] / rawTotal) * 100),
-    rawVal:   rawVals[i],   // originele waarde voor labels
-    delta:    showComparison ? (activeImpl[item.id] || 0) - (impl[item.id] || 0) : 0,
-    ter:      costs?.breakdown?.find(b => b.id === item.id)?.ter ?? null,
-  }))
-
-  // Afrondingscorrectie: zorg dat som exact 100 is
+  // Afrondingscorrectie
   const scaledTotal = segments.reduce((a, s) => a + s.val, 0)
   if (scaledTotal !== 100 && segments.length > 0) {
     segments[0].val += 100 - scaledTotal
   }
-
-  const baseTer   = costs?.weightedTer   ?? 0
-  const activeTer = compCosts?.weightedTer ?? baseTer
-  const saving    = baseTer - activeTer
-  const baseEur   = Math.round(baseTer   / 100 * PORTFOLIO_SIZE)
-  const activeEur = Math.round(activeTer / 100 * PORTFOLIO_SIZE)
-  const saveEur   = Math.round(Math.abs(saving) / 100 * PORTFOLIO_SIZE)
 
   return (
     <div style={s.wrap}>
@@ -96,9 +127,8 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
       }}>
         {segments.map((seg, i) => {
           const hasChange = showComparison && seg.delta !== 0
-          // FIX 2: labels schalen mee met segmentbreedte
-          const showName = seg.val >= MIN_PCT_FOR_NAMELABEL
-          const showSub  = seg.val >= MIN_PCT_FOR_SUBLABEL
+          const showName  = seg.val >= MIN_PCT_FOR_NAMELABEL
+          const showSub   = seg.val >= MIN_PCT_FOR_SUBLABEL
 
           return (
             <div key={seg.id} style={{
@@ -107,7 +137,7 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
               transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
               paddingRight: i < segments.length - 1 ? 14 : 0,
             }}>
-              {/* Percentage — altijd zichtbaar */}
+              {/* Percentage */}
               <div style={{
                 ...s.labelPct,
                 color: hasChange
@@ -118,17 +148,17 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
                 {seg.rawVal}%
               </div>
 
-              {/* Naam — verdwijnt bij kleine segmenten */}
+              {/* Naam */}
               {showName && (
                 <div style={s.labelName}>{seg.label}</div>
               )}
 
-              {/* Sub-omschrijving — verdwijnt eerder */}
+              {/* Sub-omschrijving */}
               {showSub && (
                 <div style={s.labelSub}>{seg.sub}</div>
               )}
 
-              {/* Delta bij compare */}
+              {/* Delta */}
               {hasChange && (
                 <div style={{
                   ...s.labelDelta,
@@ -150,12 +180,12 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
         transition: 'opacity 0.45s ease 0.1s, transform 0.45s cubic-bezier(0.34,1.26,0.64,1) 0.1s',
         transformOrigin: 'top',
       }}>
-        {/* Ghost balk: originele verdeling als dunne streep bovenin bij compare */}
+        {/* Ghost balk — originele verdeling als dunne streep bovenin bij compare */}
         {showComparison && (
           <div style={s.ghostTrack}>
             {segments.map((seg, i) => (
               <div key={seg.id} style={{
-                width: `${seg.base}%`,
+                width: `${seg.baseVal}%`,
                 background: seg.color,
                 transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
                 borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
@@ -172,84 +202,29 @@ export default function ImplementationChart({ portfolio, scenario, showCompariso
               background: seg.color,
               opacity: 0.90,
               transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
-            }}>
-              {/* FIX 3: TER met werkelijke waarde, alleen als segment breed genoeg */}
-              {seg.val >= MIN_PCT_FOR_TER && seg.ter !== null && (
-                <span style={s.terInBar}>
-                  TER {seg.ter.toFixed(2)}%
-                </span>
-              )}
-            </div>
+            }} />
           ))}
         </div>
       </div>
-
-      {/* ── Kostenblok — alleen bij compare ── */}
-      {showComparison && (
-        <div style={{
-          ...s.costBlock,
-          opacity:   costVisible ? 1 : 0,
-          transform: costVisible ? 'translateY(0)' : 'translateY(12px)',
-          transition: 'opacity 0.5s ease, transform 0.5s ease',
-        }}>
-          <div style={s.costCell}>
-            <div style={s.costCellLabel}>CURRENT TER</div>
-            <div style={s.costCellVal}>{baseTer.toFixed(2)}%</div>
-            <div style={s.costCellSub}>~€{baseEur.toLocaleString('nl-NL')}/yr on €1M</div>
-          </div>
-
-          <div style={s.costArrow}>→</div>
-
-          <div style={s.costCell}>
-            <div style={{ ...s.costCellLabel, color: 'rgba(78,213,150,0.55)' }}>SCENARIO TER</div>
-            <div style={{ ...s.costCellVal, color: '#4ED596' }}>{activeTer.toFixed(2)}%</div>
-            <div style={s.costCellSub}>~€{activeEur.toLocaleString('nl-NL')}/yr on €1M</div>
-          </div>
-
-          <div style={{ flex: 1 }} />
-
-          {saving !== 0 && (
-            <div style={s.savingBlock}>
-              <div style={{ ...s.costCellLabel, color: saving > 0 ? 'rgba(78,213,150,0.55)' : 'rgba(224,27,65,0.55)' }}>
-                {saving > 0 ? 'ANNUAL SAVING' : 'EXTRA COST'}
-              </div>
-              <div style={{
-                ...s.savingVal,
-                color: saving > 0 ? '#4ED596' : '#E01B41',
-              }}>
-                {saving > 0 ? '+' : '-'}€{saveEur.toLocaleString('nl-NL')}
-              </div>
-              <div style={s.costCellSub}>per year on €1M portfolio</div>
-            </div>
-          )}
-        </div>
-      )}
 
     </div>
   )
 }
 
 const s = {
-  // FIX 4: verticale centrering via flex met padding
   wrap: {
     display: 'flex', flexDirection: 'column',
     height: '100%', width: '100%',
     justifyContent: 'center',
     paddingTop: 8, paddingBottom: 8,
   },
-
   sublabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.58rem', fontWeight: 800,
     color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
     marginBottom: 18,
   },
-
   labelsRow: {
     display: 'flex', width: '100%',
     marginBottom: 10, alignItems: 'flex-end',
@@ -280,7 +255,6 @@ const s = {
     fontSize: '0.88rem', fontWeight: 800,
     marginTop: 2,
   },
-
   trackWrap: {
     width: '100%', borderRadius: 10,
     overflow: 'hidden',
@@ -294,51 +268,5 @@ const s = {
   },
   activeTrack: {
     display: 'flex', height: 72,
-  },
-  terInBar: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem', fontWeight: 700,
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: '0.04em',
-    pointerEvents: 'none',
-  },
-
-  costBlock: {
-    display: 'flex', alignItems: 'center', gap: 24,
-    padding: '14px 20px',
-    borderRadius: 10,
-    background: 'rgba(255,255,255,0.03)',
-    border: '0.5px solid rgba(78,213,150,0.18)',
-  },
-  costCell: {
-    display: 'flex', flexDirection: 'column', gap: 3,
-  },
-  costCellLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.10em',
-  },
-  costCellVal: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.8rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.65)', lineHeight: 1,
-  },
-  costCellSub: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', color: 'rgba(255,255,255,0.32)',
-  },
-  costArrow: {
-    fontSize: '1.4rem',
-    color: 'rgba(78,213,150,0.45)',
-    flexShrink: 0,
-  },
-  savingBlock: {
-    display: 'flex', flexDirection: 'column', gap: 3,
-    textAlign: 'right',
-  },
-  savingVal: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '2.6rem', fontWeight: 800,
-    lineHeight: 1,
   },
 }

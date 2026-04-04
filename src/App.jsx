@@ -5,15 +5,49 @@ import IdleView from './components/IdleView'
 import OperatorPanel from './components/OperatorPanel'
 import ExplorePanel from './components/ExplorePanel'
 import Configurator from './components/Configurator'
-import defaultConfig from './data/eventConfig.json'
+import rawRegistry from './data/registry.json'
+import { resolveRegistry } from './utils/resolveUseCase'
 import './styles/global.css'
+
+// Laad het actieve event uit de registry
+const { event: initialEvent, usecases: initialUsecases } = resolveRegistry(rawRegistry)
+
+// Normaliseert een use case zodat zowel 'compare' (v1.1) als 'comparison' (v1.0)
+// altijd beide aanwezig zijn — bestaande componenten lezen nog 'comparison',
+// nieuwe code gebruikt 'compare'
+function normalizeUsecaseForLegacy(uc) {
+  const normalized = { ...uc }
+  if (uc.compare !== undefined && uc.comparison === undefined) {
+    normalized.comparison = uc.compare
+  }
+  if (uc.comparison !== undefined && uc.compare === undefined) {
+    normalized.compare = uc.comparison
+  }
+  return normalized
+}
+
+// Bouw een config-object in het formaat dat de rest van de app verwacht
+function buildLegacyConfig(event, usecases) {
+  const normalizedUsecases = usecases.map(normalizeUsecaseForLegacy)
+  return {
+    event: {
+      name: event.name,
+      language: event.language || 'en',
+    },
+    portfolio: event.portfolio,
+    scenarios: normalizedUsecases,
+    usecases: normalizedUsecases,
+  }
+}
 
 function clonePortfolio(portfolio) {
   return JSON.parse(JSON.stringify(portfolio))
 }
 
 export default function App() {
-  const [config, setConfig] = useState(defaultConfig)
+  const [config, setConfig] = useState(
+    buildLegacyConfig(initialEvent, initialUsecases)
+  )
   const [activeScenarioIndex, setActiveScenarioIndex] = useState(0)
   const [showComparison, setShowComparison] = useState(false)
   const [activeDimension, setActiveDimension] = useState(null)
@@ -21,7 +55,9 @@ export default function App() {
   const [idleMode, setIdleMode] = useState(true)
 
   const [exploreMode, setExploreMode] = useState(false)
-  const [explorePortfolio, setExplorePortfolio] = useState(() => clonePortfolio(defaultConfig.portfolio))
+  const [explorePortfolio, setExplorePortfolio] = useState(
+    () => clonePortfolio(initialEvent.portfolio)
+  )
   const [exploreDimension, setExploreDimension] = useState('asset_class')
 
   const lang = config.event.language || 'en'
@@ -44,7 +80,6 @@ export default function App() {
 
   function handleEnterExplore() {
     const base = clonePortfolio(config.portfolio)
-    // Bereken initiële geo-override zodat alle regio-sliders direct kloppen
     const geoOverride = {}
     base.allocations.forEach(a => {
       if (!a.geographic?.length) return
@@ -52,7 +87,9 @@ export default function App() {
       if (!geoSum) return
       const scale = a.current / geoSum
       a.geographic.forEach(g => {
-        geoOverride[g.region] = Math.round(((geoOverride[g.region] || 0) + g.weight * scale) * 10) / 10
+        geoOverride[g.region] = Math.round(
+          ((geoOverride[g.region] || 0) + g.weight * scale) * 10
+        ) / 10
       })
     })
     base.geoOverride = geoOverride
@@ -61,11 +98,12 @@ export default function App() {
     setExploreMode(true)
   }
 
-  // Explore updaters — each modifies explorePortfolio immutably
   function handleUpdateAlloc(id, val) {
     setExplorePortfolio(prev => ({
       ...prev,
-      allocations: prev.allocations.map(a => a.id === id ? { ...a, current: val } : a),
+      allocations: prev.allocations.map(a =>
+        a.id === id ? { ...a, current: val } : a
+      ),
     }))
   }
 
@@ -76,7 +114,9 @@ export default function App() {
           ...prev,
           esg: {
             ...prev.esg,
-            sfdr: prev.esg.sfdr.map((s, i) => i === sfdrIdx ? { ...s, weight: val } : s),
+            sfdr: prev.esg.sfdr.map((s, i) =>
+              i === sfdrIdx ? { ...s, weight: val } : s
+            ),
           },
         }
       }
@@ -94,18 +134,21 @@ export default function App() {
   function handleUpdateSector(idx, val) {
     setExplorePortfolio(prev => ({
       ...prev,
-      sectors: prev.sectors.map((s, i) => i === idx ? { ...s, weight: val } : s),
+      sectors: prev.sectors.map((s, i) =>
+        i === idx ? { ...s, weight: val } : s
+      ),
     }))
   }
 
   function handleUpdateCurrency(idx, val) {
     setExplorePortfolio(prev => ({
       ...prev,
-      currencies: prev.currencies.map((c, i) => i === idx ? { ...c, weight: val } : c),
+      currencies: prev.currencies.map((c, i) =>
+        i === idx ? { ...c, weight: val } : c
+      ),
     }))
   }
 
-  // Geo explore: directe regio-gewichten aanpassen, los van asset class allocaties
   function handleUpdateGeo(region, val) {
     setExplorePortfolio(prev => ({
       ...prev,
@@ -206,7 +249,11 @@ export default function App() {
             }}
             onMouseEnter={e => e.target.style.opacity = 1}
             onMouseLeave={e => e.target.style.opacity = 0.8}
-            title={idleMode ? 'Startscherm actief — klik om dashboard te starten' : 'Dashboard actief — klik voor startscherm'}
+            title={
+              idleMode
+                ? 'Startscherm actief — klik om dashboard te starten'
+                : 'Dashboard actief — klik voor startscherm'
+            }
           >
             {idleMode ? '▶ Start' : '⏸ Idle'}
           </button>
