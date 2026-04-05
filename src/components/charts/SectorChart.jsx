@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // Sectorkleur komt uit de data (redactioneel bepaald per event)
 // Groen (#4ED596) is GERESERVEERD voor compare/delta — nooit als sectorkleur
@@ -22,7 +23,7 @@ const META = {
 // TOP_N: hoeveel sectoren groot worden getoond
 const TOP_N = 3
 
-export default function SectorChart({ portfolio, comparisonPortfolio, showComparison, lang }) {
+export default function SectorChart({ portfolio, comparisonPortfolio, showComparison, lang, exploreMode = false }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -36,6 +37,9 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
   }, [showComparison])
 
   const sectors = portfolio.sectors || []
+
+  // Som van sectorgewichten — voor explore badge
+  const rawSum = sectors.reduce((s, sec) => s + (sec.weight || 0), 0)
 
   function getComp(id) {
     if (!showComparison || !comparisonPortfolio?.sectors) return null
@@ -67,10 +71,12 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
   return (
     <div style={{
       ...s.wrap,
+      position: 'relative',
       opacity:   animated ? 1 : 0,
       transform: animated ? 'translateY(0)' : 'translateY(8px)',
       transition: 'opacity 0.5s ease, transform 0.5s ease',
     }}>
+      <ExploreTotalBadge total={rawSum} label="Sectors" exploreMode={exploreMode} />
 
       {/* ── Sublabel ── */}
       <div style={s.sublabel}>SECTOR ALLOCATION</div>

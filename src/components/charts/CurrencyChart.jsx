@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // Categoriekleuren — neutraal, geen statusoordeel
 // Groen (#4ED596) = stijging, Rood (#E01B41) = daling — richting, niet oordeel
@@ -15,7 +16,7 @@ const BAR_WIDTH    = 520
 const TOTAL_HEIGHT = 340
 const MIN_SEG_H    = 40
 
-export default function CurrencyChart({ portfolio, comparisonPortfolio, showComparison }) {
+export default function CurrencyChart({ portfolio, comparisonPortfolio, showComparison, exploreMode = false }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -92,10 +93,12 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   return (
     <div style={{
       ...s.wrap,
+      position: 'relative',
       opacity:   animated ? 1 : 0,
       transform: animated ? 'translateY(0)' : 'translateY(8px)',
       transition: 'opacity 0.5s ease, transform 0.5s ease',
     }}>
+      <ExploreTotalBadge total={rawSum} label="Currency" exploreMode={exploreMode} />
 
       {/* ── Hele compositie gecentreerd ── */}
       <div style={s.composition}>

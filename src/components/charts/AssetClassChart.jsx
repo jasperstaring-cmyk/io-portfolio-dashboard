@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import ChartTooltip, { useTooltip } from './ChartTooltip'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // Kleurlogica conform IO-stijl:
 // Rood   = equities (dominant)
@@ -74,7 +75,7 @@ function deltaBadgePos(midDeg, ex, ey) {
   return { bx, by }
 }
 
-export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, framing, lang }) {
+export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, framing, lang, exploreMode = false }) {
   const { tooltip, showTooltip, hideTooltip } = useTooltip()
   const [animated,   setAnimated]   = useState(false)
   const [selectedId, setSelectedId] = useState(null)
@@ -91,6 +92,9 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   }, [showComparison])
 
   const allocations = portfolio.allocations
+
+  // Explore gap detectie — som van ruwe current-waarden
+  const rawSum = allocations.reduce((s, a) => s + (a.current || 0), 0)
 
   function getComp(id) {
     if (!showComparison || !comparisonPortfolio?.allocations) return null
@@ -149,7 +153,8 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   }
 
   return (
-    <div style={s.wrap}>
+    <div style={{ ...s.wrap, position: 'relative' }}>
+      <ExploreTotalBadge total={rawSum} label="Allocation" exploreMode={exploreMode} />
       <svg
         viewBox={`0 0 ${VW} ${VH}`}
         preserveAspectRatio="xMidYMid meet"

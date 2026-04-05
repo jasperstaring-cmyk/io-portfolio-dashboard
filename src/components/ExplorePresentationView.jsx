@@ -100,6 +100,7 @@ export default function ExplorePresentationView({
           scenario={null}
           showComparison={false}
           lang={lang}
+          exploreMode={true}
         />
       </div>
 

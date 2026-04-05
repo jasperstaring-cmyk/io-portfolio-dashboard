@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // ESG-kleurlogica is statusgebaseerd:
 // Groen = hoge ESG-score (goed, >= 7)
@@ -31,7 +32,7 @@ function scoreColor(s) {
   return '#E01B41'
 }
 
-export default function ESGChart({ portfolio, comparisonPortfolio, showComparison }) {
+export default function ESGChart({ portfolio, comparisonPortfolio, showComparison, exploreMode = false }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -77,6 +78,9 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
   const sfdrBase   = esg.sfdr   || []
   const sfdrActive = active.sfdr || esg.sfdr || []
 
+  // Som van SFDR-gewichten — voor explore badge
+  const sfdrSum = sfdrActive.reduce((s, x) => s + (x.weight || 0), 0)
+
   const sfdrItems = sfdrActive.map(item => {
     const base = sfdrBase.find(x => x.article === item.article)
     const delta = base ? item.weight - base.weight : 0
@@ -94,7 +98,8 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
   const deltaScore = compEsg ? +(active.score - esg.score).toFixed(1) : null
 
   return (
-    <div style={s.wrap}>
+    <div style={{ ...s.wrap, position: 'relative' }}>
+      <ExploreTotalBadge total={sfdrSum} label="SFDR" exploreMode={exploreMode} />
 
       {/* ── LINKS: Gauge + Carbon Risk ── */}
       <div style={s.gaugeCol}>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // ImplementationChart — v1.1
 //
@@ -49,7 +50,7 @@ function getLabel(val, lang = 'en') {
   return val[lang] || val.en || Object.values(val)[0] || ''
 }
 
-export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, framing, lang = 'en' }) {
+export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, framing, lang = 'en', exploreMode = false }) {
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -106,7 +107,8 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
   }
 
   return (
-    <div style={s.wrap}>
+    <div style={{ ...s.wrap, position: 'relative' }}>
+      <ExploreTotalBadge total={rawSum} label="Implementation" exploreMode={exploreMode} />
 
       {/* ── Sublabel ── */}
       <div style={s.sublabel}>PORTFOLIO CONSTRUCTION</div>
