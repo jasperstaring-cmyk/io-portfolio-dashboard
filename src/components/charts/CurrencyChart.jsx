@@ -11,9 +11,9 @@ const FX_COLORS = {
 }
 const HOME_COLOR = '#5B8DEF'
 
-const BAR_WIDTH    = 520   // px — vaste breedte
-const TOTAL_HEIGHT = 340   // px — iets hoger voor meer ruimte kleine segmenten
-const MIN_SEG_H    = 40    // px — ruimer minimum zodat labels leesbaar blijven
+const BAR_WIDTH    = 520
+const TOTAL_HEIGHT = 340
+const MIN_SEG_H    = 40
 
 export default function CurrencyChart({ portfolio, comparisonPortfolio, showComparison }) {
   const [animated, setAnimated] = useState(false)
@@ -30,7 +30,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   const rawCurrencies  = portfolio.currencies || []
   const compCurrencies = showComparison ? comparisonPortfolio?.currencies : null
 
-  // Schaal altijd naar 100%
   const rawActive = rawCurrencies.map(c => {
     const comp = compCurrencies?.find(x => x.currency === c.currency)
     return {
@@ -46,6 +45,11 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
 
   const activeTotal = rawActive.reduce((s, c) => s + c.rawVal, 0) || 100
   const baseTotal   = rawActive.reduce((s, c) => s + c.baseRaw, 0) || 100
+
+  // Explore gap detectie — som van ruwe gewichten
+  const rawSum  = rawActive.reduce((s, c) => s + c.rawVal, 0)
+  const gapPct  = Math.max(0, 100 - rawSum)
+  const showGap = gapPct > 0 && gapPct < 100 && !showComparison
 
   const data = rawActive.map(c => ({
     ...c,
@@ -66,10 +70,24 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   const hasFxDelta  = showComparison && fxDelta !== 0
   const dColor      = d => d < 0 ? '#E01B41' : '#4ED596'
 
-  // Vaste hoogtes — nooit veranderen, ook niet bij explore
-  const rawHeights = data.map(c => Math.max(Math.round((c.pct / 100) * TOTAL_HEIGHT), MIN_SEG_H))
-  const hSum = rawHeights.reduce((a, b) => a + b, 0)
-  if (hSum !== TOTAL_HEIGHT && rawHeights.length > 0) rawHeights[0] += TOTAL_HEIGHT - hSum
+  // Vaste hoogtes — proportoneel aan pct, maar nooit kleiner dan MIN_SEG_H
+  // In explore mode: schaal de hoogtes op basis van rawSum zodat gap zichtbaar wordt
+  const effectiveTotal = showGap ? 100 : (activeTotal || 100)
+  const rawHeights = data.map(c => {
+    const proportion = showGap
+      ? (c.rawVal / effectiveTotal)
+      : (c.pct / 100)
+    return Math.max(Math.round(proportion * TOTAL_HEIGHT), MIN_SEG_H)
+  })
+
+  const filledHeight = rawHeights.reduce((a, b) => a + b, 0)
+  const gapHeight    = showGap ? Math.max(0, TOTAL_HEIGHT - filledHeight) : 0
+
+  // Correctie als geen gap: zorg dat hoogtes exact optellen
+  if (!showGap) {
+    const hSum = rawHeights.reduce((a, b) => a + b, 0)
+    if (hSum !== TOTAL_HEIGHT && rawHeights.length > 0) rawHeights[0] += TOTAL_HEIGHT - hSum
+  }
 
   return (
     <div style={{
@@ -82,23 +100,21 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
       {/* ── Hele compositie gecentreerd ── */}
       <div style={s.composition}>
 
-        {/* ── BOVEN: metric + delta boven de balk ── */}
+        {/* ── BOVEN: metric + delta ── */}
         <div style={s.metricBlock}>
           <div style={s.sublabel}>FX EXPOSURE</div>
 
           <div style={s.metricRow}>
-            {/* Groot getal */}
             <div style={{
               ...s.bigNumber,
               color: hasFxDelta ? dColor(fxDelta) : '#E01B41',
               transition: 'color 0.5s ease',
             }}>
-              {fxExp}%
+              {showGap ? Math.round(100 - (rawActive.find(c => c.isHome)?.rawVal ?? 0)) : fxExp}%
             </div>
             <div style={s.bigNumberSub}>non-{homeCurrency}</div>
           </div>
 
-          {/* Delta-slot — vaste hoogte zodat positie niet verspringt */}
           <div style={s.deltaSlot}>
             {hasFxDelta && (
               <>
@@ -112,6 +128,15 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                 <span style={s.vsBase}>vs base</span>
               </>
             )}
+            {showGap && (
+              <span style={{
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.72rem', fontWeight: 700,
+                color: 'rgba(255,255,255,0.28)',
+              }}>
+                {Math.round(gapPct)}% unallocated
+              </span>
+            )}
           </div>
         </div>
 
@@ -121,7 +146,7 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
 
           <div style={{ display: 'flex', alignItems: 'flex-start' }}>
 
-            {/* Verticale gestapelde balk — vaste afmetingen */}
+            {/* Verticale gestapelde balk */}
             <div style={{
               width: BAR_WIDTH,
               height: TOTAL_HEIGHT,
@@ -149,9 +174,8 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                     display: 'flex',
                     alignItems: 'center',
                     overflow: 'hidden',
-                    transition: 'background 0.5s ease',
+                    transition: 'background 0.5s ease, height 0.85s cubic-bezier(0.4,0,0.2,1)',
                   }}>
-                    {/* Label in segment */}
                     {rawHeights[i] >= 28 && (
                       <div style={{
                         position: 'absolute', left: 14,
@@ -169,7 +193,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                       </div>
                     )}
 
-                    {/* Ghost streep rechts bij compare */}
                     {showComparison && (
                       <div style={{
                         position: 'absolute', top: 0, right: 0, bottom: 0,
@@ -179,9 +202,36 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                   </div>
                 )
               })}
+
+              {/* Gap segment — gestreept grijs onderaan, alleen in explore */}
+              {showGap && gapHeight > 0 && (
+                <div style={{
+                  width: '100%',
+                  height: gapHeight,
+                  flexShrink: 0,
+                  background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 4px, rgba(255,255,255,0.09) 4px, rgba(255,255,255,0.09) 8px)',
+                  borderTop: '2px solid rgba(255,255,255,0.10)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'height 0.85s cubic-bezier(0.4,0,0.2,1)',
+                }}>
+                  {gapHeight >= 32 && (
+                    <span style={{
+                      fontFamily: "'Merriweather Sans', sans-serif",
+                      fontSize: '0.62rem', fontWeight: 700,
+                      color: 'rgba(255,255,255,0.28)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}>
+                      adjust sliders ↑
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Percentages + delta direct rechts van balk */}
+            {/* Percentages + delta rechts van balk */}
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -211,10 +261,9 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                       transition: 'color 0.5s ease',
                       whiteSpace: 'nowrap',
                     }}>
-                      {c.pct}%
+                      {showGap ? c.rawVal : c.pct}%
                     </span>
 
-                    {/* Delta slot — vaste breedte, voorkomt layout shift */}
                     <div style={s.rowDeltaSlot}>
                       {hasCDelta && rawHeights[i] >= 26 && (
                         <span style={{
@@ -229,6 +278,26 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                   </div>
                 )
               })}
+
+              {/* Gap label rechts */}
+              {showGap && gapHeight > 0 && (
+                <div style={{
+                  height: gapHeight,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}>
+                  <span style={{
+                    fontFamily: "'Merriweather Sans', sans-serif",
+                    fontSize: '0.88rem', fontWeight: 800,
+                    color: 'rgba(255,255,255,0.22)',
+                    whiteSpace: 'nowrap',
+                    transition: 'height 0.85s cubic-bezier(0.4,0,0.2,1)',
+                  }}>
+                    {Math.round(gapPct)}%
+                  </span>
+                </div>
+              )}
             </div>
 
           </div>
@@ -248,16 +317,12 @@ const s = {
     justifyContent: 'center',
     paddingBottom: '6%',
   },
-
-  // Hele compositie als één blok gecentreerd
   composition: {
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
     alignItems: 'flex-start',
   },
-
-  // Metric boven de balk
   metricBlock: {
     display: 'flex',
     flexDirection: 'column',
@@ -287,7 +352,6 @@ const s = {
     fontSize: '1rem', fontWeight: 600,
     color: 'rgba(255,255,255,0.40)',
   },
-  // Vaste hoogte — voorkomt verspringen bij compare toggle
   deltaSlot: {
     height: 30,
     display: 'flex', alignItems: 'center', gap: 8,
@@ -297,12 +361,9 @@ const s = {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)',
   },
-
-  // Balk blok
   barBlock: {
     display: 'flex', flexDirection: 'column',
   },
-
   fxBadge: {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: '7px', fontWeight: 800, letterSpacing: '0.06em',
@@ -310,8 +371,6 @@ const s = {
     border: '0.5px solid rgba(255,255,255,0.25)',
     borderRadius: 3, padding: '1px 4px',
   },
-
-  // Vaste breedte delta-slot per rij
   rowDeltaSlot: {
     minWidth: 48, flexShrink: 0,
     fontFamily: "'Merriweather Sans', sans-serif",

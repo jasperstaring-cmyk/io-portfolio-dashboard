@@ -7,8 +7,9 @@ import { useState, useEffect, useRef } from 'react'
 // geen hardcoded ITEMS meer. Framing per use case wordt ondersteund
 // via de resolvedFraming prop (optioneel, toekomstige stap).
 //
-// Kostenvergelijking is de verantwoordelijkheid van CostChart.
-// Het TER-blok is verwijderd uit deze component.
+// Explore mode: als de som van gewichten onder 100 ligt, toont de balk
+// een grijs "resterende ruimte" segment zodat de operator weet dat de
+// sliders nog bijgesteld moeten worden.
 //
 // Kleurlogica:
 // Groen (#4ED596) = stijging (delta > 0)
@@ -17,44 +18,31 @@ import { useState, useEffect, useRef } from 'react'
 
 const PORTFOLIO_SIZE = 1_000_000
 
-// Drempelwaarden voor labels boven de balk
 const MIN_PCT_FOR_SUBLABEL  = 18
 const MIN_PCT_FOR_NAMELABEL = 10
 
-// Fallback-kleuren voor bekende ids als color ontbreekt in de config
 const FALLBACK_COLORS = {
   active:     '#E01B41',
   passive:    '#5B8DEF',
   individual: '#F5A623',
 }
 
-// Haal categories op uit implementation — ondersteunt zowel v1.1 (categories[])
-// als v1.0 (plat object met active/passive/individual als getallen)
 function getCategories(implementation) {
   if (!implementation) return []
-
-  // v1.1 formaat
-  if (Array.isArray(implementation.categories)) {
-    return implementation.categories
-  }
-
-  // v1.0 formaat — converteer naar categories-structuur met fallback labels
+  if (Array.isArray(implementation.categories)) return implementation.categories
   const LEGACY_LABELS = {
     active:     { label: { en: 'Active Management'    }, sub: { en: 'Alpha-seeking, manager discretion' }, color: '#E01B41' },
     passive:    { label: { en: 'Passive / ETF'         }, sub: { en: 'Index-tracking, market beta'       }, color: '#5B8DEF' },
     individual: { label: { en: 'Individual Securities' }, sub: { en: 'Direct stock & bond holdings'      }, color: '#F5A623' },
   }
-
   return Object.entries(implementation)
     .filter(([key]) => typeof implementation[key] === 'number')
     .map(([id, weight]) => ({
-      id,
-      weight,
+      id, weight,
       ...(LEGACY_LABELS[id] || { label: { en: id }, sub: { en: '' }, color: '#8A8A82' }),
     }))
 }
 
-// Haal een gelokaliseerde string op uit een i18n-object of directe string
 function getLabel(val, lang = 'en') {
   if (!val) return ''
   if (typeof val === 'string') return val
@@ -74,14 +62,10 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
     return () => clearTimeout(t)
   }, [showComparison])
 
-  // Haal base categories op
   const baseCategories = getCategories(portfolio.implementation)
-
-  // Haal compare categories op uit comparisonPortfolio
   const compImpl = showComparison ? comparisonPortfolio?.implementation : null
   const compCategories = compImpl ? getCategories(compImpl) : null
 
-  // Bouw segmenten — base categories zijn leidend voor volgorde en labels
   const baseTotal = baseCategories.reduce((s, c) => s + (c.weight || 0), 0) || 100
 
   const segments = baseCategories.map(cat => {
@@ -92,7 +76,6 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
       ? compCategories.reduce((s, c) => s + (c.weight || 0), 0) || 100
       : baseTotal
 
-    // Framing overschrijft label/sub voor deze use case
     const catFraming = framing?.[cat.id]
     const labelVal = catFraming?.label ?? cat.label
     const subVal   = catFraming?.sub   ?? cat.sub
@@ -109,10 +92,17 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
     }
   })
 
-  // Afrondingscorrectie
-  const scaledTotal = segments.reduce((a, s) => a + s.val, 0)
-  if (scaledTotal !== 100 && segments.length > 0) {
-    segments[0].val += 100 - scaledTotal
+  // Bereken de som van ruwe gewichten — voor explore gap detectie
+  const rawSum = baseCategories.reduce((s, c) => s + (c.weight || 0), 0)
+  const gapPct = Math.max(0, 100 - rawSum)
+  const showGap = gapPct > 0 && gapPct < 100 && !showComparison
+
+  // Afrondingscorrectie — alleen als geen gap
+  if (!showGap) {
+    const scaledTotal = segments.reduce((a, s) => a + s.val, 0)
+    if (scaledTotal !== 100 && segments.length > 0) {
+      segments[0].val += 100 - scaledTotal
+    }
   }
 
   return (
@@ -140,7 +130,6 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
               transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
               paddingRight: i < segments.length - 1 ? 14 : 0,
             }}>
-              {/* Percentage */}
               <div style={{
                 ...s.labelPct,
                 color: hasChange
@@ -150,18 +139,8 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
               }}>
                 {seg.rawVal}%
               </div>
-
-              {/* Naam */}
-              {showName && (
-                <div style={s.labelName}>{seg.label}</div>
-              )}
-
-              {/* Sub-omschrijving */}
-              {showSub && (
-                <div style={s.labelSub}>{seg.sub}</div>
-              )}
-
-              {/* Delta */}
+              {showName && <div style={s.labelName}>{seg.label}</div>}
+              {showSub  && <div style={s.labelSub}>{seg.sub}</div>}
               {hasChange && (
                 <div style={{
                   ...s.labelDelta,
@@ -173,6 +152,23 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
             </div>
           )
         })}
+
+        {/* Gap label — alleen in explore mode */}
+        {showGap && (
+          <div style={{
+            ...s.labelCol,
+            width: `${gapPct}%`,
+            transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+            paddingLeft: 14,
+          }}>
+            <div style={{ ...s.labelPct, color: 'rgba(255,255,255,0.22)' }}>
+              {Math.round(gapPct)}%
+            </div>
+            <div style={{ ...s.labelName, color: 'rgba(255,255,255,0.22)' }}>
+              Unallocated
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Gestapelde balk ── */}
@@ -208,6 +204,32 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
               borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
             }} />
           ))}
+
+          {/* Gap segment — lichtgrijs, gestreept, alleen in explore */}
+          {showGap && (
+            <div style={{
+              width: `${gapPct}%`,
+              background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 4px, rgba(255,255,255,0.09) 4px, rgba(255,255,255,0.09) 8px)',
+              borderLeft: '2px solid rgba(255,255,255,0.10)',
+              transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {gapPct >= 8 && (
+                <span style={{
+                  fontFamily: "'Merriweather Sans', sans-serif",
+                  fontSize: '0.62rem', fontWeight: 700,
+                  color: 'rgba(255,255,255,0.28)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                }}>
+                  ← adjust sliders
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
