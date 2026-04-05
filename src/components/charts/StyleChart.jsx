@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 
 const STYLES    = ['Value', 'Blend', 'Growth']
@@ -46,7 +47,6 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
 
   const maxCell = Math.max(...active.map(c => c.displayVal), 1)
 
-  // Kolomtotalen (per stijl) en rijtotalen (per cap)
   const colTotals = STYLES.map(style =>
     active.filter(c => c.style === style).reduce((s, c) => s + c.displayVal, 0)
   )
@@ -61,7 +61,6 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
     return active.find(c => c.capSize === cap && c.style === style)
   }
 
-  // Style tilt: Growth - Value (positief = growth tilt, negatief = value tilt)
   const growthTilt     = colTotals[2] - colTotals[0]
   const baseGrowthTilt = baseColTotals[2] - baseColTotals[0]
   const tiltDelta      = showComparison ? growthTilt - baseGrowthTilt : 0
@@ -75,10 +74,9 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
   return (
     <div style={s.wrap}>
 
-      {/* ── Sublabel ── */}
       <div style={s.sublabel}>STYLE BOX</div>
 
-      {/* ── Matrix: kolomheaders ── */}
+      {/* Kolomheaders */}
       <div style={s.colHeaders}>
         <div style={s.rowHeaderSpacer} />
         {STYLES.map(style => (
@@ -86,22 +84,18 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
         ))}
       </div>
 
-      {/* ── Matrix: rijen ── */}
+      {/* Matrix rijen */}
       <div style={s.matrixBody}>
         {CAP_SIZES.map((cap, ri) => (
           <div key={cap} style={s.matrixRow}>
-            {/* Rijlabel */}
             <div style={s.rowHeader}>{cap}</div>
 
-            {/* Cellen */}
             {STYLES.map(style => {
               const cell = getCell(cap, style)
               const val  = cell?.displayVal || 0
               const base = cell?.weight     || 0
               const delta = cell?.delta     || 0
               const hasChange = cell?.hasChange || false
-              // delta-kleur: rood = stijging, groen = daling — NEE:
-              // delta-kleur: rood = daling, groen = stijging (richting, niet oordeel)
               const dColor = delta < 0 ? '#E01B41' : '#4ED596'
 
               return (
@@ -121,12 +115,12 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
                   {/* Percentage groot */}
                   <div style={s.cellVal}>{val}%</div>
 
-                  {/* Delta — groot en leesbaar op 20 meter */}
+                  {/* Delta */}
                   <div style={s.cellDeltaSlot}>
                     {hasChange && (
                       <span style={{
                         fontFamily: "'Merriweather Sans', sans-serif",
-                        fontSize: '1.15rem', fontWeight: 800,
+                        fontSize: T.large, fontWeight: T.wHeavy,
                         color: delta > 0 ? '#4ED596' : '#E01B41',
                         lineHeight: 1,
                       }}>
@@ -141,17 +135,16 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
         ))}
       </div>
 
-      {/* ── Tiltkaarten onderaan ── */}
+      {/* Tiltkaarten onderaan */}
       <div style={s.tiltRow}>
         <div style={s.tiltCard}>
           <div style={s.tiltLabel}>STYLE TILT</div>
           <div style={s.tiltValue}>{tiltLabel(growthTilt)}</div>
-          {/* Vaste hoogte delta-slot */}
           <div style={s.tiltDeltaSlot}>
             {showComparison && tiltDelta !== 0 && (
               <span style={{
                 fontFamily: "'Merriweather Sans', sans-serif",
-                fontSize: '0.80rem', fontWeight: 800,
+                fontSize: T.medium, fontWeight: T.wHeavy,
                 color: tiltDelta < 0 ? '#E01B41' : '#4ED596',
               }}>
                 {tiltDelta > 0 ? '+' : ''}{tiltDelta}% vs base
@@ -177,15 +170,12 @@ const s = {
     height: '100%', width: '100%',
     justifyContent: 'center', gap: 0,
   },
-
   sublabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    fontSize: T.micro, fontWeight: T.wMicro,
+    color: T.faint, letterSpacing: '0.1em',
     marginBottom: 10, flexShrink: 0,
   },
-
-  // Kolomheaders
   colHeaders: {
     display: 'flex', gap: 6, marginBottom: 6, flexShrink: 0,
   },
@@ -195,12 +185,10 @@ const s = {
   colHeader: {
     flex: 1,
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.88rem', fontWeight: 700,
+    fontSize: T.body, fontWeight: T.wMedium,
     color: 'rgba(255,255,255,0.55)',
     textAlign: 'center',
   },
-
-  // Matrix
   matrixBody: {
     display: 'flex', flexDirection: 'column',
     gap: 6, flex: 1, minHeight: 0,
@@ -212,11 +200,9 @@ const s = {
     width: 52, flexShrink: 0,
     display: 'flex', alignItems: 'center',
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.88rem', fontWeight: 700,
+    fontSize: T.body, fontWeight: T.wMedium,
     color: 'rgba(255,255,255,0.55)',
   },
-
-  // Cel
   cell: {
     flex: 1,
     borderRadius: 8,
@@ -228,17 +214,14 @@ const s = {
   },
   cellVal: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.6rem', fontWeight: 800,
+    fontSize: T.xlarge, fontWeight: T.wHeavy,
     color: 'rgba(255,255,255,0.88)', lineHeight: 1,
   },
-  // Vaste hoogte delta-slot — voorkomt layout shift
   cellDeltaSlot: {
     height: 28,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontFamily: "'Merriweather Sans', sans-serif",
   },
-
-  // Tiltkaarten
   tiltRow: {
     display: 'flex', gap: 12,
     marginTop: 12, flexShrink: 0,
@@ -251,16 +234,15 @@ const s = {
   },
   tiltLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    fontSize: T.micro, fontWeight: T.wMicro,
+    color: T.faint, letterSpacing: '0.1em',
     marginBottom: 4,
   },
   tiltValue: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.3rem', fontWeight: 800,
+    fontSize: T.xlarge, fontWeight: T.wHeavy,
     color: 'rgba(255,255,255,0.82)',
   },
-  // Vaste hoogte voor delta onder tiltkaart
   tiltDeltaSlot: {
     height: 22,
     display: 'flex', alignItems: 'center',

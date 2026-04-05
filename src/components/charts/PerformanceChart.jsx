@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 
 // Kleurlogica conform IO-stijl op donkere achtergrond:
@@ -12,8 +13,6 @@ const C = {
   bench:  'rgba(255,255,255,0.22)',
 }
 
-// Genereer synthetische maanddata op basis van KPI-getallen
-// Wordt gebruikt als portfolio.performance.series ontbreekt
 function generateSyntheticSeries(p) {
   const port  = [100,102.1,101.4,103.8,105.2,103.9,106.1,107.4,105.8,107.2,108.9,104.2 + p.ytd * 0.3]
   const bench = [100,101.2,100.8,102.4,103.6,102.1,104.3,105.1,103.9,104.8,106.2,103.5 + p.benchmark * 0.3]
@@ -21,20 +20,15 @@ function generateSyntheticSeries(p) {
   return { port, bench, labels: months }
 }
 
-// Verwerk tijdreeksdata uit portfolio.performance.series
-// Ondersteunt zowel nieuw formaat { label, portfolio, benchmark }
-// als oud formaat { month: "2025-01", portfolio, benchmark }
 function processRealSeries(series) {
   if (!series?.length) return null
 
-  // Normaliseer naar index 100 op het eerste datapunt
   const base    = series[0].portfolio
   const baseBch = series[0].benchmark ?? series[0].portfolio
 
   const port  = series.map(s => (s.portfolio / base) * 100)
   const bench = series.map(s => ((s.benchmark ?? s.portfolio) / baseBch) * 100)
 
-  // Label: gebruik vrij label-veld, val terug op month-parsing voor bestaande data
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const labels = series.map(s => {
     if (s.label) return s.label
@@ -60,14 +54,12 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
   const p = portfolio.performance
 
-  // Gebruik echte tijdreeks als beschikbaar, anders synthetisch
   const seriesData = p.series?.length
     ? processRealSeries(p.series)
     : generateSyntheticSeries(p)
 
   const { port, bench, labels } = seriesData
 
-  // Als compare actief is en compare-portfolio ook een series heeft, toon die ook
   const compP = showComparison ? comparisonPortfolio?.performance : null
   const compSeriesRaw = compP?.series?.length ? processRealSeries(compP.series) : null
 
@@ -89,7 +81,6 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
     return `${tx(0)},${H - pB} ${data.map((v, i) => `${tx(i)},${ty(v)}`).join(' ')} ${tx(n - 1)},${H - pB}`
   }
 
-  // Metrics
   const alpha = (p.ytd - p.benchmark).toFixed(1)
   const metrics = [
     { label: 'YTD Return',   value: `${p.ytd >= 0 ? '+' : ''}${p.ytd}%`,            color: p.ytd >= 0 ? C.green : C.red },
@@ -111,7 +102,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
   return (
     <div style={s.wrap}>
 
-      {/* ── Chart column ── */}
+      {/* Chart column */}
       <div style={s.chartCol}>
         <div style={s.topLabel}>{chartLabel}</div>
 
@@ -149,7 +140,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
                   <line x1={pL} y1={y} x2={W - pR} y2={y}
                     stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
                   <text x={pL - 6} y={y + 4} textAnchor="end"
-                    fontFamily="'Merriweather Sans', sans-serif" fontSize="8"
+                    fontFamily="'Merriweather Sans', sans-serif" fontSize={T.svgMicro}
                     fill={C.muted}>
                     {(maxV - t * range).toFixed(1)}
                   </text>
@@ -157,13 +148,13 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
               )
             })}
 
-            {/* X-labels — toon subset als veel datapunten */}
+            {/* X-labels */}
             {labels.map((m, i) => {
               const step = Math.max(1, Math.floor(n / 12))
               if (i % step !== 0 && i !== n - 1) return null
               return (
                 <text key={i} x={tx(i)} y={H - 8} textAnchor="middle"
-                  fontFamily="'Merriweather Sans', sans-serif" fontSize="8"
+                  fontFamily="'Merriweather Sans', sans-serif" fontSize={T.svgMicro}
                   fill={C.muted}>
                   {m}
                 </text>
@@ -229,7 +220,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
             {/* YTD-label naast eindpunt */}
             <text x={endX + 10} y={endY + 4}
               fontFamily="'Merriweather Sans', sans-serif"
-              fontSize="10" fontWeight="800" fill={C.green}
+              fontSize={T.svgSmall} fontWeight="800" fill={C.green}
               opacity={drawn ? 1 : 0}
               style={{ transition: drawn ? 'opacity 0.3s ease 1.1s' : 'none' }}>
               {p.ytd >= 0 ? '+' : ''}{p.ytd}%
@@ -261,11 +252,10 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
         </div>
       </div>
 
-      {/* ── Metrics column ── */}
+      {/* Metrics column */}
       <div style={s.metricsCol}>
         <div style={s.topLabel}>KEY METRICS</div>
 
-        {/* Alpha card */}
         {(() => {
           const alphaMet  = metrics.find(m => m.label === 'vs Benchmark')
           const alphaPos  = parseFloat(alpha) >= 0
@@ -288,7 +278,6 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
           )
         })()}
 
-        {/* Overige 5 metrics */}
         <div style={s.grid}>
           {metrics.filter(m => m.label !== 'vs Benchmark').map(m => (
             <div key={m.label} style={{
@@ -320,15 +309,15 @@ const s = {
   chartCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0 },
   topLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em', flexShrink: 0,
+    fontSize: T.micro, fontWeight: T.wMicro,
+    color: T.faint, letterSpacing: '0.1em', flexShrink: 0,
   },
   svgWrap: { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   svg: { width: '100%', height: '100%', display: 'block', overflow: 'visible' },
   legend: { display: 'flex', gap: 20, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' },
   li:  { display: 'flex', alignItems: 'center', gap: 7 },
   ll:  { width: 22, height: 2.5, borderRadius: 1 },
-  lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)' },
+  lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, color: 'rgba(255,255,255,0.35)' },
   metricsCol: { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
   alphaCard: {
     border: '1px solid', borderRadius: 8, padding: '12px 16px', flexShrink: 0,
@@ -337,11 +326,11 @@ const s = {
   },
   alphaLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.55rem', fontWeight: 700,
+    fontSize: T.micro, fontWeight: T.wMedium,
     color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase',
   },
-  alphaVal:  { fontFamily: "'Merriweather', serif", fontSize: '2.2rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
-  alphaSub:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.62rem', fontWeight: 600, opacity: 0.7 },
+  alphaVal:  { fontFamily: "'Merriweather', serif", fontSize: T.display, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+  alphaSub:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight: 600, opacity: 0.7 },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1 },
   card: {
     border: '1px solid', borderRadius: 8, padding: '14px 14px 12px',
@@ -350,8 +339,8 @@ const s = {
   },
   cLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.55rem', fontWeight: 700,
+    fontSize: T.micro, fontWeight: T.wMedium,
     color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3,
   },
-  cVal: { fontFamily: "'Merriweather', serif", fontSize: '1.55rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+  cVal: { fontFamily: "'Merriweather', serif", fontSize: T.xlarge, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
 }

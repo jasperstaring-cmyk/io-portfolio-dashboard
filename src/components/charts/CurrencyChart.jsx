@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -47,7 +48,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   const activeTotal = rawActive.reduce((s, c) => s + c.rawVal, 0) || 100
   const baseTotal   = rawActive.reduce((s, c) => s + c.baseRaw, 0) || 100
 
-  // Explore gap detectie — som van ruwe gewichten
   const rawSum  = rawActive.reduce((s, c) => s + c.rawVal, 0)
   const gapPct  = Math.max(0, 100 - rawSum)
   const showGap = gapPct > 0 && gapPct < 100 && !showComparison
@@ -58,11 +58,9 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
     basePct: Math.round((c.baseRaw / baseTotal)   * 100),
   }))
 
-  // Afrondingscorrectie
   const pctSum = data.reduce((s, c) => s + c.pct, 0)
   if (pctSum !== 100 && data.length > 0) data[0].pct += 100 - pctSum
 
-  // FX exposure metrics
   const homePct     = data.find(c => c.isHome)?.pct     ?? 0
   const baseHomePct = data.find(c => c.isHome)?.basePct ?? 0
   const fxExp       = 100 - homePct
@@ -71,8 +69,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   const hasFxDelta  = showComparison && fxDelta !== 0
   const dColor      = d => d < 0 ? '#E01B41' : '#4ED596'
 
-  // Vaste hoogtes — proportoneel aan pct, maar nooit kleiner dan MIN_SEG_H
-  // In explore mode: schaal de hoogtes op basis van rawSum zodat gap zichtbaar wordt
   const effectiveTotal = showGap ? 100 : (activeTotal || 100)
   const rawHeights = data.map(c => {
     const proportion = showGap
@@ -84,7 +80,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   const filledHeight = rawHeights.reduce((a, b) => a + b, 0)
   const gapHeight    = showGap ? Math.max(0, TOTAL_HEIGHT - filledHeight) : 0
 
-  // Correctie als geen gap: zorg dat hoogtes exact optellen
   if (!showGap) {
     const hSum = rawHeights.reduce((a, b) => a + b, 0)
     if (hSum !== TOTAL_HEIGHT && rawHeights.length > 0) rawHeights[0] += TOTAL_HEIGHT - hSum
@@ -100,7 +95,6 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
     }}>
       <ExploreTotalBadge total={rawSum} label="Currency" exploreMode={exploreMode} />
 
-      {/* ── Hele compositie gecentreerd ── */}
       <div style={s.composition}>
 
         {/* ── BOVEN: metric + delta ── */}
@@ -123,7 +117,7 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
               <>
                 <span style={{
                   fontFamily: "'Merriweather Sans', sans-serif",
-                  fontSize: '1.2rem', fontWeight: 800,
+                  fontSize: T.xlarge, fontWeight: T.wHeavy,
                   color: dColor(fxDelta),
                 }}>
                   {fxDelta > 0 ? '+' : ''}{fxDelta}%
@@ -134,8 +128,8 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
             {showGap && (
               <span style={{
                 fontFamily: "'Merriweather Sans', sans-serif",
-                fontSize: '0.72rem', fontWeight: 700,
-                color: 'rgba(255,255,255,0.28)',
+                fontSize: T.small, fontWeight: T.wMedium,
+                color: T.faint,
               }}>
                 {Math.round(gapPct)}% unallocated
               </span>
@@ -186,8 +180,8 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                       }}>
                         <span style={{
                           fontFamily: "'Merriweather Sans', sans-serif",
-                          fontSize: rawHeights[i] >= 64 ? '1rem' : '0.82rem',
-                          fontWeight: 700,
+                          fontSize: rawHeights[i] >= 64 ? T.medium : T.body,
+                          fontWeight: T.wMedium,
                           color: 'rgba(255,255,255,0.82)',
                         }}>
                           {c.currency}
@@ -222,8 +216,8 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                   {gapHeight >= 32 && (
                     <span style={{
                       fontFamily: "'Merriweather Sans', sans-serif",
-                      fontSize: '0.62rem', fontWeight: 700,
-                      color: 'rgba(255,255,255,0.28)',
+                      fontSize: T.small, fontWeight: T.wMedium,
+                      color: T.faint,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
                     }}>
@@ -256,10 +250,10 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                   }}>
                     <span style={{
                       fontFamily: "'Merriweather Sans', sans-serif",
-                      fontSize: rawHeights[i] >= 64 ? '1.5rem'
-                              : rawHeights[i] >= 34 ? '1.15rem'
-                              : '0.88rem',
-                      fontWeight: 800,
+                      fontSize: rawHeights[i] >= 64 ? T.xlarge
+                              : rawHeights[i] >= 34 ? T.large
+                              : T.medium,
+                      fontWeight: T.wHeavy,
                       color: pctColor,
                       transition: 'color 0.5s ease',
                       whiteSpace: 'nowrap',
@@ -271,7 +265,7 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                       {hasCDelta && rawHeights[i] >= 26 && (
                         <span style={{
                           fontFamily: "'Merriweather Sans', sans-serif",
-                          fontSize: '0.75rem', fontWeight: 800,
+                          fontSize: T.small, fontWeight: T.wHeavy,
                           color: dColor(cDelta),
                         }}>
                           {cDelta > 0 ? '+' : ''}{cDelta}%
@@ -292,7 +286,7 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
                 }}>
                   <span style={{
                     fontFamily: "'Merriweather Sans', sans-serif",
-                    fontSize: '0.88rem', fontWeight: 800,
+                    fontSize: T.medium, fontWeight: T.wHeavy,
                     color: 'rgba(255,255,255,0.22)',
                     whiteSpace: 'nowrap',
                     transition: 'height 0.85s cubic-bezier(0.4,0,0.2,1)',
@@ -333,13 +327,13 @@ const s = {
   },
   sublabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    fontSize: T.micro, fontWeight: T.wMicro,
+    color: T.faint, letterSpacing: '0.1em',
     marginBottom: 6,
   },
   sublabelSmall: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
+    fontSize: T.micro, fontWeight: T.wMicro,
     color: 'rgba(255,255,255,0.22)', letterSpacing: '0.1em',
     marginBottom: 8,
   },
@@ -348,11 +342,11 @@ const s = {
   },
   bigNumber: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '4.8rem', fontWeight: 800, lineHeight: 1,
+    fontSize: '4.8rem', fontWeight: T.wHeavy, lineHeight: 1,
   },
   bigNumberSub: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1rem', fontWeight: 600,
+    fontSize: T.medium, fontWeight: T.wBody,
     color: 'rgba(255,255,255,0.40)',
   },
   deltaSlot: {
@@ -362,14 +356,14 @@ const s = {
   },
   vsBase: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)',
+    fontSize: T.body, color: 'rgba(255,255,255,0.35)',
   },
   barBlock: {
     display: 'flex', flexDirection: 'column',
   },
   fxBadge: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '7px', fontWeight: 800, letterSpacing: '0.06em',
+    fontSize: T.micro, fontWeight: T.wMicro, letterSpacing: '0.06em',
     color: 'rgba(255,255,255,0.55)',
     border: '0.5px solid rgba(255,255,255,0.25)',
     borderRadius: 3, padding: '1px 4px',
@@ -377,7 +371,7 @@ const s = {
   rowDeltaSlot: {
     minWidth: 48, flexShrink: 0,
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.75rem',
+    fontSize: T.small,
     color: 'transparent',
   },
 }

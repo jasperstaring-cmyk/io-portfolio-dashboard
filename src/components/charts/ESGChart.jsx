@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useRef, useState, useEffect } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -139,8 +140,9 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
               <circle r="16" fill={col} opacity="0.14" style={{transition:'fill 0.6s ease'}} />
               <circle r="11" fill={col} stroke="#0C182E" strokeWidth="2.5" style={{transition:'fill 0.6s ease'}} />
             </g>
+            {/* ESG score groot — schaalbaar via svgHero */}
             <text x={cx} y={cy-14} textAnchor="middle" fontFamily="'Merriweather Sans', sans-serif" fontSize="48" fontWeight="800" fill={col} style={{transition:'fill 0.6s ease'}}>{active.score.toFixed(1)}</text>
-            <text x={cx} y={cy+14} textAnchor="middle" fontFamily="'Merriweather Sans', sans-serif" fontSize="11" fontWeight="600" fill="rgba(255,255,255,0.30)">
+            <text x={cx} y={cy+14} textAnchor="middle" fontFamily="'Merriweather Sans', sans-serif" fontSize={T.svgSmall} fontWeight="600" fill={T.faint}>
               {deltaScore ? (deltaScore>0?`+${deltaScore} vs base`:`${deltaScore} vs base`) : `out of ${esg.maxScore}`}
             </text>
           </svg>
@@ -160,7 +162,7 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
         <div style={s.sublabel}>
           SFDR CLASSIFICATION{compEsg ? ' — SCENARIO' : ''}
           {hasSelection && (
-            <span style={{marginLeft:10, fontSize:'0.52rem', color:'rgba(255,255,255,0.28)', fontWeight:600, letterSpacing:'0.06em'}}>
+            <span style={{marginLeft:10, fontSize: T.micro, color: T.faint, fontWeight:600, letterSpacing:'0.06em'}}>
               CLICK AGAIN TO CLOSE
             </span>
           )}
@@ -186,16 +188,27 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
             }}>
               <div style={s.sfdrHeader}>
                 <div>
-                  <div style={{...s.sfdrName, color:item.color, fontSize:item.article==='Article 9'?'1.05rem':'0.92rem'}}>{item.article}</div>
+                  <div style={{
+                    ...s.sfdrName,
+                    color: item.color,
+                    fontSize: item.article === 'Article 9' ? T.large : T.body,
+                  }}>
+                    {item.article}
+                  </div>
                   <div style={s.sfdrDesc}>{item.desc}</div>
                 </div>
                 <div style={s.sfdrPctWrap}>
-                  <div style={{...s.sfdrPct, color:item.hasChange?deltaColor:'white', fontSize:item.article==='Article 9'?'2.4rem':'1.8rem', transition:'color 0.5s ease'}}>
+                  <div style={{
+                    ...s.sfdrPct,
+                    color: item.hasChange ? deltaColor : 'white',
+                    fontSize: item.article === 'Article 9' ? T.hero : T.display,
+                    transition: 'color 0.5s ease',
+                  }}>
                     {item.weight}%
                   </div>
                   <div style={{height:18, display:'flex', alignItems:'center', justifyContent:'flex-end'}}>
                     {item.hasChange && (
-                      <span style={{fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.75rem', fontWeight:800, color:deltaColor}}>
+                      <span style={{fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight: T.wHeavy, color:deltaColor}}>
                         {item.delta>0?'+':''}{item.delta}% vs base
                       </span>
                     )}
@@ -209,7 +222,7 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
               </div>
 
               <div style={{maxHeight: isSelected ? 100 : 0, overflow:'hidden', transition:'max-height 0.35s ease'}}>
-                <div style={{fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.72rem', fontWeight:400, color:'rgba(255,255,255,0.55)', lineHeight:1.55, paddingTop:8, borderTop:`1px solid ${item.color}30`, marginTop:6}}>
+                <div style={{fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight:400, color:'rgba(255,255,255,0.55)', lineHeight:1.55, paddingTop:8, borderTop:`1px solid ${item.color}30`, marginTop:6}}>
                   {item.detail}
                 </div>
               </div>
@@ -233,7 +246,7 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
           <div style={s.distLegend}>
             {sfdrItems.map(item => (
               <span key={item.article} onClick={() => handleCardClick(item.article)} style={{
-                fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.65rem', fontWeight:700,
+                fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight: T.wMedium,
                 color: item.color, cursor:'pointer',
                 opacity: hasSelection ? (selectedArticle===item.article ? 1 : 0.35) : 1,
                 transition:'opacity 0.3s ease',
@@ -254,17 +267,17 @@ const s = {
   gaugeSvgWrap: { flex:1, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', minHeight:0 },
   gaugeSvg: { width:'100%', height:'100%', display:'block' },
   carbonCard: { width:'100%', padding:'10px 18px', background:'rgba(255,255,255,0.04)', border:'1px solid', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', gap:2, flexShrink:0 },
-  carbonVal: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'2rem', fontWeight:800, lineHeight:1 },
-  carbonSub: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.65rem', color:'rgba(255,255,255,0.30)' },
+  carbonVal: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.display, fontWeight: T.wHeavy, lineHeight:1 },
+  carbonSub: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, color: T.faint },
   sfdrCol: { flex:1, display:'flex', flexDirection:'column', gap:6, minWidth:0 },
   sfdrCard: { padding:'10px 14px', borderRadius:10, border:'1px solid', display:'flex', flexDirection:'column', gap:6, flex:'none' },
   sfdrHeader: { display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 },
-  sfdrName: { fontFamily:"'Merriweather Sans', sans-serif", fontWeight:700, lineHeight:1.2 },
-  sfdrDesc: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.68rem', color:'rgba(255,255,255,0.32)', marginTop:2 },
+  sfdrName: { fontFamily:"'Merriweather Sans', sans-serif", fontWeight: T.wMedium, lineHeight:1.2 },
+  sfdrDesc: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, color:'rgba(255,255,255,0.32)', marginTop:2 },
   sfdrPctWrap: { flexShrink:0, textAlign:'right' },
-  sfdrPct: { fontFamily:"'Merriweather Sans', sans-serif", fontWeight:800, lineHeight:1 },
+  sfdrPct: { fontFamily:"'Merriweather Sans', sans-serif", fontWeight: T.wHeavy, lineHeight:1 },
   sfdrTrack: { height:8, background:'rgba(255,255,255,0.06)', borderRadius:4, position:'relative', overflow:'hidden', flexShrink:0 },
   distTrack: { height:10, borderRadius:5, overflow:'hidden', display:'flex' },
   distLegend: { display:'flex', gap:16, marginTop:5 },
-  sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.58rem', fontWeight:800, color:'rgba(255,255,255,0.28)', letterSpacing:'0.1em', alignSelf:'flex-start' },
+  sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, color: T.faint, letterSpacing:'0.1em', alignSelf:'flex-start' },
 }

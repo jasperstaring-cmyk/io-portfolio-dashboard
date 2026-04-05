@@ -1,17 +1,9 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
 // ImplementationChart — v1.1
-//
 // Leest implementation.categories[] uit de portfolio (v1.1 formaat).
-// Labels, sub-omschrijvingen en kleuren komen volledig uit de config —
-// geen hardcoded ITEMS meer. Framing per use case wordt ondersteund
-// via de resolvedFraming prop (optioneel, toekomstige stap).
-//
-// Explore mode: als de som van gewichten onder 100 ligt, toont de balk
-// een grijs "resterende ruimte" segment zodat de operator weet dat de
-// sliders nog bijgesteld moeten worden.
-//
 // Kleurlogica:
 // Groen (#4ED596) = stijging (delta > 0)
 // Rood  (#E01B41) = daling  (delta < 0)
@@ -95,7 +87,6 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
     }
   })
 
-  // Bereken de som van ruwe gewichten — voor explore gap detectie
   const rawSum = baseCategories.reduce((s, c) => s + (c.weight || 0), 0)
   const hasSelection = !!selectedId
 
@@ -105,7 +96,6 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
   const gapPct = Math.max(0, 100 - rawSum)
   const showGap = gapPct > 0 && gapPct < 100 && !showComparison
 
-  // Afrondingscorrectie — alleen als geen gap
   if (!showGap) {
     const scaledTotal = segments.reduce((a, s) => a + s.val, 0)
     if (scaledTotal !== 100 && segments.length > 0) {
@@ -117,17 +107,17 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
     <div style={{ ...s.wrap, position: 'relative' }}>
       <ExploreTotalBadge total={rawSum} label="Implementation" exploreMode={exploreMode} />
 
-      {/* ── Sublabel ── */}
+      {/* Sublabel */}
       <div style={s.sublabel}>
         PORTFOLIO CONSTRUCTION
         {hasSelection && (
-          <span style={{marginLeft:10, fontSize:'0.52rem', color:'rgba(255,255,255,0.28)', fontWeight:600, letterSpacing:'0.06em'}}>
+          <span style={{marginLeft:10, fontSize: T.micro, color: T.faint, fontWeight:600, letterSpacing:'0.06em'}}>
             CLICK AGAIN TO CLOSE
           </span>
         )}
       </div>
 
-      {/* ── Segment-labels boven de balk ── */}
+      {/* Segment-labels boven de balk */}
       <div style={{
         ...s.labelsRow,
         opacity:   animated ? 1 : 0,
@@ -202,23 +192,17 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
         )}
       </div>
 
-      {/* ── Gestapelde balk ── */}
-      <div style={{
-        ...s.trackWrap,
-        opacity:   animated ? 1 : 0,
-        transform: animated ? 'scaleY(1)' : 'scaleY(0.7)',
-        transition: 'opacity 0.45s ease 0.1s, transform 0.45s cubic-bezier(0.34,1.26,0.64,1) 0.1s',
-        transformOrigin: 'top',
-      }}>
-        {/* Ghost balk — originele verdeling als dunne streep bovenin bij compare */}
+      {/* Balk */}
+      <div style={s.trackWrap}>
+
+        {/* Ghost — base bij compare */}
         {showComparison && (
           <div style={s.ghostTrack}>
-            {segments.map((seg, i) => (
+            {segments.map(seg => (
               <div key={seg.id} style={{
                 width: `${seg.baseVal}%`,
                 background: seg.color,
                 transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
-                borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
               }} />
             ))}
           </div>
@@ -226,22 +210,29 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
 
         {/* Actieve balk */}
         <div style={s.activeTrack}>
-          {segments.map((seg, i) => (
-            <div key={seg.id}
-              onClick={() => handleSegmentClick(seg.id)}
-              style={{
-                width: `${seg.val}%`,
-                background: seg.color,
-                opacity: hasSelection
-                  ? (selectedId === seg.id ? 1.0 : 0.30)
-                  : 0.90,
-                transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
-                borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
-                cursor: 'pointer',
-                outline: selectedId === seg.id ? `2px solid ${seg.color}` : 'none',
-                outlineOffset: -2,
-              }} />
-          ))}
+          {segments.map(seg => {
+            const hasChange  = showComparison && seg.delta !== 0
+            const isSelected = selectedId === seg.id
+            const isDimmed   = hasSelection && !isSelected
+            const barColor   = hasChange
+              ? (seg.delta < 0 ? '#E01B41' : '#4ED596')
+              : seg.color
+
+            return (
+              <div
+                key={seg.id}
+                onClick={() => handleSegmentClick(seg.id)}
+                style={{
+                  width: `${seg.val}%`,
+                  background: barColor,
+                  opacity: isDimmed ? 0.35 : showComparison ? 0.82 : 0.88,
+                  transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, background 0.5s ease',
+                  cursor: 'pointer',
+                  outline: selectedId === seg.id ? `2px solid ${seg.color}` : 'none',
+                  outlineOffset: -2,
+                }} />
+            )
+          })}
 
           {/* Gap segment — lichtgrijs, gestreept, alleen in explore */}
           {showGap && (
@@ -257,8 +248,8 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
               {gapPct >= 8 && (
                 <span style={{
                   fontFamily: "'Merriweather Sans', sans-serif",
-                  fontSize: '0.62rem', fontWeight: 700,
-                  color: 'rgba(255,255,255,0.28)',
+                  fontSize: T.small, fontWeight: T.wMedium,
+                  color: T.faint,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
                   whiteSpace: 'nowrap',
@@ -284,8 +275,8 @@ const s = {
   },
   sublabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em',
+    fontSize: T.micro, fontWeight: T.wMicro,
+    color: T.faint, letterSpacing: '0.1em',
     marginBottom: 18,
   },
   labelsRow: {
@@ -299,23 +290,23 @@ const s = {
   },
   labelPct: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '2.4rem', fontWeight: 800, lineHeight: 1,
+    fontSize: T.display, fontWeight: T.wHeavy, lineHeight: 1,
   },
   labelName: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.88rem', fontWeight: 600,
+    fontSize: T.body, fontWeight: T.wBody,
     color: 'rgba(255,255,255,0.72)',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   labelSub: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', fontWeight: 400,
+    fontSize: T.small, fontWeight: 400,
     color: 'rgba(255,255,255,0.32)',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   labelDelta: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.88rem', fontWeight: 800,
+    fontSize: T.body, fontWeight: T.wHeavy,
     marginTop: 2,
   },
   trackWrap: {

@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useEffect, useRef } from 'react'
 
 // Categoriekleuren — neutraal, geen statusoordeel
@@ -247,7 +248,7 @@ export default function GeographyChart({ portfolio, comparisonPortfolio, showCom
                 {hasDelta && (
                   <span style={{
                     fontFamily: "'Merriweather Sans',sans-serif",
-                    fontSize: '0.68rem', fontWeight: 700,
+                    fontSize: T.small, fontWeight: T.wMedium,
                     color: r.delta > 0 ? '#E01B41' : '#4ED596',
                   }}>
                     {r.delta > 0 ? '+' : ''}{r.delta}%
@@ -268,11 +269,11 @@ const s = {
   mapWrap:     { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 },
   mapSvg:      { width: '100%', height: '100%', display: 'block' },
   barsCol:     { flex: 1, display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center', minWidth: 0 },
-  label:       { fontFamily: "'Merriweather Sans',sans-serif", fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em' },
+  label:       { fontFamily: "'Merriweather Sans',sans-serif", fontSize: T.micro, fontWeight: T.wMicro, color: T.faint, letterSpacing: '0.1em' },
   regionRow:   { display: 'flex', alignItems: 'center', gap: 12 },
   regionLabel: { display: 'flex', alignItems: 'center', gap: 8, width: 145, flexShrink: 0 },
-  regionName:  { fontFamily: "'Merriweather Sans',sans-serif", fontSize: '0.8rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)' },
+  regionName:  { fontFamily: "'Merriweather Sans',sans-serif", fontSize: T.body, fontWeight: T.wBody, color: T.secondary },
   track:       { height: 26, background: 'rgba(255,255,255,0.05)', borderRadius: 4, position: 'relative', overflow: 'hidden' },
   vals:        { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 90 },
-  pct:         { fontFamily: "'Merriweather Sans',sans-serif", fontSize: '1.05rem', fontWeight: 800 },
+  pct:         { fontFamily: "'Merriweather Sans',sans-serif", fontSize: T.large, fontWeight: T.wHeavy },
 }

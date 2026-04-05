@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -81,7 +82,7 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
       <div style={s.sublabel}>
         SECTOR ALLOCATION
         {hasSelection && (
-          <span style={{marginLeft:10, fontSize:'0.52rem', color:'rgba(255,255,255,0.28)', fontWeight:600, letterSpacing:'0.06em'}}>
+          <span style={{marginLeft:10, fontSize: T.micro, color: T.faint, fontWeight:600, letterSpacing:'0.06em'}}>
             CLICK AGAIN TO CLOSE
           </span>
         )}
@@ -138,7 +139,7 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
 
               <div style={s.topDeltaSlot}>
                 {sec.hasChange && (
-                  <span style={{color:deltaColor, fontWeight:800, fontSize:'0.82rem'}}>
+                  <span style={{color:deltaColor, fontWeight:800, fontSize: T.medium}}>
                     {sec.delta>0?'+':''}{sec.delta}% vs base
                   </span>
                 )}
@@ -148,7 +149,7 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
               <div style={{maxHeight: isSelected ? 80 : 0, overflow:'hidden', transition:'max-height 0.35s ease'}}>
                 <div style={{
                   fontFamily:"'Merriweather Sans', sans-serif",
-                  fontSize:'0.70rem', fontWeight:400,
+                  fontSize: T.small, fontWeight:400,
                   color:'rgba(255,255,255,0.50)',
                   lineHeight:1.5,
                   paddingTop:8,
@@ -224,24 +225,24 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
 
 const s = {
   wrap: { display:'flex', flexDirection:'column', height:'100%', width:'100%', justifyContent:'center', gap:0, paddingTop:'6%' },
-  sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.62rem', fontWeight:800, color:'rgba(255,255,255,0.28)', letterSpacing:'0.1em', marginBottom:12, flexShrink:0 },
+  sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, color: T.faint, letterSpacing:'0.1em', marginBottom:12, flexShrink:0 },
   topRow: { display:'flex', gap:12, marginBottom:14, flexShrink:0 },
   topCard: { flex:1, padding:'16px 20px', borderRadius:10, border:'1px solid', display:'flex', flexDirection:'column', gap:0 },
-  metaTag: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.65rem', fontWeight:800, letterSpacing:'0.1em', opacity:0.75, marginBottom:6 },
+  metaTag: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, letterSpacing:'0.1em', opacity:0.75, marginBottom:6 },
   topPct: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'3.2rem', fontWeight:800, lineHeight:1, marginBottom:4 },
-  topName: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'1.1rem', fontWeight:600, color:'rgba(255,255,255,0.75)', marginBottom:14 },
+  topName: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.large, fontWeight: T.wBody, color:'rgba(255,255,255,0.75)', marginBottom:14 },
   topTrack: { height:10, background:'rgba(255,255,255,0.06)', borderRadius:4, position:'relative', overflow:'hidden', marginBottom:8 },
-  topDeltaSlot: { height:22, display:'flex', alignItems:'center', fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.88rem', color:'transparent' },
+  topDeltaSlot: { height:22, display:'flex', alignItems:'center', fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.medium, color:'transparent' },
   divider: { display:'flex', alignItems:'center', gap:12, marginBottom:10, flexShrink:0 },
-  dividerLabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.62rem', fontWeight:800, letterSpacing:'0.1em', color:'rgba(255,255,255,0.22)', whiteSpace:'nowrap' },
+  dividerLabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, letterSpacing:'0.1em', color:'rgba(255,255,255,0.22)', whiteSpace:'nowrap' },
   dividerLine: { flex:1, height:1, background:'rgba(255,255,255,0.07)' },
   restGrid: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'4px 28px', flex:1, alignContent:'start' },
   restRow: { display:'flex', alignItems:'center', gap:10, padding:'5px 6px' },
   restStripe: { width:4, height:32, borderRadius:2, flexShrink:0 },
   restInfo: { width:148, flexShrink:0 },
-  restName: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.95rem', fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', transition:'color 0.3s ease' },
-  restMeta: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.68rem', transition:'color 0.3s ease' },
+  restName: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.body, fontWeight: T.wBody, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', transition:'color 0.3s ease' },
+  restMeta: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.small, transition:'color 0.3s ease' },
   restTrack: { flex:1, height:12, background:'rgba(255,255,255,0.06)', borderRadius:4, position:'relative', overflow:'hidden' },
-  restPct: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'1.1rem', fontWeight:800, minWidth:42, textAlign:'right', flexShrink:0 },
-  restDeltaSlot: { fontFamily:"'Merriweather Sans', sans-serif", fontSize:'0.80rem', fontWeight:800, minWidth:44, textAlign:'right', flexShrink:0, color:'transparent' },
+  restPct: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.large, fontWeight: T.wHeavy, minWidth:42, textAlign:'right', flexShrink:0 },
+  restDeltaSlot: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.medium, fontWeight: T.wHeavy, minWidth:44, textAlign:'right', flexShrink:0, color:'transparent' },
 }

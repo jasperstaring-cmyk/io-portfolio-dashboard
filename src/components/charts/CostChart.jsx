@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect } from 'react'
 
 // Kleurlogica is statusgebaseerd — bewuste uitzondering op categorieregel:
@@ -44,14 +45,11 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
   const tier     = terTier(weightedTer)
   const baseTier = terTier(baseTer)
 
-  // ── Gauge SVG berekeningen ────────────────────────────────────────────
-  // CY = 210 geeft de arc voldoende ruimte boven het hoogste punt (CY - R = 55)
-  // zodat MKT AVG label en arc-top nooit worden afgekapt
   const CX = 200, CY = 210, R = 155
 
   function arcPoint(ratio, radius) {
     const r2 = radius ?? R
-    const angle = Math.PI + ratio * Math.PI   // 180°→360° = links→rechts
+    const angle = Math.PI + ratio * Math.PI
     return {
       x: CX + r2 * Math.cos(angle),
       y: CY + r2 * Math.sin(angle),
@@ -73,7 +71,6 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
   const mktPt    = arcPoint(mktRatio)
   const needlePt = arcPoint(gaugeRatio)
 
-  // Euro-indicatoren
   const activeEur = Math.round(weightedTer / 100 * PORTFOLIO_SIZE)
   const baseEur   = Math.round(baseTer     / 100 * PORTFOLIO_SIZE)
   const saveEur   = Math.round(Math.abs(saving) / 100 * PORTFOLIO_SIZE)
@@ -95,7 +92,6 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
             preserveAspectRatio="xMidYMid meet"
             style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}
           >
-
             {/* Track */}
             <path
               d={arcPath(0, 1)}
@@ -146,14 +142,14 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
             <text
               x={mktPt.x} y={mktPt.y - 15}
               textAnchor="middle"
-              fill="#F5A623" fontSize="11"
+              fill="#F5A623" fontSize={T.svgSmall}
               fontFamily="'Merriweather Sans', sans-serif"
               fontWeight="700" opacity="0.75"
             >MKT AVG</text>
             <text
               x={mktPt.x} y={mktPt.y - 3}
               textAnchor="middle"
-              fill="#F5A623" fontSize="9"
+              fill="#F5A623" fontSize={T.svgMicro}
               fontFamily="'Merriweather Sans', sans-serif"
               opacity="0.55"
             >{marketAvg.toFixed(2)}%</text>
@@ -180,11 +176,11 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
 
             {/* Schaallabels */}
             <text x="35" y={CY + 26}
-              fill="rgba(255,255,255,0.28)" fontSize="11"
+              fill={T.faint} fontSize={T.svgSmall}
               fontFamily="'Merriweather Sans', sans-serif">0%</text>
             <text x="365" y={CY + 26}
               textAnchor="end"
-              fill="rgba(255,255,255,0.28)" fontSize="11"
+              fill={T.faint} fontSize={T.svgSmall}
               fontFamily="'Merriweather Sans', sans-serif">1.2%</text>
 
             {/* TER readout */}
@@ -198,7 +194,7 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
             <text
               x={CX} y={CY + 8}
               textAnchor="middle"
-              fill="rgba(255,255,255,0.30)" fontSize="10"
+              fill={T.faint} fontSize={T.svgSmall}
               fontFamily="'Merriweather Sans', sans-serif"
               letterSpacing="1.5"
             >WEIGHTED AVG TER</text>
@@ -209,7 +205,7 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
             <text
               x={CX} y={CY + 31}
               textAnchor="middle"
-              fill={tier.color} fontSize="9"
+              fill={tier.color} fontSize={T.svgMicro}
               fontFamily="'Merriweather Sans', sans-serif"
               fontWeight="800" letterSpacing="1"
             >{tier.label.toUpperCase()}</text>
@@ -344,7 +340,6 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
 
                 {/* Balk */}
                 <div style={s.barTrack}>
-                  {/* Ghost */}
                   {hasDelta && (
                     <div style={{
                       position: 'absolute', top: 0, bottom: 0, left: 0,
@@ -354,7 +349,6 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
                       width: `${basePct}%`,
                     }} />
                   )}
-                  {/* Actief */}
                   <div style={{
                     position: 'absolute', top: 0, bottom: 0, left: 0,
                     borderRadius: 4,
@@ -362,7 +356,6 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
                     width: animated ? `${barPct}%` : '0%',
                     transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1), background 0.5s ease',
                   }} />
-                  {/* Marktgemiddelde lijn */}
                   <div style={{
                     position: 'absolute', top: -3, bottom: -3,
                     left: `${mktLinePct}%`,
@@ -406,7 +399,6 @@ const s = {
     gap: 10, minHeight: 0, overflow: 'visible',
   },
   gaugeWrap: {
-    // Neemt beschikbare ruimte maar schaalt niet onbeperkt mee
     flex: 1, minHeight: 0, maxHeight: 300,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     overflow: 'visible',
@@ -418,7 +410,7 @@ const s = {
   },
   sectionLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
+    fontSize: T.micro, fontWeight: T.wMicro,
     color: 'rgba(255,255,255,0.32)',
     letterSpacing: '0.12em', textTransform: 'uppercase',
     flexShrink: 0,
@@ -434,17 +426,17 @@ const s = {
   },
   kpiLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem', fontWeight: 600,
+    fontSize: T.micro, fontWeight: 600,
     color: 'rgba(255,255,255,0.32)', letterSpacing: '0.04em',
   },
   kpiVal: {
     fontFamily: "'Merriweather', serif",
-    fontSize: '1.25rem', fontWeight: 700,
+    fontSize: T.xlarge, fontWeight: 700,
     color: '#FFFFFF', lineHeight: 1.1,
   },
   kpiSub: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)',
+    fontSize: T.micro, color: T.faint,
   },
   savingCard: {
     border: '1px solid', borderRadius: 6,
@@ -452,16 +444,16 @@ const s = {
   },
   savingLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
+    fontSize: T.micro, fontWeight: T.wMicro,
     letterSpacing: '0.08em', textTransform: 'uppercase',
   },
   savingAmount: {
     fontFamily: "'Merriweather', serif",
-    fontSize: '1.6rem', fontWeight: 700, lineHeight: 1,
+    fontSize: T.xlarge, fontWeight: 700, lineHeight: 1,
   },
   savingEur: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)',
+    fontSize: T.small, color: 'rgba(255,255,255,0.38)',
   },
   barList: {
     flex: 1, display: 'flex', flexDirection: 'column',
@@ -472,33 +464,33 @@ const s = {
   barLabelGroup: { display: 'flex', alignItems: 'center', gap: 7 },
   barLabel: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.82)',
+    fontSize: T.body, fontWeight: T.wBody, color: 'rgba(255,255,255,0.82)',
   },
   tierBadge: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.5rem', fontWeight: 800,
+    fontSize: T.micro, fontWeight: T.wMicro,
     letterSpacing: '0.1em', textTransform: 'uppercase',
     padding: '1px 5px', borderRadius: 3, border: '1px solid',
   },
   weightTag: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.28)',
+    fontSize: T.micro, fontWeight: 600,
+    color: T.faint,
   },
   barValueGroup: { display: 'flex', alignItems: 'center', gap: 7 },
   barValue: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.8rem', fontWeight: 700, color: '#FFFFFF',
+    fontSize: T.body, fontWeight: T.wMedium, color: '#FFFFFF',
   },
   barDelta: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.6rem', fontWeight: 700,
+    fontSize: T.small, fontWeight: T.wMedium,
     padding: '1px 5px', borderRadius: 3,
   },
   contribVal: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem', fontWeight: 500,
-    color: 'rgba(255,255,255,0.28)',
+    fontSize: T.micro, fontWeight: 500,
+    color: T.faint,
   },
   barTrack: {
     position: 'relative', height: 22, borderRadius: 4,
@@ -518,6 +510,6 @@ const s = {
   },
   legendText: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.54rem', color: 'rgba(255,255,255,0.28)', marginRight: 3,
+    fontSize: T.micro, color: T.faint, marginRight: 3,
   },
 }

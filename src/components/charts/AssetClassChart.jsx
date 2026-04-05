@@ -1,3 +1,4 @@
+import { T } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ChartTooltip, { useTooltip } from './ChartTooltip'
 import ExploreTotalBadge from './ExploreTotalBadge'
@@ -175,7 +176,6 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
             <stop offset="0%"   stopColor="#4ED596" stopOpacity="0.06" />
             <stop offset="100%" stopColor="#4ED596" stopOpacity="0"    />
           </radialGradient>
-          {/* Diepte-schaduw filter onder de pie — iets sterker voor groot scherm */}
           <filter id="pie-depth" x="-20%" y="-15%" width="140%" height="145%">
             <feDropShadow dx="0" dy="14" stdDeviation="18" floodColor="#000000" floodOpacity="0.55" />
             <feDropShadow dx="0" dy="5"  stdDeviation="6"  floodColor="#000000" floodOpacity="0.30" />
@@ -252,8 +252,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
           const badgeColor = delta < 0 ? '#E01B41' : '#4ED596'
           const badgeText  = (delta > 0 ? '+' : '') + delta + '%'
 
-          // Badge achtergrond rect (geclampt binnen viewport)
-          const bw = 38, bh = 20
+          const bw = 42, bh = 22
           const rx = Math.max(SAFE_LEFT, Math.min(SAFE_RIGHT - bw, bx - bw / 2))
           const ry = Math.max(SAFE_TOP,  Math.min(SAFE_BOTTOM - bh, by - bh / 2))
 
@@ -268,7 +267,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
                 x={rx + bw / 2} y={ry + bh / 2 + 5}
                 textAnchor="middle"
                 fontFamily="'Merriweather Sans', sans-serif"
-                fontSize="11" fontWeight="800"
+                fontSize={T.svgSmall} fontWeight="800"
                 fill={badgeColor}
               >
                 {badgeText}
@@ -289,12 +288,13 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
           const lineW       = isSelected ? '1.0' : '0.7'
           const lineOpacity = isDimmed ? 0.07 : isSelected ? 0.75 : 0.32
 
-          const pctSize  = isSelected ? 30 : 19
-          const nameSize = isSelected ? 14 : 12
+          // Schaalbare font sizes via tokens
+          const pctSize  = isSelected ? T.svgHero  : T.svgLarge
+          const nameSize = isSelected ? T.svgBody  : T.svgBody
 
           const pctY    = labelY - 4
           const nameY   = labelY + nameSize + 4
-          const statusY = nameY + 17
+          const statusY = nameY + T.svgSmall + 6
 
           return (
             <g
@@ -343,7 +343,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
                   x={labelX} y={statusY}
                   textAnchor={anchor}
                   fontFamily="'Merriweather Sans', sans-serif"
-                  fontSize="11" fontWeight="700"
+                  fontSize={T.svgSmall} fontWeight="700"
                   fill={st.color}
                   letterSpacing="0.05em"
                 >
