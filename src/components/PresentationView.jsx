@@ -23,7 +23,8 @@ const DIMENSIONS = {
 }
 
 export default function PresentationView({
-  event, portfolio, scenario, showComparison, activeDimension, lang
+  event, portfolio, scenario, showComparison, activeDimension,
+  showPerformanceView, lang
 }) {
   const [visible, setVisible] = useState(false)
 
@@ -31,10 +32,8 @@ export default function PresentationView({
     setVisible(false)
     const t = setTimeout(() => setVisible(true), 80)
     return () => clearTimeout(t)
-  }, [scenario?.id, activeDimension])
+  }, [scenario?.id, activeDimension, showPerformanceView])
 
-  // Stap 3: resolveUseCase produceert opgeloste base en compare
-  // Event-object wordt geconstrueerd met de portfolio als baseline
   const resolvedEvent = { ...event, portfolio }
   const { resolvedBase, resolvedCompare, resolvedFraming } = resolveUseCase(
     resolvedEvent,
@@ -48,8 +47,32 @@ export default function PresentationView({
   const compLabel      = scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
   const sp             = scenario?.speakerProfile
 
-  // comparisonPortfolio is null als compare uitstaat of niet beschikbaar
   const comparisonPortfolio = showComparison ? resolvedCompare : null
+
+  // ── Performance view — bouw een synthetisch portfolio met de twee series ──
+  // base-serie en (optioneel) compare-serie uit scenario.performanceView
+  const perfView = scenario?.performanceView
+  const hasPerfView = !!(perfView?.base?.length || perfView?.compare?.length)
+
+  // Portfolio-objecten voor de performance chart in performance view modus
+  const perfBasePortfolio = hasPerfView ? {
+    ...resolvedBase,
+    performance: {
+      ...resolvedBase.performance,
+      series: perfView.base || [],
+    },
+  } : null
+
+  const perfComparePortfolio = (hasPerfView && showComparison && perfView?.compare?.length) ? {
+    ...resolvedBase,
+    performance: {
+      ...resolvedBase.performance,
+      series: perfView.compare,
+    },
+  } : null
+
+  // Actieve weergave: performance view of normale dimensie
+  const showingPerf = showPerformanceView && hasPerfView
 
   return (
     <div style={s.container}>
@@ -97,6 +120,9 @@ export default function PresentationView({
           {showComparison && compLabel && (
             <span style={s.compTag}>⟳ {compLabel}</span>
           )}
+          {showingPerf && (
+            <span style={s.perfTag}>↗ Performance impact</span>
+          )}
         </div>
         <div style={s.policyQuestion}>{policyQuestion}</div>
       </div>
@@ -108,13 +134,22 @@ export default function PresentationView({
         transform: visible ? 'translateY(0)' : 'translateY(14px)',
         transition: 'opacity 0.52s ease 0.07s, transform 0.52s ease 0.07s',
       }}>
-        <ChartComponent
-          portfolio={resolvedBase}
-          comparisonPortfolio={comparisonPortfolio}
-          showComparison={showComparison && !!comparisonPortfolio}
-          framing={resolvedFraming}
-          lang={lang}
-        />
+        {showingPerf ? (
+          <PerformanceChart
+            portfolio={perfBasePortfolio}
+            comparisonPortfolio={perfComparePortfolio}
+            showComparison={showComparison && !!perfComparePortfolio}
+            lang={lang}
+          />
+        ) : (
+          <ChartComponent
+            portfolio={resolvedBase}
+            comparisonPortfolio={comparisonPortfolio}
+            showComparison={showComparison && !!comparisonPortfolio}
+            framing={resolvedFraming}
+            lang={lang}
+          />
+        )}
       </div>
 
       {/* ── FOOTER ── */}
@@ -241,6 +276,14 @@ const s = {
     color: '#4ED596',
     background: 'rgba(78,213,150,0.1)',
     border: '1px solid rgba(78,213,150,0.28)',
+    padding: '3px 9px', borderRadius: '3px',
+  },
+  perfTag: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.58rem', fontWeight: 700,
+    color: '#5B8DEF',
+    background: 'rgba(91,141,239,0.1)',
+    border: '1px solid rgba(91,141,239,0.28)',
     padding: '3px 9px', borderRadius: '3px',
   },
   policyQuestion: {

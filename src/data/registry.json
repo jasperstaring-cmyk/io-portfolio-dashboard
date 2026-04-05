@@ -201,13 +201,13 @@
           "series": [
             {
               "month": "2024-01",
-              "portfolio": 100.0,
-              "benchmark": 100.0
+              "portfolio": 100,
+              "benchmark": 100
             },
             {
               "month": "2024-02",
               "portfolio": 101.8,
-              "benchmark": 101.0
+              "benchmark": 101
             },
             {
               "month": "2024-03",
@@ -252,7 +252,7 @@
             {
               "month": "2024-11",
               "portfolio": 111.6,
-              "benchmark": 109.0
+              "benchmark": 109
             },
             {
               "month": "2024-12",
@@ -1405,8 +1405,8 @@
           "series": [
             {
               "month": "2025-01",
-              "portfolio": 100.0,
-              "benchmark": 100.0
+              "portfolio": 100,
+              "benchmark": 100
             },
             {
               "month": "2025-02",
@@ -1838,6 +1838,92 @@
                 }
               }
             }
+          },
+          "performanceView": {
+            "base": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 102.4,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 101.1,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 104.8,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 106.2,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 105.1,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 108.3,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 111.6,
+                "benchmark": 109.8
+              }
+            ],
+            "compare": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 101.8,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 100.9,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 103.2,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 104.1,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 103.6,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 105.8,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 107.4,
+                "benchmark": 109.8
+              }
+            ]
           }
         },
         {
@@ -1978,6 +2064,92 @@
                 "current": 10
               }
             ]
+          },
+          "performanceView": {
+            "base": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 99.2,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 98.1,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 101.4,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 103.8,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 104.6,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 106.1,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 108.2,
+                "benchmark": 109.8
+              }
+            ],
+            "compare": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 97.8,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 96.4,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 100.2,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 103.1,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 104.8,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 107.2,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 110.1,
+                "benchmark": 109.8
+              }
+            ]
           }
         },
         {
@@ -2087,6 +2259,92 @@
                 }
               ]
             }
+          },
+          "performanceView": {
+            "base": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 102.1,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 100.8,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 104.3,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 106.8,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 107.4,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 109.2,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 112.4,
+                "benchmark": 109.8
+              }
+            ],
+            "compare": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 101.6,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 100.5,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 103.8,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 105.9,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 106.8,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 108.1,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 110.3,
+                "benchmark": 109.8
+              }
+            ]
           }
         },
         {
@@ -2165,6 +2423,92 @@
               {
                 "id": "real_estate_sec",
                 "weight": 4
+              }
+            ]
+          },
+          "performanceView": {
+            "base": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 103.8,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 102.1,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 106.4,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 109.2,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 110.8,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 112.1,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 116.3,
+                "benchmark": 109.8
+              }
+            ],
+            "compare": [
+              {
+                "label": "Q1 2023",
+                "portfolio": 100,
+                "benchmark": 100
+              },
+              {
+                "label": "Q2 2023",
+                "portfolio": 101.4,
+                "benchmark": 101.2
+              },
+              {
+                "label": "Q3 2023",
+                "portfolio": 100.8,
+                "benchmark": 100.1
+              },
+              {
+                "label": "Q4 2023",
+                "portfolio": 103.6,
+                "benchmark": 103.4
+              },
+              {
+                "label": "Q1 2024",
+                "portfolio": 105.2,
+                "benchmark": 105.6
+              },
+              {
+                "label": "Q2 2024",
+                "portfolio": 106.1,
+                "benchmark": 106.2
+              },
+              {
+                "label": "Q3 2024",
+                "portfolio": 107.8,
+                "benchmark": 107.8
+              },
+              {
+                "label": "Q4 2024",
+                "portfolio": 109.4,
+                "benchmark": 109.8
               }
             ]
           }

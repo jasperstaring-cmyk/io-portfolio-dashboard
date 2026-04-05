@@ -43,11 +43,16 @@ export default function OperatorPanel({
   activeDimension, onSelectDimension,
   activeScenario, lang, onEnterExplore,
   allEvents, activeEventId, onSelectEvent,
+  showPerformanceView, onTogglePerformanceView,
 }) {
+  // Bepaal of de actieve use case een performance view heeft
+  const perfView = activeScenario?.performanceView
+  const hasPerfView = !!(perfView?.base?.length || perfView?.compare?.length)
+
   return (
     <div style={styles.panel}>
 
-      {/* ── Event selector — only shown if multiple events available ── */}
+      {/* ── Event selector ── */}
       {allEvents?.length > 1 && (
         <>
           <div style={styles.section}>
@@ -77,6 +82,7 @@ export default function OperatorPanel({
         </>
       )}
 
+      {/* ── Scenarios ── */}
       <div style={styles.section}>
         <div style={styles.sectionLabel}>SCENARIOS</div>
         <div style={styles.row}>
@@ -103,11 +109,12 @@ export default function OperatorPanel({
 
       <div style={styles.vDivider} />
 
+      {/* ── Dimension ── */}
       <div style={styles.section}>
         <div style={styles.sectionLabel}>DIMENSION</div>
         <div style={styles.row}>
           {DIMENSIONS.map(d => {
-            const isActive = activeDimension === d.id
+            const isActive = activeDimension === d.id && !showPerformanceView
             return (
               <button key={d.id} onClick={() => onSelectDimension(d.id)}
                 style={{ ...styles.dimBtn, ...(isActive ? styles.dimBtnActive : {}) }}>
@@ -124,6 +131,7 @@ export default function OperatorPanel({
 
       <div style={styles.vDivider} />
 
+      {/* ── Compare ── */}
       <div style={styles.section}>
         <div style={styles.sectionLabel}>COMPARE</div>
         <div style={styles.row}>
@@ -166,6 +174,34 @@ export default function OperatorPanel({
 
       <div style={styles.vDivider} />
 
+      {/* ── Performance view — alleen zichtbaar als use case dit heeft ── */}
+      {hasPerfView && (
+        <>
+          <div style={styles.section}>
+            <div style={styles.sectionLabel}>PERFORMANCE</div>
+            <div style={styles.row}>
+              <button
+                onClick={onTogglePerformanceView}
+                style={{
+                  ...styles.perfBtn,
+                  ...(showPerformanceView ? styles.perfBtnActive : {}),
+                }}
+              >
+                <span style={{ fontSize: '0.88rem', lineHeight: 1 }}>↗</span>
+                <span style={{
+                  ...styles.perfBtnLabel,
+                  color: showPerformanceView ? '#FFFFFF' : '#0C182E',
+                }}>
+                  {showPerformanceView ? 'Performance ON' : 'Performance view'}
+                </span>
+              </button>
+            </div>
+          </div>
+          <div style={styles.vDivider} />
+        </>
+      )}
+
+      {/* ── Explore ── */}
       <div style={styles.section}>
         <div style={styles.sectionLabel}>EXPLORE</div>
         <div style={styles.row}>
@@ -308,6 +344,31 @@ const styles = {
     fontSize: '0.6rem',
     color: '#8A8A82',
     lineHeight: 1.35,
+  },
+  perfBtn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '7px 16px',
+    background: '#FFFFFF',
+    border: '1.5px solid #E0E0DC',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    minWidth: '100px',
+  },
+  perfBtnActive: {
+    background: '#0C182E',
+    borderColor: '#0C182E',
+    boxShadow: '0 2px 8px rgba(12,24,46,0.2)',
+  },
+  perfBtnLabel: {
+    fontFamily: "'Merriweather Sans', sans-serif",
+    fontSize: '0.57rem',
+    fontWeight: 700,
+    textAlign: 'center',
+    whiteSpace: 'nowrap',
   },
   exploreBtn: {
     display: 'flex',

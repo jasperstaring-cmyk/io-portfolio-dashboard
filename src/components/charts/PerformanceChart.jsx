@@ -21,8 +21,9 @@ function generateSyntheticSeries(p) {
   return { port, bench, labels: months }
 }
 
-// Verwerk echte tijdreeksdata uit portfolio.performance.series
-// Verwacht: [{ month: "2025-01", portfolio: 100.0, benchmark: 100.0 }, ...]
+// Verwerk tijdreeksdata uit portfolio.performance.series
+// Ondersteunt zowel nieuw formaat { label, portfolio, benchmark }
+// als oud formaat { month: "2025-01", portfolio, benchmark }
 function processRealSeries(series) {
   if (!series?.length) return null
 
@@ -30,12 +31,13 @@ function processRealSeries(series) {
   const base    = series[0].portfolio
   const baseBch = series[0].benchmark ?? series[0].portfolio
 
-  const port   = series.map(s => (s.portfolio  / base)    * 100)
-  const bench  = series.map(s => ((s.benchmark ?? s.portfolio) / baseBch) * 100)
+  const port  = series.map(s => (s.portfolio / base) * 100)
+  const bench = series.map(s => ((s.benchmark ?? s.portfolio) / baseBch) * 100)
 
-  // Maandlabels: "2025-01" → "Jan '25" of korte maandnaam
+  // Label: gebruik vrij label-veld, val terug op month-parsing voor bestaande data
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
   const labels = series.map(s => {
+    if (s.label) return s.label
     if (!s.month) return ''
     const parts = s.month.split('-')
     const m = parseInt(parts[1], 10) - 1
@@ -101,7 +103,6 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
   const endX = tx(n - 1)
   const endY = ty(port[port.length - 1])
 
-  // Label: toon of data synthetisch of echt is
   const isReal = !!p.series?.length
   const chartLabel = isReal
     ? `PORTFOLIO PERFORMANCE — ${labels[0]} → ${labels[labels.length - 1]} (INDEXED TO 100)`
@@ -158,7 +159,6 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
             {/* X-labels — toon subset als veel datapunten */}
             {labels.map((m, i) => {
-              // Toon max 12 labels, altijd eerste en laatste
               const step = Math.max(1, Math.floor(n / 12))
               if (i % step !== 0 && i !== n - 1) return null
               return (
@@ -174,7 +174,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
             <line x1={pL} y1={ty(100)} x2={W - pR} y2={ty(100)}
               stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="4 3" />
 
-            {/* Compare lijn — als vergelijkingsportfolio ook tijdreeks heeft */}
+            {/* Compare lijn */}
             {compSeriesRaw && (
               <>
                 <polygon points={areaPath(compSeriesRaw.port)} fill="url(#perf-area-comp)"
@@ -198,7 +198,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
               stroke={C.bench} strokeWidth="1.5"
               strokeDasharray="5 3" strokeLinecap="round" />
 
-            {/* Portfoliolijn — draw-animatie */}
+            {/* Portfoliolijn */}
             <path ref={pathRef} d={linePath(port)} fill="none"
               stroke={C.green} strokeWidth="2.8"
               strokeLinecap="round" strokeLinejoin="round"

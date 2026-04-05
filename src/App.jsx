@@ -16,9 +16,6 @@ const {
   allEvents: allRegistryEvents,
 } = resolveRegistry(rawRegistry)
 
-// Normaliseert een use case zodat zowel 'compare' (v1.1) als 'comparison' (v1.0)
-// altijd beide aanwezig zijn — bestaande componenten lezen nog 'comparison',
-// nieuwe code gebruikt 'compare'
 function normalizeUsecaseForLegacy(uc) {
   const normalized = { ...uc }
   if (uc.compare !== undefined && uc.comparison === undefined) {
@@ -30,7 +27,6 @@ function normalizeUsecaseForLegacy(uc) {
   return normalized
 }
 
-// Bouw een config-object in het formaat dat de rest van de app verwacht
 function buildLegacyConfig(event, usecases) {
   const normalizedUsecases = usecases.map(normalizeUsecaseForLegacy)
   return {
@@ -59,6 +55,7 @@ export default function App() {
   const [activeDimension, setActiveDimension] = useState(null)
   const [showConfig, setShowConfig] = useState(false)
   const [idleMode, setIdleMode] = useState(true)
+  const [showPerformanceView, setShowPerformanceView] = useState(false)
 
   const [exploreMode, setExploreMode] = useState(false)
   const [explorePortfolio, setExplorePortfolio] = useState(
@@ -73,9 +70,9 @@ export default function App() {
     setActiveScenarioIndex(i)
     setShowComparison(false)
     setActiveDimension(null)
+    setShowPerformanceView(false)
   }
 
-  // Select event from registry
   function handleSelectEvent(eventId) {
     if (!allEvents?.length) return
     const event = allEvents.find(e => e.id === eventId)
@@ -86,44 +83,48 @@ export default function App() {
     setActiveScenarioIndex(0)
     setShowComparison(false)
     setActiveDimension(null)
+    setShowPerformanceView(false)
     setIdleMode(true)
     setExplorePortfolio(clonePortfolio(event.portfolio))
   }
 
-  // Apply — update dashboard state, keep configurator open
   function handleApplyConfig(newConfig) {
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
     setActiveDimension(null)
+    setShowPerformanceView(false)
     setExplorePortfolio(clonePortfolio(newConfig.portfolio))
   }
 
-  // Save — update dashboard state and close configurator
   function handleSaveConfig(newConfig) {
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
     setActiveDimension(null)
+    setShowPerformanceView(false)
     setShowConfig(false)
     setExplorePortfolio(clonePortfolio(newConfig.portfolio))
   }
 
+  function handleSelectDimension(dim) {
+    setActiveDimension(dim)
+    setShowPerformanceView(false)
+  }
+
+  function handleTogglePerformanceView() {
+    setShowPerformanceView(prev => !prev)
+  }
+
   function handleEnterExplore() {
-    // Stap 5: startFrom "base" of "compare" — bepaald door use case explore-configuratie
-    // Als startFrom "compare" is én compare actief is, start explore vanuit de compare-state
     const exploreConfig = activeScenario?.explore
     const startFrom = exploreConfig?.startFrom || 'base'
     const useCompareAsStart = startFrom === 'compare' && showComparison
 
-    // Bepaal het startpunt: base portfolio of compare portfolio
-    // resolveUseCase is al aangeroepen in PresentationView — hier klonen we direct
     let startPortfolio
     if (useCompareAsStart && activeScenario?.comparison) {
-      // Deep merge van base portfolio met comparison-overrides als startpunt
       const baseClone = clonePortfolio(config.portfolio)
       const comp = activeScenario.comparison
-      // Pas compare-velden toe op het startpunt
       if (comp.allocations) {
         baseClone.allocations = baseClone.allocations.map(a => {
           const c = comp.allocations.find(x => x.id === a.id)
@@ -148,7 +149,6 @@ export default function App() {
       startPortfolio = clonePortfolio(config.portfolio)
     }
 
-    // Bereken geo-override voor startpositie
     const geoOverride = {}
     startPortfolio.allocations.forEach(a => {
       if (!a.geographic?.length) return
@@ -197,7 +197,6 @@ export default function App() {
   function handleUpdateImpl(id, val) {
     setExplorePortfolio(prev => {
       const impl = prev.implementation
-      // v1.1: categories array
       if (Array.isArray(impl?.categories)) {
         return {
           ...prev,
@@ -209,7 +208,6 @@ export default function App() {
           },
         }
       }
-      // v1.0 fallback: plat object
       return { ...prev, implementation: { ...impl, [id]: val } }
     })
   }
@@ -262,6 +260,7 @@ export default function App() {
             scenario={activeScenario}
             showComparison={showComparison}
             activeDimension={activeDimension || activeScenario.dimension}
+            showPerformanceView={showPerformanceView}
             lang={lang}
           />
         )}
@@ -291,13 +290,15 @@ export default function App() {
             showComparison={showComparison}
             onToggleComparison={() => setShowComparison(!showComparison)}
             activeDimension={activeDimension || activeScenario.dimension}
-            onSelectDimension={setActiveDimension}
+            onSelectDimension={handleSelectDimension}
             activeScenario={activeScenario}
             lang={lang}
             onEnterExplore={handleEnterExplore}
             allEvents={allEvents}
             activeEventId={activeEventId}
             onSelectEvent={handleSelectEvent}
+            showPerformanceView={showPerformanceView}
+            onTogglePerformanceView={handleTogglePerformanceView}
           />
         )}
 
@@ -335,11 +336,6 @@ export default function App() {
             }}
             onMouseEnter={e => e.target.style.opacity = 1}
             onMouseLeave={e => e.target.style.opacity = 0.8}
-            title={
-              idleMode
-                ? 'Startscherm actief — klik om dashboard te starten'
-                : 'Dashboard actief — klik voor startscherm'
-            }
           >
             {idleMode ? '▶ Start' : '⏸ Idle'}
           </button>

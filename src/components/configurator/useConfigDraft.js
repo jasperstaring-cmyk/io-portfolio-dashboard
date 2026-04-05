@@ -267,6 +267,26 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+  // ── Performance view ─────────────────────────────────────────────────────
+  // Beheert de optionele performance tijdreeks per use case.
+  // serie = 'base' of 'compare', data = array van { label, portfolio, benchmark }
+
+  function upPerfView(idx, serie, data) {
+    mark(d => ({
+      ...d,
+      scenarios: d.scenarios.map((s, i) => {
+        if (i !== idx) return s
+        const current = s.performanceView || {}
+        const updated = { ...current, [serie]: data }
+        // Verwijder performanceView als beide series leeg zijn
+        const isEmpty = !updated.base?.length && !updated.compare?.length
+        return isEmpty
+          ? { ...s, performanceView: undefined }
+          : { ...s, performanceView: updated }
+      }),
+    }))
+  }
+
   // ── Comparison ───────────────────────────────────────────────────────────
 
   function upCompLabel(idx, lang, val) {
@@ -458,6 +478,8 @@ export function useConfigDraft(initialConfig) {
     upFraming,
     // Explore
     upExploreToggle, upExploreStartFrom,
+    // Performance view
+    upPerfView,
     // Comparison
     upCompLabel, upCompAlloc, upCompESG, upCompSFDR,
     upCompImplCat, toggleComparison,
