@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 
 // Kleurlogica conform IO-stijl op donkere achtergrond:
@@ -43,6 +43,8 @@ function processRealSeries(series) {
 }
 
 export default function PerformanceChart({ portfolio, comparisonPortfolio, showComparison }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [drawn, setDrawn] = useState(false)
   const pathRef = useRef(null)
 
@@ -304,7 +306,8 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: { display: 'flex', gap: 32, height: '100%', width: '100%', alignItems: 'stretch' },
   chartCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0 },
   topLabel: {
@@ -343,4 +346,5 @@ const s = {
     color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3,
   },
   cVal: { fontFamily: "'Merriweather', serif", fontSize: T.xlarge, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+}
 }

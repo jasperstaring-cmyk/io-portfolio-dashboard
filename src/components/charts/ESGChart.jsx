@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useRef, useState, useEffect } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -39,6 +39,8 @@ function sfdrRgb(color) {
 }
 
 export default function ESGChart({ portfolio, comparisonPortfolio, showComparison, exploreMode = false }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState(null)
   const prevCompare = useRef(showComparison)
@@ -261,7 +263,8 @@ export default function ESGChart({ portfolio, comparisonPortfolio, showCompariso
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: { display:'flex', gap:32, height:'100%', width:'100%', alignItems:'center' },
   gaugeCol: { flexShrink:0, width:'42%', maxWidth:380, display:'flex', flexDirection:'column', alignItems:'center', gap:10, alignSelf:'stretch' },
   gaugeSvgWrap: { flex:1, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', minHeight:0 },
@@ -280,4 +283,5 @@ const s = {
   distTrack: { height:10, borderRadius:5, overflow:'hidden', display:'flex' },
   distLegend: { display:'flex', gap:16, marginTop:5 },
   sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, color: T.faint, letterSpacing:'0.1em', alignSelf:'flex-start' },
+}
 }

@@ -6,8 +6,12 @@ import OperatorPanel from './components/OperatorPanel'
 import ExplorePanel from './components/ExplorePanel'
 import Configurator from './components/Configurator'
 import rawRegistry from './data/registry.json'
+import { ScaleContext } from './components/charts/chartTokens'
 import { resolveRegistry } from './utils/resolveUseCase'
 import './styles/global.css'
+
+// Laad displayScale uit registry (top-level veld)
+const initialScale = rawRegistry.displayScale ?? 1.0
 
 // Laad het actieve event uit de registry
 const {
@@ -27,7 +31,7 @@ function normalizeUsecaseForLegacy(uc) {
   return normalized
 }
 
-function buildLegacyConfig(event, usecases) {
+function buildLegacyConfig(event, usecases, scale) {
   const normalizedUsecases = usecases.map(normalizeUsecaseForLegacy)
   return {
     event: {
@@ -37,6 +41,7 @@ function buildLegacyConfig(event, usecases) {
     portfolio: event.portfolio,
     scenarios: normalizedUsecases,
     usecases: normalizedUsecases,
+    displayScale: scale ?? 1.0,
   }
 }
 
@@ -46,7 +51,7 @@ function clonePortfolio(portfolio) {
 
 export default function App() {
   const [config, setConfig] = useState(
-    buildLegacyConfig(initialEvent, initialUsecases)
+    buildLegacyConfig(initialEvent, initialUsecases, initialScale)
   )
   const [allEvents] = useState(allRegistryEvents || [])
   const [activeEventId, setActiveEventId] = useState(initialEvent?.id || null)
@@ -56,6 +61,8 @@ export default function App() {
   const [showConfig, setShowConfig] = useState(false)
   const [idleMode, setIdleMode] = useState(true)
   const [showPerformanceView, setShowPerformanceView] = useState(false)
+
+  const [displayScale, setDisplayScale] = useState(initialScale)
 
   const [exploreMode, setExploreMode] = useState(false)
   const [explorePortfolio, setExplorePortfolio] = useState(
@@ -78,7 +85,7 @@ export default function App() {
     const event = allEvents.find(e => e.id === eventId)
     if (!event) return
     const usecases = event.usecases || event.scenarios || []
-    setConfig(buildLegacyConfig(event, usecases))
+    setConfig(buildLegacyConfig(event, usecases, displayScale))
     setActiveEventId(eventId)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -89,6 +96,7 @@ export default function App() {
   }
 
   function handleApplyConfig(newConfig) {
+    if (newConfig.displayScale !== undefined) setDisplayScale(newConfig.displayScale)
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -98,6 +106,7 @@ export default function App() {
   }
 
   function handleSaveConfig(newConfig) {
+    if (newConfig.displayScale !== undefined) setDisplayScale(newConfig.displayScale)
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -242,6 +251,7 @@ export default function App() {
   }
 
   return (
+    <ScaleContext.Provider value={displayScale}>
     <div className="app">
       <div className="presentation-wrapper">
         {idleMode ? (
@@ -351,5 +361,6 @@ export default function App() {
         />
       )}
     </div>
+    </ScaleContext.Provider>
   )
 }

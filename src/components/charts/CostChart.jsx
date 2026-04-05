@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect } from 'react'
 
 // Kleurlogica is statusgebaseerd — bewuste uitzondering op categorieregel:
@@ -22,6 +22,8 @@ const MAX_TER = 1.2
 const PORTFOLIO_SIZE = 1_000_000
 
 export default function CostChart({ portfolio, comparisonPortfolio, showComparison, lang = 'en' }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
 
   useEffect(() => {
@@ -387,7 +389,8 @@ export default function CostChart({ portfolio, comparisonPortfolio, showComparis
 }
 
 // ── Styles ──────────────────────────────────────────────────────────────────
-const s = {
+function makeStyles(T) {
+  return {
   wrap: {
     display: 'flex', flexDirection: 'row',
     width: '100%', height: '100%',
@@ -512,4 +515,5 @@ const s = {
     fontFamily: "'Merriweather Sans', sans-serif",
     fontSize: T.micro, color: T.faint, marginRight: 3,
   },
+}
 }

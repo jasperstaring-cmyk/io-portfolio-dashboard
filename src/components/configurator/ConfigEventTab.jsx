@@ -146,8 +146,10 @@ const se = {
 
 export default function ConfigEventTab({ draft, updaters }) {
   const [activeLang, setActiveLang] = useState('en')
-  const { upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency } = updaters
+  const { upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency, upScale } = updaters
   const p = draft.portfolio
+
+  const displayScale = draft.displayScale ?? 1.0
 
   const allocTotal  = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
   const targetTotal = p.allocations.reduce((s, a) => s + (Number(a.target)  || 0), 0)
@@ -177,6 +179,27 @@ export default function ConfigEventTab({ draft, updaters }) {
                 <option key={l} value={l}>{LANG_FULL[l]}</option>
               ))}
             </select>
+          </Field>
+          <Field label="Tekstschaal (presentatiegrootte)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <input
+                type="range"
+                min="0.8" max="1.6" step="0.05"
+                value={displayScale}
+                onChange={e => upScale(e.target.value)}
+                style={{ flex: 1, accentColor: '#0C182E' }}
+              />
+              <span style={{
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.75rem', fontWeight: 700,
+                color: '#0C182E', minWidth: 36, textAlign: 'right',
+              }}>
+                {displayScale.toFixed(2)}×
+              </span>
+            </div>
+            <div style={c.helpText}>
+              1.00 = laptop · 1.20 = kleine zaal · 1.35 = auditorium · 1.50 = groot scherm
+            </div>
           </Field>
         </Section>
 

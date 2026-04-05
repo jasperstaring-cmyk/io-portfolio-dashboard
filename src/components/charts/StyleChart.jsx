@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 
 const STYLES    = ['Value', 'Blend', 'Growth']
@@ -14,6 +14,8 @@ function heatColor(weight, max) {
 }
 
 export default function StyleChart({ portfolio, comparisonPortfolio, showComparison }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -164,7 +166,8 @@ export default function StyleChart({ portfolio, comparisonPortfolio, showCompari
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: {
     display: 'flex', flexDirection: 'column',
     height: '100%', width: '100%',
@@ -248,4 +251,5 @@ const s = {
     display: 'flex', alignItems: 'center',
     marginTop: 3,
   },
+}
 }

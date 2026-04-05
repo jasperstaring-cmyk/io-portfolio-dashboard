@@ -123,6 +123,10 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+
+  function upScale(val) {
+    mark(d => ({ ...d, displayScale: Number(val) }))
+  }
   // ── Use cases (scenarios) ────────────────────────────────────────────────
 
   function upScenario(idx, key, val) {
@@ -470,6 +474,7 @@ export function useConfigDraft(initialConfig) {
     upEvent,
     // Portfolio
     upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency,
+    upScale,
     // Use cases
     upScenario, upScenarioLang, upSpeaker,
     // Base override

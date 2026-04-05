@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ChartTooltip, { useTooltip } from './ChartTooltip'
 import ExploreTotalBadge from './ExploreTotalBadge'
@@ -77,6 +77,8 @@ function deltaBadgePos(midDeg, ex, ey) {
 }
 
 export default function AssetClassChart({ portfolio, comparisonPortfolio, showComparison, framing, lang, exploreMode = false }) {
+  const T = useT()
+  const s = makeStyles(T)
   const { tooltip, showTooltip, hideTooltip } = useTooltip()
   const [animated,   setAnimated]   = useState(false)
   const [selectedId, setSelectedId] = useState(null)
@@ -360,7 +362,8 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     height: '100%', width: '100%',
@@ -369,4 +372,5 @@ const s = {
     width: '100%', height: '100%', display: 'block',
     overflow: 'visible',
   },
+}
 }

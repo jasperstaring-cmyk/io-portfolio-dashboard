@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -43,6 +43,8 @@ function getLabel(val, lang = 'en') {
 }
 
 export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, framing, lang = 'en', exploreMode = false }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const prevCompare = useRef(showComparison)
@@ -266,7 +268,8 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: {
     display: 'flex', flexDirection: 'column',
     height: '100%', width: '100%',
@@ -323,4 +326,5 @@ const s = {
   activeTrack: {
     display: 'flex', height: 72,
   },
+}
 }

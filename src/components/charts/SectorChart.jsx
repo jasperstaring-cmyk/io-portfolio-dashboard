@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -19,6 +19,8 @@ const META = {
 const TOP_N = 3
 
 export default function SectorChart({ portfolio, comparisonPortfolio, showComparison, lang, exploreMode = false }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const prevCompare = useRef(showComparison)
@@ -223,7 +225,8 @@ export default function SectorChart({ portfolio, comparisonPortfolio, showCompar
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: { display:'flex', flexDirection:'column', height:'100%', width:'100%', justifyContent:'center', gap:0, paddingTop:'6%' },
   sublabel: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.micro, fontWeight: T.wMicro, color: T.faint, letterSpacing:'0.1em', marginBottom:12, flexShrink:0 },
   topRow: { display:'flex', gap:12, marginBottom:14, flexShrink:0 },
@@ -245,4 +248,5 @@ const s = {
   restTrack: { flex:1, height:12, background:'rgba(255,255,255,0.06)', borderRadius:4, position:'relative', overflow:'hidden' },
   restPct: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.large, fontWeight: T.wHeavy, minWidth:42, textAlign:'right', flexShrink:0 },
   restDeltaSlot: { fontFamily:"'Merriweather Sans', sans-serif", fontSize: T.medium, fontWeight: T.wHeavy, minWidth:44, textAlign:'right', flexShrink:0, color:'transparent' },
+}
 }

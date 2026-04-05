@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 import ExploreTotalBadge from './ExploreTotalBadge'
 
@@ -18,6 +18,8 @@ const TOTAL_HEIGHT = 340
 const MIN_SEG_H    = 40
 
 export default function CurrencyChart({ portfolio, comparisonPortfolio, showComparison, exploreMode = false }) {
+  const T = useT()
+  const s = makeStyles(T)
   const [animated, setAnimated] = useState(false)
   const prevCompare = useRef(showComparison)
 
@@ -306,7 +308,8 @@ export default function CurrencyChart({ portfolio, comparisonPortfolio, showComp
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap: {
     display: 'flex',
     height: '100%', width: '100%',
@@ -374,4 +377,5 @@ const s = {
     fontSize: T.small,
     color: 'transparent',
   },
+}
 }

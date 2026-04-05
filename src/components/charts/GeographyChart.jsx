@@ -1,4 +1,4 @@
-import { T } from './chartTokens'
+import { useT } from './chartTokens'
 import { useEffect, useRef } from 'react'
 
 // Categoriekleuren — neutraal, geen statusoordeel
@@ -85,6 +85,8 @@ function loadDeps() {
 }
 
 export default function GeographyChart({ portfolio, comparisonPortfolio, showComparison }) {
+  const T = useT()
+  const s = makeStyles(T)
   const svgRef = useRef(null)
 
   // baseMap: altijd berekend uit originele allocaties
@@ -263,7 +265,8 @@ export default function GeographyChart({ portfolio, comparisonPortfolio, showCom
   )
 }
 
-const s = {
+function makeStyles(T) {
+  return {
   wrap:        { display: 'flex', gap: 40, height: '100%', width: '100%', alignItems: 'stretch' },
   mapCol:      { flex: 1.6, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
   mapWrap:     { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 },
@@ -276,4 +279,5 @@ const s = {
   track:       { height: 26, background: 'rgba(255,255,255,0.05)', borderRadius: 4, position: 'relative', overflow: 'hidden' },
   vals:        { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 90 },
   pct:         { fontFamily: "'Merriweather Sans',sans-serif", fontSize: T.large, fontWeight: T.wHeavy },
+}
 }
