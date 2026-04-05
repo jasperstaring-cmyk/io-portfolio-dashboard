@@ -52,12 +52,14 @@ function getLabel(val, lang = 'en') {
 
 export default function ImplementationChart({ portfolio, comparisonPortfolio, showComparison, framing, lang = 'en', exploreMode = false }) {
   const [animated, setAnimated] = useState(false)
+  const [selectedId, setSelectedId] = useState(null)
   const prevCompare = useRef(showComparison)
 
   useEffect(() => {
     setAnimated(false)
     if (prevCompare.current !== showComparison) {
       prevCompare.current = showComparison
+      setSelectedId(null)
     }
     const t = setTimeout(() => setAnimated(true), 60)
     return () => clearTimeout(t)
@@ -95,6 +97,11 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
 
   // Bereken de som van ruwe gewichten — voor explore gap detectie
   const rawSum = baseCategories.reduce((s, c) => s + (c.weight || 0), 0)
+  const hasSelection = !!selectedId
+
+  function handleSegmentClick(id) {
+    setSelectedId(prev => prev === id ? null : id)
+  }
   const gapPct = Math.max(0, 100 - rawSum)
   const showGap = gapPct > 0 && gapPct < 100 && !showComparison
 
@@ -111,7 +118,14 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
       <ExploreTotalBadge total={rawSum} label="Implementation" exploreMode={exploreMode} />
 
       {/* ── Sublabel ── */}
-      <div style={s.sublabel}>PORTFOLIO CONSTRUCTION</div>
+      <div style={s.sublabel}>
+        PORTFOLIO CONSTRUCTION
+        {hasSelection && (
+          <span style={{marginLeft:10, fontSize:'0.52rem', color:'rgba(255,255,255,0.28)', fontWeight:600, letterSpacing:'0.06em'}}>
+            CLICK AGAIN TO CLOSE
+          </span>
+        )}
+      </div>
 
       {/* ── Segment-labels boven de balk ── */}
       <div style={{
@@ -121,17 +135,23 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
         transition: 'opacity 0.5s ease 0.05s, transform 0.5s ease 0.05s',
       }}>
         {segments.map((seg, i) => {
-          const hasChange = showComparison && seg.delta !== 0
-          const showName  = seg.val >= MIN_PCT_FOR_NAMELABEL
-          const showSub   = seg.val >= MIN_PCT_FOR_SUBLABEL
+          const hasChange  = showComparison && seg.delta !== 0
+          const isSelected = selectedId === seg.id
+          const isDimmed   = hasSelection && !isSelected
+          const showName   = seg.val >= MIN_PCT_FOR_NAMELABEL
+          const showSub    = seg.val >= MIN_PCT_FOR_SUBLABEL
 
           return (
-            <div key={seg.id} style={{
-              ...s.labelCol,
-              width: `${seg.val}%`,
-              transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
-              paddingRight: i < segments.length - 1 ? 14 : 0,
-            }}>
+            <div key={seg.id}
+              onClick={() => handleSegmentClick(seg.id)}
+              style={{
+                ...s.labelCol,
+                width: `${seg.val}%`,
+                transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
+                paddingRight: i < segments.length - 1 ? 14 : 0,
+                opacity: isDimmed ? 0.32 : 1,
+                cursor: 'pointer',
+              }}>
               <div style={{
                 ...s.labelPct,
                 color: hasChange
@@ -142,7 +162,16 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
                 {seg.rawVal}%
               </div>
               {showName && <div style={s.labelName}>{seg.label}</div>}
-              {showSub  && <div style={s.labelSub}>{seg.sub}</div>}
+              {(showSub || isSelected) && seg.sub && (
+                <div style={{
+                  ...s.labelSub,
+                  color: isSelected ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.32)',
+                  transition: 'color 0.3s ease',
+                  whiteSpace: isSelected ? 'normal' : 'nowrap',
+                }}>
+                  {seg.sub}
+                </div>
+              )}
               {hasChange && (
                 <div style={{
                   ...s.labelDelta,
@@ -198,13 +227,20 @@ export default function ImplementationChart({ portfolio, comparisonPortfolio, sh
         {/* Actieve balk */}
         <div style={s.activeTrack}>
           {segments.map((seg, i) => (
-            <div key={seg.id} style={{
-              width: `${seg.val}%`,
-              background: seg.color,
-              opacity: 0.90,
-              transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1)',
-              borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
-            }} />
+            <div key={seg.id}
+              onClick={() => handleSegmentClick(seg.id)}
+              style={{
+                width: `${seg.val}%`,
+                background: seg.color,
+                opacity: hasSelection
+                  ? (selectedId === seg.id ? 1.0 : 0.30)
+                  : 0.90,
+                transition: 'width 0.85s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease',
+                borderRight: i < segments.length - 1 ? '2px solid #0C182E' : 'none',
+                cursor: 'pointer',
+                outline: selectedId === seg.id ? `2px solid ${seg.color}` : 'none',
+                outlineOffset: -2,
+              }} />
           ))}
 
           {/* Gap segment — lichtgrijs, gestreept, alleen in explore */}
