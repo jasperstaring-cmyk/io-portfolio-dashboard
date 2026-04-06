@@ -10,10 +10,8 @@ import { ScaleContext } from './components/charts/chartTokens'
 import { resolveRegistry } from './utils/resolveUseCase'
 import './styles/global.css'
 
-// Laad displayScale uit registry (top-level veld)
 const initialScale = rawRegistry.displayScale ?? 1.0
 
-// Laad het actieve event uit de registry
 const {
   event: initialEvent,
   usecases: initialUsecases,
@@ -252,115 +250,80 @@ export default function App() {
 
   return (
     <ScaleContext.Provider value={displayScale}>
-    <div className="app">
-      <div className="presentation-wrapper">
-        {idleMode ? (
-          <IdleView event={config.event} />
-        ) : exploreMode ? (
-          <ExplorePresentationView
-            event={config.event}
-            portfolio={explorePortfolio}
-            activeDimension={exploreDimension}
-            lang={lang}
-          />
-        ) : (
-          <PresentationView
-            event={config.event}
-            portfolio={config.portfolio}
-            scenario={activeScenario}
-            showComparison={showComparison}
-            activeDimension={activeDimension || activeScenario.dimension}
-            showPerformanceView={showPerformanceView}
-            lang={lang}
+      <div className="app">
+        <div className="presentation-wrapper">
+          {idleMode ? (
+            <IdleView event={config.event} />
+          ) : exploreMode ? (
+            <ExplorePresentationView
+              event={config.event}
+              portfolio={explorePortfolio}
+              activeDimension={exploreDimension}
+              lang={lang}
+            />
+          ) : (
+            <PresentationView
+              event={config.event}
+              portfolio={config.portfolio}
+              scenario={activeScenario}
+              showComparison={showComparison}
+              activeDimension={activeDimension || activeScenario.dimension}
+              showPerformanceView={showPerformanceView}
+              lang={lang}
+            />
+          )}
+        </div>
+
+        <div className="operator-wrapper" style={{ position: 'relative' }}>
+          {exploreMode ? (
+            <ExplorePanel
+              portfolio={config.portfolio}
+              explorePortfolio={explorePortfolio}
+              onUpdateAlloc={handleUpdateAlloc}
+              onUpdateESG={handleUpdateESG}
+              onUpdateImpl={handleUpdateImpl}
+              onUpdateSector={handleUpdateSector}
+              onUpdateCurrency={handleUpdateCurrency}
+              onUpdateGeo={handleUpdateGeo}
+              onResetAlloc={handleResetAlloc}
+              activeDimension={exploreDimension}
+              onSelectDimension={setExploreDimension}
+              onExitExplore={() => setExploreMode(false)}
+            />
+          ) : (
+            <OperatorPanel
+              scenarios={config.scenarios}
+              activeIndex={activeScenarioIndex}
+              onSelectScenario={handleSelectScenario}
+              showComparison={showComparison}
+              onToggleComparison={() => setShowComparison(!showComparison)}
+              activeDimension={activeDimension || activeScenario.dimension}
+              onSelectDimension={handleSelectDimension}
+              activeScenario={activeScenario}
+              lang={lang}
+              onEnterExplore={handleEnterExplore}
+              allEvents={allEvents}
+              activeEventId={activeEventId}
+              onSelectEvent={handleSelectEvent}
+              showPerformanceView={showPerformanceView}
+              onTogglePerformanceView={handleTogglePerformanceView}
+              idleMode={idleMode}
+              onToggleIdle={() => setIdleMode(prev => !prev)}
+              exploreActive={exploreMode}
+              onOpenConfig={() => setShowConfig(true)}
+            />
+          )}
+        </div>
+
+        {showConfig && (
+          <Configurator
+            config={config}
+            onApply={handleApplyConfig}
+            onSave={handleSaveConfig}
+            onClose={() => setShowConfig(false)}
           />
         )}
       </div>
-
-      <div className="operator-wrapper" style={{ position: 'relative' }}>
-        {exploreMode ? (
-          <ExplorePanel
-            portfolio={config.portfolio}
-            explorePortfolio={explorePortfolio}
-            onUpdateAlloc={handleUpdateAlloc}
-            onUpdateESG={handleUpdateESG}
-            onUpdateImpl={handleUpdateImpl}
-            onUpdateSector={handleUpdateSector}
-            onUpdateCurrency={handleUpdateCurrency}
-            onUpdateGeo={handleUpdateGeo}
-            onResetAlloc={handleResetAlloc}
-            activeDimension={exploreDimension}
-            onSelectDimension={setExploreDimension}
-            onExitExplore={() => setExploreMode(false)}
-          />
-        ) : (
-          <OperatorPanel
-            scenarios={config.scenarios}
-            activeIndex={activeScenarioIndex}
-            onSelectScenario={handleSelectScenario}
-            showComparison={showComparison}
-            onToggleComparison={() => setShowComparison(!showComparison)}
-            activeDimension={activeDimension || activeScenario.dimension}
-            onSelectDimension={handleSelectDimension}
-            activeScenario={activeScenario}
-            lang={lang}
-            onEnterExplore={handleEnterExplore}
-            allEvents={allEvents}
-            activeEventId={activeEventId}
-            onSelectEvent={handleSelectEvent}
-            showPerformanceView={showPerformanceView}
-            onTogglePerformanceView={handleTogglePerformanceView}
-          />
-        )}
-
-        {!exploreMode && (
-          <button
-            onClick={() => setShowConfig(true)}
-            style={{
-              position: 'absolute', bottom: 10, right: 12,
-              padding: '4px 10px', background: 'none',
-              border: '1px solid #C5C5BF', borderRadius: 4, cursor: 'pointer',
-              fontFamily: "'Merriweather Sans', sans-serif",
-              fontSize: '0.58rem', fontWeight: 700, color: '#8A8A82',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              opacity: 0.6, transition: 'opacity 0.2s ease',
-            }}
-            onMouseEnter={e => e.target.style.opacity = 1}
-            onMouseLeave={e => e.target.style.opacity = 0.6}
-          >
-            ⚙ Configure
-          </button>
-        )}
-        {!exploreMode && (
-          <button
-            onClick={() => setIdleMode(prev => !prev)}
-            style={{
-              position: 'absolute', bottom: 10, right: 108,
-              padding: '4px 10px', background: 'none',
-              border: `1px solid ${idleMode ? '#E01B41' : '#C5C5BF'}`,
-              borderRadius: 4, cursor: 'pointer',
-              fontFamily: "'Merriweather Sans', sans-serif",
-              fontSize: '0.58rem', fontWeight: 700,
-              color: idleMode ? '#E01B41' : '#8A8A82',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              opacity: 0.8, transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={e => e.target.style.opacity = 1}
-            onMouseLeave={e => e.target.style.opacity = 0.8}
-          >
-            {idleMode ? '▶ Start' : '⏸ Idle'}
-          </button>
-        )}
-      </div>
-
-      {showConfig && (
-        <Configurator
-          config={config}
-          onApply={handleApplyConfig}
-          onSave={handleSaveConfig}
-          onClose={() => setShowConfig(false)}
-        />
-      )}
-    </div>
     </ScaleContext.Provider>
   )
 }
