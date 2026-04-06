@@ -1,400 +1,433 @@
-// Check if a comparison has relevant data for the active dimension
-function comparisonRelevantFor(comparison, dimension) {
-  if (!comparison) return false
-  switch (dimension) {
-    case 'asset_class':
-      return !!(comparison.allocations?.length)
-    case 'geography':
-      return !!(comparison.allocations?.some(a => a.geographic?.length))
-    case 'esg':
-      return !!(comparison.esg)
-    case 'implementation':
-      return !!(comparison.implementation || comparison.costs)
-    case 'sector':
-      return !!(comparison.sectors?.length)
-    case 'currency':
-      return !!(comparison.currencies?.length)
-    case 'style':
-      return !!(comparison.style?.length)
-    case 'cost':
-      return !!(comparison.costs)
-    case 'performance':
-      return false
-    default:
-      return false
-  }
-}
-
-const DIMENSIONS = [
-  { id: 'asset_class',    label: 'Asset Class',    icon: '◉' },
-  { id: 'geography',      label: 'Geography',      icon: '⊕' },
-  { id: 'esg',            label: 'ESG',            icon: '◈' },
-  { id: 'implementation', label: 'Implementation', icon: '◧' },
-  { id: 'performance',    label: 'Performance',    icon: '↗' },
-  { id: 'sector',         label: 'Sector',         icon: '⬡' },
-  { id: 'currency',       label: 'Currency',       icon: '€' },
-  { id: 'style',          label: 'Style',          icon: '▦' },
-  { id: 'cost',           label: 'Cost',           icon: '€€' },
-]
-
 export default function OperatorPanel({
-  scenarios, activeIndex, onSelectScenario,
-  showComparison, onToggleComparison,
-  activeDimension, onSelectDimension,
-  activeScenario, lang, onEnterExplore,
-  allEvents, activeEventId, onSelectEvent,
-  showPerformanceView, onTogglePerformanceView,
+  scenarios,
+  activeIndex,
+  onSelectScenario,
+  showComparison,
+  onToggleComparison,
+  activeDimension,
+  onSelectDimension,
+  activeScenario,
+  lang,
+  onEnterExplore,
+  allEvents,
+  activeEventId,
+  onSelectEvent,
+  showPerformanceView,
+  onTogglePerformanceView,
+  idleMode,
+  onToggleIdle,
+  exploreActive,
+  onOpenConfig,
 }) {
-  // Bepaal of de actieve use case een performance view heeft
-  const perfView = activeScenario?.performanceView
-  const hasPerfView = !!(perfView?.base?.length || perfView?.compare?.length)
+  const isLive = !idleMode
+
+  const eventName =
+    allEvents?.find(e => e.id === activeEventId)?.name || 'Portfolio Day'
+
+  const policyQuestion =
+    activeScenario?.framing?.policyQuestion?.[lang] ||
+    activeScenario?.framing?.policyQuestion?.en ||
+    activeScenario?.speaker?.[lang] ||
+    activeScenario?.speaker?.en ||
+    activeScenario?.title?.[lang] ||
+    activeScenario?.title?.en ||
+    ''
+
+  const hasComparison = !!activeScenario?.comparison
+  const hasPerfView = !!(activeScenario?.performanceView?.base?.length)
+  const hasMultipleEvents = allEvents?.length > 1
 
   return (
-    <div style={styles.panel}>
+    <div style={s.panel}>
 
-      {/* ── Event selector ── */}
-      {allEvents?.length > 1 && (
-        <>
-          <div style={styles.section}>
-            <div style={styles.sectionLabel}>EVENT</div>
-            <div style={styles.row}>
+      {/* Rode lijn — splitsing tussen scherm en panel */}
+      <div style={s.redLine} />
+
+      {/* Hoofdrij */}
+      <div style={s.mainRow}>
+
+        {/* ── Event selector (alleen als meerdere events) ── */}
+        {hasMultipleEvents && (
+          <>
+            <div style={s.eventSection}>
+              <div style={s.microLabel}>Event</div>
               <select
                 value={activeEventId || ''}
                 onChange={e => onSelectEvent(e.target.value)}
-                style={{
-                  fontFamily: "'Merriweather Sans', sans-serif",
-                  fontSize: '0.7rem', fontWeight: 700,
-                  color: '#0C182E', background: '#FFFFFF',
-                  border: '1.5px solid #E0E0DC', borderRadius: 6,
-                  padding: '6px 10px', cursor: 'pointer',
-                  minWidth: 160,
-                }}
+                style={s.eventSelect}
               >
                 {allEvents.map(e => (
-                  <option key={e.id} value={e.id}>
-                    {e.name || e.id}
-                  </option>
+                  <option key={e.id} value={e.id}>{e.name || e.id}</option>
                 ))}
               </select>
             </div>
+            <div style={s.vDivider} />
+          </>
+        )}
+
+        {/* ── Beleidsvraag ── */}
+        <div style={s.questionSection}>
+          <div style={s.microLabel}>{eventName}</div>
+          <div style={s.question}>{policyQuestion || '\u00A0'}</div>
+        </div>
+
+        <div style={s.vDivider} />
+
+        {/* ── Navigatie ── */}
+        <div style={s.navSection}>
+          <div style={s.microLabel}>Use case</div>
+          <div style={s.navRow}>
+            <button
+              style={s.arrowBtn}
+              onClick={() =>
+                onSelectScenario((activeIndex - 1 + scenarios.length) % scenarios.length)
+              }
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M9 2L4 7l5 5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div style={s.navCounter}>{activeIndex + 1} / {scenarios.length}</div>
+            <button
+              style={s.arrowBtn}
+              onClick={() =>
+                onSelectScenario((activeIndex + 1) % scenarios.length)
+              }
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2l5 5-5 5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </div>
-          <div style={styles.vDivider} />
-        </>
-      )}
-
-      {/* ── Scenarios ── */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>SCENARIOS</div>
-        <div style={styles.row}>
-          {scenarios.map((s, i) => {
-            const isActive = i === activeIndex
-            return (
-              <button key={s.id} onClick={() => onSelectScenario(i)}
-                style={{ ...styles.scenarioBtn, ...(isActive ? styles.scenarioBtnActive : {}) }}>
-                <span style={{
-                  ...styles.scenarioNum,
-                  color: isActive ? '#E01B41' : '#8A8A82',
-                }}>{i + 1}</span>
-                <span style={{
-                  ...styles.scenarioName,
-                  color: isActive ? '#FFFFFF' : '#0C182E',
-                }}>
-                  {s.speaker?.[lang] || s.speaker?.en}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div style={styles.vDivider} />
-
-      {/* ── Dimension ── */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>DIMENSION</div>
-        <div style={styles.row}>
-          {DIMENSIONS.map(d => {
-            const isActive = activeDimension === d.id && !showPerformanceView
-            return (
-              <button key={d.id} onClick={() => onSelectDimension(d.id)}
-                style={{ ...styles.dimBtn, ...(isActive ? styles.dimBtnActive : {}) }}>
-                <span style={styles.dimIcon}>{d.icon}</span>
-                <span style={{
-                  ...styles.dimLabel,
-                  color: isActive ? '#FFFFFF' : '#0C182E',
-                }}>{d.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div style={styles.vDivider} />
-
-      {/* ── Compare ── */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>COMPARE</div>
-        <div style={styles.row}>
-          {(() => {
-            const comp = activeScenario?.comparison
-            const isRelevant = comparisonRelevantFor(comp, activeDimension)
-            const hasComp = !!comp
-            return (
-              <button
-                onClick={onToggleComparison}
-                disabled={!hasComp}
-                style={{
-                  ...styles.compareBtn,
-                  ...(showComparison ? styles.compareBtnActive : {}),
-                  ...(!hasComp ? styles.compareBtnDisabled : {}),
-                }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{
-                    ...styles.compareToggle,
-                    color: showComparison ? '#4ED596' : '#8A8A82',
-                  }}>
-                    {showComparison ? '● ON' : '○ OFF'}
-                  </span>
-                  {hasComp && !isRelevant && (
-                    <span style={styles.compareWarn} title="This comparison has no data for the current dimension">
-                      ⚠ not for this view
-                    </span>
-                  )}
-                </div>
-                <span style={styles.compareDesc}>
-                  {hasComp
-                    ? (comp.label?.[lang] || comp.label?.en)
-                    : 'No comparison available'}
-                </span>
-              </button>
-            )
-          })()}
-        </div>
-      </div>
-
-      <div style={styles.vDivider} />
-
-      {/* ── Performance view — alleen zichtbaar als use case dit heeft ── */}
-      {hasPerfView && (
-        <>
-          <div style={styles.section}>
-            <div style={styles.sectionLabel}>PERFORMANCE</div>
-            <div style={styles.row}>
-              <button
-                onClick={onTogglePerformanceView}
-                style={{
-                  ...styles.perfBtn,
-                  ...(showPerformanceView ? styles.perfBtnActive : {}),
-                }}
-              >
-                <span style={{ fontSize: '0.88rem', lineHeight: 1 }}>↗</span>
-                <span style={{
-                  ...styles.perfBtnLabel,
-                  color: showPerformanceView ? '#FFFFFF' : '#0C182E',
-                }}>
-                  {showPerformanceView ? 'Performance ON' : 'Performance view'}
-                </span>
-              </button>
-            </div>
+          <div style={s.progressTrack}>
+            <div style={{
+              ...s.progressFill,
+              width: ((activeIndex + 1) / scenarios.length) * 100 + '%',
+            }} />
           </div>
-          <div style={styles.vDivider} />
-        </>
-      )}
-
-      {/* ── Explore ── */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>EXPLORE</div>
-        <div style={styles.row}>
-          <button onClick={onEnterExplore} style={styles.exploreBtn}>
-            <span style={{ fontSize: '0.82rem', lineHeight: 1 }}>⬡</span>
-            <span style={styles.exploreBtnLabel}>Explore mode</span>
-          </button>
         </div>
+
+        <div style={s.vDivider} />
+
+        {/* ── START / IDLE ── */}
+        <button
+          style={{
+            ...s.btn,
+            background: isLive ? '#E01B41' : 'rgba(255,255,255,0.04)',
+            borderColor: isLive ? '#E01B41' : 'rgba(255,255,255,0.1)',
+          }}
+          onClick={onToggleIdle}
+        >
+          {isLive ? (
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+              <polygon points="13,9 24,16 13,23" fill="white" />
+            </svg>
+          ) : (
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+              <rect x="10" y="10" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.35)" />
+              <rect x="18" y="10" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.35)" />
+            </svg>
+          )}
+          <span style={{ ...s.btnLabel, color: isLive ? '#fff' : 'rgba(255,255,255,0.3)' }}>
+            {isLive ? 'Live' : 'Idle'}
+          </span>
+        </button>
+
+        {/* ── COMPARE ── */}
+        <button
+          style={{
+            ...s.btn,
+            background: showComparison ? 'rgba(251,199,37,0.12)' : 'rgba(255,255,255,0.04)',
+            borderColor: showComparison ? 'rgba(251,199,37,0.4)' : 'rgba(255,255,255,0.1)',
+            opacity: hasComparison ? 1 : 0.28,
+            pointerEvents: hasComparison ? 'auto' : 'none',
+          }}
+          onClick={onToggleComparison}
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect x="3" y="8" width="11" height="16" rx="2.5"
+              fill={showComparison ? 'rgba(251,199,37,0.45)' : 'rgba(255,255,255,0.2)'} />
+            <rect x="18" y="8" width="11" height="16" rx="2.5"
+              fill={showComparison ? 'rgba(251,199,37,0.18)' : 'rgba(255,255,255,0.1)'} />
+            <line x1="6" y1="14" x2="11" y2="14" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.45)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="6" y1="17" x2="11" y2="17" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.45)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="6" y1="20" x2="11" y2="20" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="21" y1="14" x2="26" y2="14" stroke={showComparison ? 'rgba(251,199,37,0.6)' : 'rgba(255,255,255,0.25)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="21" y1="17" x2="26" y2="17" stroke={showComparison ? 'rgba(251,199,37,0.6)' : 'rgba(255,255,255,0.25)'} strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span style={{ ...s.btnLabel, color: showComparison ? '#FBC725' : 'rgba(255,255,255,0.3)' }}>
+            Compare
+          </span>
+        </button>
+
+        {/* ── PERFORMANCE ── */}
+        <button
+          style={{
+            ...s.btn,
+            background: showPerformanceView ? 'rgba(224,27,65,0.1)' : 'rgba(255,255,255,0.04)',
+            borderColor: showPerformanceView ? 'rgba(224,27,65,0.35)' : 'rgba(255,255,255,0.1)',
+            opacity: hasPerfView ? 1 : 0.28,
+            pointerEvents: hasPerfView ? 'auto' : 'none',
+          }}
+          onClick={onTogglePerformanceView}
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <line x1="3" y1="26" x2="29" y2="26" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <polygon points="3,22 9,15 15,18 21,9 29,5 29,26 3,26"
+              fill={showPerformanceView ? 'rgba(224,27,65,0.1)' : 'rgba(255,255,255,0.05)'} />
+            <polyline points="3,22 9,15 15,18 21,9 29,5"
+              stroke={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.4)'}
+              strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <circle cx="29" cy="5" r="2"
+              fill={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.4)'} />
+          </svg>
+          <span style={{ ...s.btnLabel, color: showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.3)' }}>
+            Performance
+          </span>
+        </button>
+
+        {/* ── EXPLORE ── */}
+        <button
+          style={{
+            ...s.btn,
+            background: exploreActive ? 'rgba(78,213,150,0.1)' : 'rgba(255,255,255,0.04)',
+            borderColor: exploreActive ? 'rgba(78,213,150,0.32)' : 'rgba(255,255,255,0.1)',
+          }}
+          onClick={onEnterExplore}
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="12"
+              stroke={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.25)'}
+              strokeWidth="1.5" />
+            <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <ellipse cx="16" cy="16" rx="6" ry="12"
+              stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="2.5 2" fill="none" />
+            <circle cx="16" cy="16" r="2.5"
+              fill={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.4)'} />
+            <polygon points="16,5 14,10 18,10"
+              fill={exploreActive ? 'rgba(78,213,150,0.8)' : 'rgba(255,255,255,0.35)'} />
+          </svg>
+          <span style={{ ...s.btnLabel, color: exploreActive ? '#4ED596' : 'rgba(255,255,255,0.3)' }}>
+            Explore
+          </span>
+        </button>
+
+        {/* ── Configurator-knop rechtsonder ── */}
+        <div style={s.vDivider} />
+        <button style={s.configBtn} onClick={onOpenConfig} title="Open configurator">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+              stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span style={s.configLabel}>Configure</span>
+        </button>
+
       </div>
 
+      <style>{`
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.2; }
+        }
+      `}</style>
     </div>
   )
 }
 
-const styles = {
+const s = {
   panel: {
-    height: '100%',
-    display: 'flex',
-    alignItems: 'stretch',
-    background: '#F8F8F7',
+    width: '100%',
+    background: '#0C182E',
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    flexShrink: 0,
   },
-  section: {
+  redLine: {
+    height: '3px',
+    background: '#E01B41',
+    width: '100%',
+  },
+  mainRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: '0 20px',
+    height: '96px',
+    gap: 0,
+  },
+
+  /* Event selector */
+  eventSection: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    gap: '8px',
-    padding: '10px 20px',
+    gap: '5px',
     flexShrink: 0,
+    paddingRight: '16px',
   },
+  eventSelect: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#ffffff',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '6px',
+    padding: '5px 10px',
+    cursor: 'pointer',
+    appearance: 'none',
+    maxWidth: '160px',
+  },
+
+  /* Beleidsvraag */
+  questionSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: '5px',
+    flex: '1 1 0',
+    minWidth: 0,
+    paddingRight: '16px',
+  },
+  microLabel: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '8px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.16em',
+    color: 'rgba(255,255,255,0.28)',
+  },
+  question: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '13px',
+    fontWeight: 700,
+    color: '#ffffff',
+    lineHeight: 1.35,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+  },
+
+  /* Verticale divider */
   vDivider: {
     width: '1px',
-    background: '#E0E0DC',
-    margin: '14px 0',
+    height: '56px',
+    background: 'rgba(255,255,255,0.08)',
+    flexShrink: 0,
+    margin: '0 20px',
+  },
+
+  /* Navigatie */
+  navSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '6px',
+    flexShrink: 0,
+    width: '100px',
+  },
+  navRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  arrowBtn: {
+    width: '28px',
+    height: '28px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0,
     flexShrink: 0,
   },
-  sectionLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.54rem',
-    fontWeight: 800,
-    color: '#8A8A82',
-    letterSpacing: '0.12em',
-  },
-  row: {
-    display: 'flex',
-    gap: '6px',
-  },
-  scenarioBtn: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '3px',
-    padding: '7px 10px',
-    background: '#FFFFFF',
-    border: '1.5px solid #E0E0DC',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    minWidth: '80px',
-    maxWidth: '96px',
-    transition: 'all 0.15s ease',
-  },
-  scenarioBtnActive: {
-    background: '#0C182E',
-    borderColor: '#0C182E',
-    boxShadow: '0 2px 10px rgba(12,24,46,0.2)',
-  },
-  scenarioNum: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem',
-    fontWeight: 800,
-    letterSpacing: '0.08em',
-  },
-  scenarioName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.6rem',
-    fontWeight: 600,
+  navCounter: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '13px',
+    fontWeight: 700,
+    color: 'rgba(255,255,255,0.7)',
+    minWidth: '30px',
     textAlign: 'center',
-    lineHeight: 1.3,
+  },
+  progressTrack: {
+    width: '100%',
+    height: '2px',
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: '1px',
     overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: '76px',
   },
-  dimBtn: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '7px 12px',
-    background: '#FFFFFF',
-    border: '1.5px solid #E0E0DC',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    minWidth: '74px',
-    transition: 'all 0.15s ease',
-  },
-  dimBtnActive: {
+  progressFill: {
+    height: '100%',
     background: '#E01B41',
-    borderColor: '#E01B41',
-    boxShadow: '0 2px 8px rgba(224,27,65,0.28)',
+    borderRadius: '1px',
+    transition: 'width 0.3s ease',
   },
-  dimIcon: {
-    fontSize: '0.88rem',
-    lineHeight: 1,
-  },
-  dimLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.57rem',
-    fontWeight: 700,
-    textAlign: 'center',
-  },
-  compareBtn: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '4px',
-    padding: '9px 14px',
-    background: '#FFFFFF',
-    border: '1.5px solid #E0E0DC',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    minWidth: '175px',
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  },
-  compareBtnActive: {
-    background: 'rgba(78,213,150,0.07)',
-    borderColor: '#4ED596',
-  },
-  compareBtnDisabled: {
-    opacity: 0.4,
-    cursor: 'not-allowed',
-  },
-  compareToggle: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.72rem',
-    fontWeight: 800,
-  },
-  compareDesc: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.6rem',
-    color: '#8A8A82',
-    lineHeight: 1.35,
-  },
-  perfBtn: {
+
+  /* Actieknoppen */
+  btn: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '4px',
-    padding: '7px 16px',
-    background: '#FFFFFF',
-    border: '1.5px solid #E0E0DC',
-    borderRadius: '6px',
+    justifyContent: 'center',
+    gap: '7px',
+    width: '84px',
+    height: '72px',
+    flexShrink: 0,
+    borderRadius: '10px',
+    border: '1px solid rgba(255,255,255,0.1)',
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    minWidth: '100px',
+    transition: 'background 0.18s, border-color 0.18s, opacity 0.15s',
+    background: 'rgba(255,255,255,0.04)',
+    marginLeft: '8px',
   },
-  perfBtnActive: {
-    background: '#0C182E',
-    borderColor: '#0C182E',
-    boxShadow: '0 2px 8px rgba(12,24,46,0.2)',
-  },
-  perfBtnLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.57rem',
+  btnLabel: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '8px',
     fontWeight: 700,
-    textAlign: 'center',
-    whiteSpace: 'nowrap',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
   },
-  exploreBtn: {
+
+  /* Configurator-knop */
+  configBtn: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '4px',
-    padding: '7px 16px',
-    background: 'rgba(78,213,150,0.07)',
-    border: '1.5px solid rgba(78,213,150,0.35)',
-    borderRadius: '6px',
+    justifyContent: 'center',
+    gap: '5px',
+    width: '64px',
+    height: '56px',
+    flexShrink: 0,
+    borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.08)',
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    background: 'transparent',
+    marginLeft: '4px',
+    transition: 'background 0.15s',
   },
-  compareWarn: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.52rem',
+  configLabel: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '7px',
     fontWeight: 700,
-    color: '#F5A623',
-    letterSpacing: '0.02em',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    color: 'rgba(255,255,255,0.3)',
   },
-  exploreBtnLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.57rem',
-    fontWeight: 700,
-    color: '#1a7a50',
-    textAlign: 'center',
-    whiteSpace: 'nowrap',
+
+  /* Logo */
+  logoArea: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.15,
+    paddingLeft: '4px',
+    flexShrink: 0,
   },
 }
