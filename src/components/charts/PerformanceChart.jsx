@@ -1,10 +1,6 @@
 import { useT } from './chartTokens'
 import { useState, useEffect, useRef } from 'react'
 
-// Kleurlogica conform IO-stijl op donkere achtergrond:
-// Groen = positief rendement / outperformance
-// Rood  = negatief / risicoindicator (drawdown)
-// Wit   = neutraal (volatiliteit)
 const C = {
   green:  '#4ED596',
   red:    '#E01B41',
@@ -134,13 +130,13 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
             <rect x={pL} y={pT} width={W - pL - pR} height={H - pT - pB}
               fill="url(#perf-bg-glow)" />
 
-            {/* Y-gridlijnen */}
+            {/* Y-gridlijnen — bewust subtiel, strokeThin op lage opacity */}
             {[0, 0.25, 0.5, 0.75, 1].map(t => {
               const y = pT + t * (H - pT - pB)
               return (
                 <g key={t}>
                   <line x1={pL} y1={y} x2={W - pR} y2={y}
-                    stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    stroke="rgba(255,255,255,0.07)" strokeWidth={T.strokeThin} />
                   <text x={pL - 6} y={y + 4} textAnchor="end"
                     fontFamily="'Merriweather Sans', sans-serif" fontSize={T.svgMicro}
                     fill={C.muted}>
@@ -165,7 +161,7 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
             {/* Baseline 100 */}
             <line x1={pL} y1={ty(100)} x2={W - pR} y2={ty(100)}
-              stroke="rgba(255,255,255,0.10)" strokeWidth="1" strokeDasharray="4 3" />
+              stroke="rgba(255,255,255,0.14)" strokeWidth={T.strokeThin} strokeDasharray="4 3" />
 
             {/* Compare lijn */}
             {compSeriesRaw && (
@@ -174,9 +170,9 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
                   opacity={drawn ? 0.6 : 0}
                   style={{ transition: drawn ? 'opacity 0.9s ease 0.3s' : 'none' }} />
                 <path d={linePath(compSeriesRaw.port)} fill="none"
-                  stroke="#F5A623" strokeWidth="1.8"
+                  stroke="#F5A623" strokeWidth={T.strokeMid}
                   strokeDasharray="6 3" strokeLinecap="round"
-                  opacity={drawn ? 0.7 : 0}
+                  opacity={drawn ? 0.85 : 0}
                   style={{ transition: drawn ? 'opacity 0.5s ease 0.2s' : 'none' }} />
               </>
             )}
@@ -188,12 +184,12 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
             {/* Benchmarklijn */}
             <path d={linePath(bench)} fill="none"
-              stroke={C.bench} strokeWidth="1.5"
+              stroke={C.bench} strokeWidth={T.strokeMid}
               strokeDasharray="5 3" strokeLinecap="round" />
 
             {/* Portfoliolijn */}
             <path ref={pathRef} d={linePath(port)} fill="none"
-              stroke={C.green} strokeWidth="2.8"
+              stroke={C.green} strokeWidth={T.strokeThick}
               strokeLinecap="round" strokeLinejoin="round"
               strokeDasharray="1000"
               strokeDashoffset={drawn ? 0 : 1000}
@@ -207,16 +203,16 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
             {/* Eindpunt benchmark */}
             <circle cx={endX} cy={ty(bench[bench.length - 1])}
-              r="3.5" fill={C.bench} stroke="#0C182E" strokeWidth="1.5" />
+              r="3.5" fill={C.bench} stroke="#0C182E" strokeWidth={T.strokeMid} />
 
             {/* Eindpunt portfolio */}
             <circle cx={endX} cy={endY}
-              r="6" fill={C.green} stroke="#0C182E" strokeWidth="2.5"
+              r="6" fill={C.green} stroke="#0C182E" strokeWidth={T.strokeMid}
               opacity={drawn ? 1 : 0}
               style={{ transition: drawn ? 'opacity 0.3s ease 1s' : 'none' }} />
             <circle cx={endX} cy={endY}
-              r="11" fill="none" stroke={C.green} strokeWidth="0.8"
-              opacity={drawn ? 0.25 : 0}
+              r="11" fill="none" stroke={C.green} strokeWidth={T.strokeThin}
+              opacity={drawn ? 0.30 : 0}
               style={{ transition: drawn ? 'opacity 0.3s ease 1.1s' : 'none' }} />
 
             {/* YTD-label naast eindpunt */}
@@ -308,43 +304,43 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
 function makeStyles(T) {
   return {
-  wrap: { display: 'flex', gap: 32, height: '100%', width: '100%', alignItems: 'stretch' },
-  chartCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0 },
-  topLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: T.micro, fontWeight: T.wMicro,
-    color: T.faint, letterSpacing: '0.1em', flexShrink: 0,
-  },
-  svgWrap: { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  svg: { width: '100%', height: '100%', display: 'block', overflow: 'visible' },
-  legend: { display: 'flex', gap: 20, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' },
-  li:  { display: 'flex', alignItems: 'center', gap: 7 },
-  ll:  { width: 22, height: 2.5, borderRadius: 1 },
-  lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, color: 'rgba(255,255,255,0.35)' },
-  metricsCol: { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
-  alphaCard: {
-    border: '1px solid', borderRadius: 8, padding: '12px 16px', flexShrink: 0,
-    display: 'flex', flexDirection: 'column', gap: 4,
-    transition: 'border-color 0.4s ease, background 0.4s ease',
-  },
-  alphaLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: T.micro, fontWeight: T.wMedium,
-    color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase',
-  },
-  alphaVal:  { fontFamily: "'Merriweather', serif", fontSize: T.display, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
-  alphaSub:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight: 600, opacity: 0.7 },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1 },
-  card: {
-    border: '1px solid', borderRadius: 8, padding: '14px 14px 12px',
-    display: 'flex', flexDirection: 'column', gap: 6,
-    transition: 'border-color 0.4s ease',
-  },
-  cLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: T.micro, fontWeight: T.wMedium,
-    color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3,
-  },
-  cVal: { fontFamily: "'Merriweather', serif", fontSize: T.xlarge, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
-}
+    wrap: { display: 'flex', gap: 32, height: '100%', width: '100%', alignItems: 'stretch' },
+    chartCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, minHeight: 0 },
+    topLabel: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro, fontWeight: T.wMicro,
+      color: T.faint, letterSpacing: '0.1em', flexShrink: 0,
+    },
+    svgWrap: { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    svg: { width: '100%', height: '100%', display: 'block', overflow: 'visible' },
+    legend: { display: 'flex', gap: 20, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' },
+    li:  { display: 'flex', alignItems: 'center', gap: 7 },
+    ll:  { width: 22, height: 2.5, borderRadius: 1 },
+    lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, color: 'rgba(255,255,255,0.35)' },
+    metricsCol: { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
+    alphaCard: {
+      border: '1px solid', borderRadius: 8, padding: '12px 16px', flexShrink: 0,
+      display: 'flex', flexDirection: 'column', gap: 4,
+      transition: 'border-color 0.4s ease, background 0.4s ease',
+    },
+    alphaLabel: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro, fontWeight: T.wMedium,
+      color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em', textTransform: 'uppercase',
+    },
+    alphaVal:  { fontFamily: "'Merriweather', serif", fontSize: T.display, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+    alphaSub:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, fontWeight: 600, opacity: 0.7 },
+    grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1 },
+    card: {
+      border: '1px solid', borderRadius: 8, padding: '14px 14px 12px',
+      display: 'flex', flexDirection: 'column', gap: 6,
+      transition: 'border-color 0.4s ease',
+    },
+    cLabel: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro, fontWeight: T.wMedium,
+      color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.3,
+    },
+    cVal: { fontFamily: "'Merriweather', serif", fontSize: T.xlarge, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' },
+  }
 }

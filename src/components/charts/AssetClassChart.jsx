@@ -19,18 +19,16 @@ const COLORS = {
 }
 
 const GAP_DEG      = 1.4
-const EXPLODE_SEL  = 22   // explode bij segment-selectie
-const EXPLODE_COMP = 12   // explode alle segmenten bij compare
+const EXPLODE_SEL  = 22
+const EXPLODE_COMP = 12
 const VW = 680, VH = 460
 const CX = VW / 2, CY = VH / 2 + 8
 const R  = 152
 
-// Callout-lijn afstanden
 const R_EDGE = R + 14
 const R_KNIK = R + 48
 const H_EXT  = 46
 
-// Veilige marges voor label-clamp (viewport-coördinaten)
 const SAFE_LEFT = 22, SAFE_RIGHT = VW - 22
 const SAFE_TOP  = 18, SAFE_BOTTOM = VH - 18
 
@@ -47,7 +45,6 @@ function piePath(startDeg, endDeg, ex, ey) {
   return `M ${CX+ex},${CY+ey} L ${x1},${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`
 }
 
-// Knik-lijn + label met viewport-clamp
 function callout(midDeg, ex, ey) {
   const rad     = (midDeg - 90) * Math.PI / 180
   const goRight = Math.cos(rad) >= 0
@@ -55,7 +52,6 @@ function callout(midDeg, ex, ey) {
   const p1 = polar(CX + ex, CY + ey, R_EDGE, midDeg)
   const p2 = polar(CX + ex, CY + ey, R_KNIK, midDeg)
 
-  // Horizontale extensie, geclampt zodat label niet buiten viewport loopt
   const rawP3x = p2[0] + (goRight ? H_EXT : -H_EXT)
   const p3x    = Math.max(SAFE_LEFT + 60, Math.min(SAFE_RIGHT - 60, rawP3x))
   const p3     = [p3x, Math.max(SAFE_TOP + 24, Math.min(SAFE_BOTTOM - 36, p2[1]))]
@@ -69,7 +65,6 @@ function callout(midDeg, ex, ey) {
   }
 }
 
-// Delta-badge positie: net buiten segment, op mid-hoek
 function deltaBadgePos(midDeg, ex, ey) {
   const r = R + 28
   const [bx, by] = polar(CX + ex, CY + ey, r, midDeg)
@@ -95,8 +90,6 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   }, [showComparison])
 
   const allocations = portfolio.allocations
-
-  // Explore gap detectie — som van ruwe current-waarden
   const rawSum = allocations.reduce((s, a) => s + (a.current || 0), 0)
 
   function getComp(id) {
@@ -120,7 +113,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
   })
 
   const hasSelection = !!selectedId
-  // Framing overschrijft label per asset class id voor deze use case
+
   const labelLang = a => {
     const catFraming = framing?.[a.id]
     const labelVal = catFraming?.label ?? a.label
@@ -136,20 +129,14 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
     return { label: 'Within policy', color: '#4ED596' }
   }
 
-  // Explode-offset per segment:
-  // - compare aan: alle segmenten exploderen klein uit elkaar
-  // - segment geselecteerd: dat segment explodeert verder
   function explodeOffset(sl) {
     const rad = (sl.midDeg - 90) * Math.PI / 180
     const isSelected = sl.id === selectedId
-
     if (isSelected) {
-      // Selectie-explode domineert
       const dist = EXPLODE_SEL + (showComparison ? EXPLODE_COMP : 0)
       return { ex: Math.cos(rad) * dist, ey: Math.sin(rad) * dist }
     }
     if (showComparison) {
-      // Compare: alle segmenten licht uit elkaar
       return { ex: Math.cos(rad) * EXPLODE_COMP, ey: Math.sin(rad) * EXPLODE_COMP }
     }
     return { ex: 0, ey: 0 }
@@ -184,15 +171,12 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
           </filter>
         </defs>
 
-        {/* Klik buiten pie → deselecteer */}
-        <rect
-          x="0" y="0" width={VW} height={VH}
+        <rect x="0" y="0" width={VW} height={VH}
           fill="transparent"
           style={{ cursor: hasSelection ? 'default' : 'auto' }}
           onClick={() => setSelectedId(null)}
         />
 
-        {/* Achtergrondgloed */}
         <circle cx={CX} cy={CY} r={R + 48}
           fill={showComparison ? 'url(#ac-bg-comp)' : 'url(#ac-bg-base)'}
           style={{ transition: 'fill 0.6s ease' }}
@@ -200,20 +184,20 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
 
         {/* Subtiele buitenring */}
         <circle cx={CX} cy={CY} r={R + 5}
-          fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"
+          fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={T.strokeHair}
         />
 
         {/* Compare stippelring */}
         {showComparison && (
           <circle cx={CX} cy={CY} r={R + 7}
             fill="none"
-            stroke="rgba(78,213,150,0.28)"
-            strokeWidth="1.2"
+            stroke="rgba(78,213,150,0.38)"
+            strokeWidth={T.strokeMid}
             strokeDasharray="5 4"
           />
         )}
 
-        {/* ── Pie segmenten — met diepte-filter ── */}
+        {/* ── Pie segmenten ── */}
         <g filter="url(#pie-depth)">
           {slices.map(sl => {
             const { ex, ey } = explodeOffset(sl)
@@ -226,7 +210,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
                 fill={sl.color}
                 fillOpacity={dimmed ? 0.42 : showComparison ? 0.82 : 0.92}
                 stroke="#0C182E"
-                strokeWidth="1.0"
+                strokeWidth={T.strokeThin}
                 style={{
                   cursor: 'pointer',
                   transition: 'all 0.45s cubic-bezier(0.4,0,0.2,1)',
@@ -244,7 +228,7 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
           })}
         </g>
 
-        {/* ── Delta-badges bij compare — buiten segmenten ── */}
+        {/* ── Delta-badges bij compare ── */}
         {showComparison && slices.map(sl => {
           const hasChange = sl.compVal !== null && sl.compVal !== sl.current
           if (!hasChange) return null
@@ -262,8 +246,8 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
             <g key={sl.id + '-delta'} style={{ pointerEvents: 'none' }}>
               <rect
                 x={rx} y={ry} width={bw} height={bh} rx="3"
-                fill={badgeColor} fillOpacity="0.15"
-                stroke={badgeColor} strokeWidth="0.8" strokeOpacity="0.6"
+                fill={badgeColor} fillOpacity="0.18"
+                stroke={badgeColor} strokeWidth={T.strokeThin} strokeOpacity="0.85"
               />
               <text
                 x={rx + bw / 2} y={ry + bh / 2 + 5}
@@ -280,19 +264,18 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
 
         {/* ── Callout lijntjes + labels ── */}
         {slices.map(sl => {
-          const { ex, ey }                       = explodeOffset(sl)
+          const { ex, ey }                            = explodeOffset(sl)
           const { p1, p2, p3, anchor, labelX, labelY } = callout(sl.midDeg, ex, ey)
           const isSelected = sl.id === selectedId
           const isDimmed   = hasSelection && !isSelected
           const st         = statusInfo(sl)
 
-          const lineStroke  = isSelected ? sl.color : 'rgba(255,255,255,0.40)'
-          const lineW       = isSelected ? '1.0' : '0.7'
-          const lineOpacity = isDimmed ? 0.07 : isSelected ? 0.75 : 0.32
+          const lineStroke  = isSelected ? sl.color : 'rgba(255,255,255,0.55)'
+          const lineW       = isSelected ? T.strokeMid : T.strokeThin
+          const lineOpacity = isDimmed ? 0.07 : isSelected ? 0.90 : 0.55
 
-          // Schaalbare font sizes via tokens
-          const pctSize  = isSelected ? T.svgHero  : T.svgLarge
-          const nameSize = isSelected ? T.svgBody  : T.svgBody
+          const pctSize  = isSelected ? T.svgHero : T.svgLarge
+          const nameSize = T.svgBody
 
           const pctY    = labelY - 4
           const nameY   = labelY + nameSize + 4
@@ -313,7 +296,6 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
                 style={{ transition: 'all 0.35s ease' }}
               />
 
-              {/* Percentage */}
               <text
                 x={labelX} y={pctY}
                 textAnchor={anchor}
@@ -326,20 +308,18 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
                 {sl.displayVal}%
               </text>
 
-              {/* Naam */}
               <text
                 x={labelX} y={nameY}
                 textAnchor={anchor}
                 fontFamily="'Merriweather Sans', sans-serif"
                 fontSize={nameSize} fontWeight={isSelected ? '600' : '500'}
-                fill="rgba(255,255,255,0.65)"
+                fill="rgba(255,255,255,0.75)"
                 fillOpacity={isDimmed ? 0.14 : 1}
                 style={{ transition: 'all 0.35s ease' }}
               >
                 {labelLang(sl)}
               </text>
 
-              {/* Status pill — alleen bij selectie */}
               {isSelected && (
                 <text
                   x={labelX} y={statusY}
@@ -364,13 +344,13 @@ export default function AssetClassChart({ portfolio, comparisonPortfolio, showCo
 
 function makeStyles(T) {
   return {
-  wrap: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    height: '100%', width: '100%',
-  },
-  svg: {
-    width: '100%', height: '100%', display: 'block',
-    overflow: 'visible',
-  },
-}
+    wrap: {
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100%', width: '100%',
+    },
+    svg: {
+      width: '100%', height: '100%', display: 'block',
+      overflow: 'visible',
+    },
+  }
 }
