@@ -9,6 +9,7 @@ import CurrencyChart from './charts/CurrencyChart'
 import StyleChart from './charts/StyleChart'
 import CostChart from './charts/CostChart'
 import { resolveUseCase } from '../utils/resolveUseCase'
+import { useT } from './charts/chartTokens'
 
 const DIMENSIONS = {
   asset_class:    AssetClassChart,
@@ -26,6 +27,7 @@ export default function PresentationView({
   event, portfolio, scenario, showComparison, activeDimension,
   showPerformanceView, lang
 }) {
+  const T = useT()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -44,35 +46,28 @@ export default function PresentationView({
   const ChartComponent = DIMENSIONS[activeDimension] || AssetClassChart
   const policyQuestion = scenario?.policyQuestion?.[lang] || scenario?.policyQuestion?.en
   const themeName      = scenario?.theme?.[lang]           || scenario?.theme?.en
-  const compLabel      = scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
+  const compLabel      = scenario?.compare?.label?.[lang]  || scenario?.compare?.label?.en
+                      || scenario?.comparison?.label?.[lang] || scenario?.comparison?.label?.en
   const sp             = scenario?.speakerProfile
 
   const comparisonPortfolio = showComparison ? resolvedCompare : null
 
-  // ── Performance view — bouw een synthetisch portfolio met de twee series ──
-  // base-serie en (optioneel) compare-serie uit scenario.performanceView
-  const perfView = scenario?.performanceView
+  const perfView   = scenario?.performanceView
   const hasPerfView = !!(perfView?.base?.length || perfView?.compare?.length)
 
-  // Portfolio-objecten voor de performance chart in performance view modus
   const perfBasePortfolio = hasPerfView ? {
     ...resolvedBase,
-    performance: {
-      ...resolvedBase.performance,
-      series: perfView.base || [],
-    },
+    performance: { ...resolvedBase.performance, series: perfView.base || [] },
   } : null
 
   const perfComparePortfolio = (hasPerfView && showComparison && perfView?.compare?.length) ? {
     ...resolvedBase,
-    performance: {
-      ...resolvedBase.performance,
-      series: perfView.compare,
-    },
+    performance: { ...resolvedBase.performance, series: perfView.compare },
   } : null
 
-  // Actieve weergave: performance view of normale dimensie
   const showingPerf = showPerformanceView && hasPerfView
+
+  const s = makeStyles(T)
 
   return (
     <div style={s.container}>
@@ -82,9 +77,15 @@ export default function PresentationView({
       {/* ── HEADER ── */}
       <div style={s.header}>
         <div style={s.logoWrap}>
-          <img src="/io_horizontal_white@10x.png" alt="Investment Officer"
+          <img
+            src="/io_horizontal_white@10x.png"
+            alt="Investment Officer"
             style={s.logo}
-            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+            onError={e => {
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'flex'
+            }}
+          />
           <div style={{ display: 'none', alignItems: 'center', gap: 8 }}>
             <span style={s.fallbackIo}>io</span>
             <span style={s.fallbackText}>investment officer</span>
@@ -101,7 +102,7 @@ export default function PresentationView({
             <span style={s.speakerOrg}>{sp.organisation}</span>
           </div>
         ) : (
-          <div style={{ minWidth: 220 }} />
+          <div style={s.speakerPlaceholder} />
         )}
       </div>
 
@@ -116,7 +117,7 @@ export default function PresentationView({
       }}>
         <div style={s.policyMeta}>
           <span style={s.policyLabel}>PORTFOLIO QUESTION</span>
-          <span style={s.themeTag}>{themeName}</span>
+          {themeName && <span style={s.themeTag}>{themeName}</span>}
           {showComparison && compLabel && (
             <span style={s.compTag}>⟳ {compLabel}</span>
           )}
@@ -163,154 +164,185 @@ export default function PresentationView({
   )
 }
 
-const s = {
-  container: {
-    width: '100%', height: '100%',
-    background: '#0C182E',
-    display: 'flex', flexDirection: 'column',
-    padding: '20px 40px 14px',
-    position: 'relative', overflow: 'hidden',
-  },
-  grid: {
-    position: 'absolute', inset: 0,
-    backgroundImage: `
-      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px)
-    `,
-    backgroundSize: '72px 72px',
-    pointerEvents: 'none', zIndex: 0,
-  },
-  glow: {
-    position: 'absolute', top: '-100px', right: '5%',
-    width: '700px', height: '400px',
-    background: 'radial-gradient(ellipse, rgba(224,27,65,0.05) 0%, transparent 65%)',
-    pointerEvents: 'none', zIndex: 0,
-  },
-  header: {
-    display: 'flex', alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '10px',
-    position: 'relative', zIndex: 1, flexShrink: 0,
-  },
-  logoWrap: {
-    display: 'flex', alignItems: 'center',
-    minWidth: '220px',
-  },
-  logo: {
-    height: '44px',
-    width: 'auto', objectFit: 'contain',
-  },
-  fallbackIo: {
-    fontFamily: "'Merriweather', serif",
-    fontSize: '2.2rem', fontWeight: 700,
-    color: '#fff', letterSpacing: '-0.05em',
-  },
-  fallbackText: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)',
-  },
-  eventName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '1.05rem', fontWeight: 800,
-    color: '#FFFFFF',
-    letterSpacing: '0.04em',
-    textAlign: 'center',
-    flex: 1,
-  },
-  speakerBlock: {
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'flex-end', gap: '2px',
-    minWidth: '220px',
-  },
-  nowDot: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.52rem', fontWeight: 800,
-    color: '#E01B41', letterSpacing: '0.16em',
-  },
-  speakerName: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.9rem', fontWeight: 800,
-    color: '#FFFFFF',
-  },
-  speakerRole: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', fontWeight: 400,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  speakerOrg: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.68rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.38)',
-  },
-  redLine: {
-    height: '2px',
-    background: 'linear-gradient(90deg, #E01B41 0%, rgba(224,27,65,0.22) 65%, transparent 100%)',
-    marginBottom: '16px',
-    flexShrink: 0, position: 'relative', zIndex: 1,
-  },
-  policyBlock: {
-    marginBottom: '18px',
-    position: 'relative', zIndex: 1, flexShrink: 0,
-  },
-  policyMeta: {
-    display: 'flex', alignItems: 'center', gap: '10px',
-    marginBottom: '9px',
-  },
-  policyLabel: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 800,
-    color: '#E01B41', letterSpacing: '0.13em',
-  },
-  themeTag: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 600,
-    color: 'rgba(255,255,255,0.32)',
-    letterSpacing: '0.07em', textTransform: 'uppercase',
-    background: 'rgba(255,255,255,0.05)',
-    padding: '3px 9px', borderRadius: '3px',
-    border: '1px solid rgba(255,255,255,0.08)',
-  },
-  compTag: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 700,
-    color: '#4ED596',
-    background: 'rgba(78,213,150,0.1)',
-    border: '1px solid rgba(78,213,150,0.28)',
-    padding: '3px 9px', borderRadius: '3px',
-  },
-  perfTag: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', fontWeight: 700,
-    color: '#5B8DEF',
-    background: 'rgba(91,141,239,0.1)',
-    border: '1px solid rgba(91,141,239,0.28)',
-    padding: '3px 9px', borderRadius: '3px',
-  },
-  policyQuestion: {
-    fontFamily: "'Merriweather', serif",
-    fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)',
-    fontWeight: 700, color: '#FFFFFF',
-    lineHeight: 1.28, letterSpacing: '-0.025em',
-    maxWidth: '86%',
-  },
-  chartArea: {
-    flex: 1, position: 'relative', zIndex: 1,
-    minHeight: 0, overflow: 'hidden',
-    display: 'flex', alignItems: 'stretch',
-  },
-  footer: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-    paddingTop: '10px', marginTop: '10px',
-    flexShrink: 0, position: 'relative', zIndex: 1,
-  },
-  footerLeft: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
-  },
-  footerRight: {
-    fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)',
-    fontWeight: 500,
-  },
+// ─── Styles meeschalen met T ────────────────────────────────────────────────
+function makeStyles(T) {
+  return {
+    container: {
+      width: '100%', height: '100%',
+      background: '#0C182E',
+      display: 'flex', flexDirection: 'column',
+      padding: '20px 40px 14px',
+      position: 'relative', overflow: 'hidden',
+    },
+    grid: {
+      position: 'absolute', inset: 0,
+      backgroundImage: `
+        linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px)
+      `,
+      backgroundSize: '72px 72px',
+      pointerEvents: 'none', zIndex: 0,
+    },
+    glow: {
+      position: 'absolute', top: '-100px', right: '5%',
+      width: '700px', height: '400px',
+      background: 'radial-gradient(ellipse, rgba(224,27,65,0.05) 0%, transparent 65%)',
+      pointerEvents: 'none', zIndex: 0,
+    },
+
+    // ── Header ──
+    header: {
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: '10px',
+      position: 'relative', zIndex: 1, flexShrink: 0,
+    },
+    logoWrap: {
+      display: 'flex', alignItems: 'center',
+      minWidth: '220px',
+    },
+    logo: {
+      height: '44px',
+      width: 'auto', objectFit: 'contain',
+    },
+    fallbackIo: {
+      fontFamily: "'Merriweather', serif",
+      fontSize: T.xlarge,
+      fontWeight: 700,
+      color: '#fff', letterSpacing: '-0.05em',
+    },
+    fallbackText: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.small,
+      color: 'rgba(255,255,255,0.55)',
+    },
+    eventName: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.body,
+      fontWeight: 800,
+      color: '#FFFFFF',
+      letterSpacing: '0.04em',
+      textAlign: 'center',
+      flex: 1,
+    },
+    speakerBlock: {
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'flex-end', gap: '3px',
+      minWidth: '220px',
+    },
+    speakerPlaceholder: {
+      minWidth: '220px',
+    },
+    nowDot: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro,
+      fontWeight: 800,
+      color: '#E01B41', letterSpacing: '0.16em',
+    },
+    speakerName: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.medium,
+      fontWeight: 800,
+      color: '#FFFFFF',
+      textAlign: 'right',
+    },
+    speakerRole: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.small,
+      fontWeight: 400,
+      color: 'rgba(255,255,255,0.55)',
+      textAlign: 'right',
+    },
+    speakerOrg: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.small,
+      fontWeight: 600,
+      color: 'rgba(255,255,255,0.38)',
+      textAlign: 'right',
+    },
+
+    // ── Red line ──
+    redLine: {
+      height: '2px',
+      background: 'linear-gradient(90deg, #E01B41 0%, rgba(224,27,65,0.22) 65%, transparent 100%)',
+      marginBottom: '16px',
+      flexShrink: 0, position: 'relative', zIndex: 1,
+    },
+
+    // ── Policy block ──
+    policyBlock: {
+      marginBottom: '18px',
+      position: 'relative', zIndex: 1, flexShrink: 0,
+    },
+    policyMeta: {
+      display: 'flex', alignItems: 'center', gap: '10px',
+      marginBottom: '10px',
+    },
+    policyLabel: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro,
+      fontWeight: 800,
+      color: '#E01B41', letterSpacing: '0.13em',
+    },
+    themeTag: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro,
+      fontWeight: 600,
+      color: 'rgba(255,255,255,0.32)',
+      letterSpacing: '0.07em', textTransform: 'uppercase',
+      background: 'rgba(255,255,255,0.05)',
+      padding: '3px 9px', borderRadius: '3px',
+      border: '1px solid rgba(255,255,255,0.08)',
+    },
+    compTag: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro,
+      fontWeight: 700,
+      color: '#4ED596',
+      background: 'rgba(78,213,150,0.1)',
+      border: '1px solid rgba(78,213,150,0.28)',
+      padding: '3px 9px', borderRadius: '3px',
+    },
+    perfTag: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: T.micro,
+      fontWeight: 700,
+      color: '#5B8DEF',
+      background: 'rgba(91,141,239,0.1)',
+      border: '1px solid rgba(91,141,239,0.28)',
+      padding: '3px 9px', borderRadius: '3px',
+    },
+    policyQuestion: {
+      fontFamily: "'Merriweather', serif",
+      fontSize: T.xlarge,
+      fontWeight: 700,
+      color: '#FFFFFF',
+      lineHeight: 1.28, letterSpacing: '-0.025em',
+      maxWidth: '86%',
+    },
+
+    // ── Chart area ──
+    chartArea: {
+      flex: 1, position: 'relative', zIndex: 1,
+      minHeight: 0, overflow: 'hidden',
+      display: 'flex', alignItems: 'stretch',
+    },
+
+    // ── Footer — bewust klein, hoeft niet te schalen ──
+    footer: {
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+      paddingTop: '10px', marginTop: '10px',
+      flexShrink: 0, position: 'relative', zIndex: 1,
+    },
+    footerLeft: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
+    },
+    footerRight: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: '0.62rem', color: 'rgba(255,255,255,0.45)',
+      fontWeight: 500,
+    },
+  }
 }
