@@ -148,7 +148,10 @@ export default function PerformanceChart({ portfolio, comparisonPortfolio, showC
 
             {/* X-labels */}
             {labels.map((m, i) => {
-              const step = Math.max(1, Math.floor(n / 12))
+              const chartWidth = W - pL - pR
+              const approxLabelWidth = T.svgMicro * 5.5
+              const maxLabels = Math.max(2, Math.floor(chartWidth / approxLabelWidth))
+              const step = Math.max(1, Math.ceil((n - 1) / (maxLabels - 1)))
               if (i % step !== 0 && i !== n - 1) return null
               return (
                 <text key={i} x={tx(i)} y={H - 8} textAnchor="middle"
@@ -317,7 +320,7 @@ function makeStyles(T) {
     li:  { display: 'flex', alignItems: 'center', gap: 7 },
     ll:  { width: 22, height: 2.5, borderRadius: 1 },
     lt:  { fontFamily: "'Merriweather Sans', sans-serif", fontSize: T.small, color: 'rgba(255,255,255,0.35)' },
-    metricsCol: { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
+    metricsCol: { width: Math.min(320, Math.round(220 * (T.svgMicro / 9))), flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'flex-start' },
     alphaCard: {
       border: '1px solid', borderRadius: 8, padding: '12px 16px', flexShrink: 0,
       display: 'flex', flexDirection: 'column', gap: 4,
