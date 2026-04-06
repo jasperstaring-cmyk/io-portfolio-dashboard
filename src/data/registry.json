@@ -540,6 +540,10 @@
           "dimension": "asset_class",
           "base": {
             "useEventPortfolio": true
+          },
+          "screenName": {
+            "en": "Portfolio Overview",
+            "nl": "Portefeuille Overzicht"
           }
         },
         {
@@ -635,6 +639,10 @@
                 }
               }
             }
+          },
+          "screenName": {
+            "en": "Private Markets",
+            "nl": "Private Markets"
           }
         },
         {
@@ -715,6 +723,10 @@
                 ]
               }
             ]
+          },
+          "screenName": {
+            "en": "Geopolitics",
+            "nl": "Geopolitiek"
           }
         },
         {
@@ -775,6 +787,10 @@
                 "current": 10
               }
             ]
+          },
+          "screenName": {
+            "en": "Fixed Income",
+            "nl": "Fixed Income"
           }
         },
         {
@@ -830,6 +846,10 @@
                 }
               ]
             }
+          },
+          "screenName": {
+            "en": "ESG & SFDR",
+            "nl": "ESG & SFDR"
           }
         },
         {
@@ -884,6 +904,10 @@
                 }
               ]
             }
+          },
+          "screenName": {
+            "en": "Active / Passive",
+            "nl": "Actief / Passief"
           }
         },
         {
@@ -964,6 +988,10 @@
                 "weight": 4
               }
             ]
+          },
+          "screenName": {
+            "en": "Sector Rotation",
+            "nl": "Sectorrotatie"
           }
         },
         {
@@ -1024,6 +1052,10 @@
                 "weight": 1
               }
             ]
+          },
+          "screenName": {
+            "en": "Currency Risk",
+            "nl": "Valutarisico"
           }
         },
         {
@@ -1100,6 +1132,10 @@
                 "weight": 3
               }
             ]
+          },
+          "screenName": {
+            "en": "Investment Style",
+            "nl": "Beleggingsstijl"
           }
         },
         {
@@ -1203,6 +1239,10 @@
                 }
               ]
             }
+          },
+          "screenName": {
+            "en": "Cost Pressure",
+            "nl": "Kostenbeheer"
           }
         }
       ]
@@ -1744,6 +1784,10 @@
           "dimension": "asset_class",
           "base": {
             "useEventPortfolio": true
+          },
+          "screenName": {
+            "en": "Portfolio Overview",
+            "nl": "Portefeuille Overzicht"
           }
         },
         {
@@ -1925,6 +1969,10 @@
                 "benchmark": 109.8
               }
             ]
+          },
+          "screenName": {
+            "en": "Private Markets",
+            "nl": "Private Markets"
           }
         },
         {
@@ -2005,6 +2053,10 @@
                 ]
               }
             ]
+          },
+          "screenName": {
+            "en": "Geopolitics",
+            "nl": "Geopolitiek"
           }
         },
         {
@@ -2151,6 +2203,10 @@
                 "benchmark": 109.8
               }
             ]
+          },
+          "screenName": {
+            "en": "Fixed Income",
+            "nl": "Fixed Income"
           }
         },
         {
@@ -2206,6 +2262,10 @@
                 }
               ]
             }
+          },
+          "screenName": {
+            "en": "ESG & SFDR",
+            "nl": "ESG & SFDR"
           }
         },
         {
@@ -2346,6 +2406,10 @@
                 "benchmark": 109.8
               }
             ]
+          },
+          "screenName": {
+            "en": "Active / Passive",
+            "nl": "Actief / Passief"
           }
         },
         {
@@ -2512,6 +2576,10 @@
                 "benchmark": 109.8
               }
             ]
+          },
+          "screenName": {
+            "en": "Sector Rotation",
+            "nl": "Sectorrotatie"
           }
         },
         {
@@ -2572,6 +2640,10 @@
                 "weight": 1
               }
             ]
+          },
+          "screenName": {
+            "en": "Currency Risk",
+            "nl": "Valutarisico"
           }
         },
         {
@@ -2648,6 +2720,10 @@
                 "weight": 3
               }
             ]
+          },
+          "screenName": {
+            "en": "Investment Style",
+            "nl": "Beleggingsstijl"
           }
         },
         {
@@ -2751,6 +2827,10 @@
                 }
               ]
             }
+          },
+          "screenName": {
+            "en": "Cost Pressure",
+            "nl": "Kostenbeheer"
           }
         }
       ]

@@ -1,47 +1,32 @@
-import { useState } from 'react'
-
-const DIMENSIONS = [
-  { id: 'asset_class',    label: 'Asset Class',    icon: '◉' },
-  { id: 'geography',      label: 'Geography',      icon: '⊕' },
-  { id: 'esg',            label: 'ESG',            icon: '◈' },
-  { id: 'implementation', label: 'Implementation', icon: '◧' },
-  { id: 'performance',    label: 'Performance',    icon: '↗' },
-  { id: 'sector',         label: 'Sector',         icon: '⬡' },
-  { id: 'currency',       label: 'Currency',       icon: '€' },
-  { id: 'style',          label: 'Style',          icon: '▦' },
-  { id: 'cost',           label: 'Cost',           icon: '€€' },
-]
-
-function TotalBadge({ values, target = 100 }) {
-  const total = values.reduce((s, v) => s + (Number(v) || 0), 0)
-  const ok = Math.abs(total - target) < 1
+function TotalBadge({ values }) {
+  const total = Math.round(values.reduce((s, v) => s + (v || 0), 0))
+  const ok = total === 100
+  const over = total > 100
+  const color = ok ? '#4ED596' : over ? '#E01B41' : '#F5A623'
   return (
     <span style={{
-      padding: '1px 7px', borderRadius: 4,
-      fontFamily: "'Merriweather Sans', sans-serif",
-      fontSize: '0.62rem', fontWeight: 800,
-      background: ok ? 'rgba(78,213,150,0.12)' : 'rgba(224,27,65,0.12)',
-      color: ok ? '#1a7a50' : '#E01B41',
-      border: `1px solid ${ok ? 'rgba(78,213,150,0.3)' : 'rgba(224,27,65,0.3)'}`,
+      fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+      fontSize: '9px', fontWeight: 800,
+      color, marginLeft: '8px', letterSpacing: '0.06em',
     }}>
-      {total}%
+      {total}%{ok ? ' ✓' : ''}
     </span>
   )
 }
 
-function SliderRow({ label, color, value, base, min = 0, max = 70, onChange }) {
+function SliderRow({ label, color, value, base, onChange, min = 0, max = 100 }) {
   const changed = value !== base
   const delta = value - base
   return (
     <div style={s.sliderRow}>
       <div style={s.sliderLabel}>
-        {color && <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />}
-        <span style={{ ...s.sliderName, color: changed ? '#0C182E' : '#4A4A44' }}>{label}</span>
+        <span style={{ ...s.sliderDot, background: color }} />
+        <span style={s.sliderName}>{label}</span>
       </div>
       <input type="range" min={min} max={max} step={1} value={value}
         onChange={e => onChange(Number(e.target.value))}
         style={s.range} />
-      <span style={{ ...s.sliderVal, color: changed ? '#E01B41' : '#8A8A82', fontWeight: changed ? 800 : 600 }}>
+      <span style={{ ...s.sliderVal, color: changed ? '#E01B41' : 'rgba(255,255,255,0.5)', fontWeight: changed ? 800 : 600 }}>
         {value}{typeof value === 'number' && max <= 100 ? '%' : ''}
       </span>
       {changed && (
@@ -51,19 +36,16 @@ function SliderRow({ label, color, value, base, min = 0, max = 70, onChange }) {
   )
 }
 
-// Regiokleuren conform GeographyChart
 const GEO_COLORS = {
-  'Europe':          '#5B8DEF',
-  'North America':   '#F5A623',
-  'Asia Pacific':    '#A78BFA',
-  'Emerging Markets':'#8A8A82',
+  'Europe': '#5B8DEF',
+  'North America': '#F5A623',
+  'Asia Pacific': '#A78BFA',
+  'Emerging Markets': '#8A8A82',
 }
 
-// Haal implementation categories op — ondersteunt v1.1 (categories[]) en v1.0 (plat object)
 function getImplCategories(implementation) {
   if (!implementation) return []
   if (Array.isArray(implementation.categories)) return implementation.categories
-  // v1.0 fallback
   const LEGACY = {
     active:     { label: { en: 'Active' },       color: '#E01B41' },
     passive:    { label: { en: 'Passive / ETF' }, color: '#5B8DEF' },
@@ -80,238 +62,365 @@ export default function ExplorePanel({
   onUpdateGeo, onResetAlloc,
   activeDimension, onSelectDimension, onExitExplore,
 }) {
-  const showAlloc      = activeDimension === 'asset_class'
-  const showGeo        = activeDimension === 'geography'
-  const showESG        = activeDimension === 'esg'
-  const showImpl       = activeDimension === 'implementation'
-  const showSector     = activeDimension === 'sector'
-  const showCurrency   = activeDimension === 'currency'
-  const noSliders      = activeDimension === 'performance' || activeDimension === 'style' || activeDimension === 'cost'
+  const showAlloc    = activeDimension === 'asset_class'
+  const showGeo      = activeDimension === 'geography'
+  const showESG      = activeDimension === 'esg'
+  const showImpl     = activeDimension === 'implementation'
+  const showSector   = activeDimension === 'sector'
+  const showCurrency = activeDimension === 'currency'
+  const noSliders    = ['performance', 'style', 'cost'].includes(activeDimension)
 
-  // Implementation categories — uit explorePortfolio (v1.1) of portfolio (v1.0)
   const baseImplCats    = getImplCategories(portfolio.implementation)
   const exploreImplCats = getImplCategories(explorePortfolio.implementation)
 
   return (
     <div style={s.panel}>
 
-      {/* Left: exit + label */}
-      <div style={s.section}>
-        <div style={s.exploreTag}><span style={s.exploreDot}>●</span>EXPLORE</div>
-        <button style={s.exitBtn} onClick={onExitExplore}>← Back to programme</button>
-      </div>
+      {/* Groene lijn bovenaan — explore staat */}
+      <div style={s.greenLine} />
 
-      <div style={s.vDivider} />
+      <div style={s.mainRow}>
 
-      {/* Centre: dimension-aware sliders */}
-      <div style={s.sliderSection}>
-
-        {showAlloc && (
-          <>
-            <div style={s.sectionLabel}>
-              ASSET ALLOCATION
-              <TotalBadge values={explorePortfolio.allocations.map(a => a.current)} />
-            </div>
-            <div style={s.sliders}>
-              {explorePortfolio.allocations.map(a => {
-                const base = portfolio.allocations.find(x => x.id === a.id)?.current ?? a.current
-                return (
-                  <SliderRow key={a.id}
-                    label={a.label?.en || a.id} color={a.color}
-                    value={a.current} base={base}
-                    onChange={v => onUpdateAlloc(a.id, v)} />
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {showGeo && (
-          <>
-            <div style={s.sectionLabel}>
-              REGIONAL EXPOSURE
-              <TotalBadge values={Object.values(
-                explorePortfolio.geoOverride || (() => {
-                  const m = {}
-                  portfolio.allocations.forEach(a => {
-                    if (!a.geographic?.length) return
-                    const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
-                    if (!geoSum) return
-                    const scale = a.current / geoSum
-                    a.geographic.forEach(g => { m[g.region] = (m[g.region] || 0) + Math.round(g.weight * scale * 10) / 10 })
-                  })
-                  return m
-                })()
-              )} />
-            </div>
-            <div style={s.sliders}>
-              {Object.keys(GEO_COLORS).map(region => {
-                const baseMap = {}
-                portfolio.allocations.forEach(a => {
-                  if (!a.geographic?.length) return
-                  const geoSum = a.geographic.reduce((s, g) => s + g.weight, 0)
-                  if (!geoSum) return
-                  const scale = a.current / geoSum
-                  a.geographic.forEach(g => { baseMap[g.region] = (baseMap[g.region] || 0) + Math.round(g.weight * scale * 10) / 10 })
-                })
-                const base = Math.round((baseMap[region] || 0))
-                if (base === 0 && !(explorePortfolio.geoOverride?.[region])) return null
-                const value = Math.round(explorePortfolio.geoOverride?.[region] ?? base)
-                return (
-                  <SliderRow key={region}
-                    label={region}
-                    color={GEO_COLORS[region]}
-                    value={value}
-                    base={base}
-                    max={80}
-                    onChange={v => onUpdateGeo(region, v)} />
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {showESG && (
-          <>
-            <div style={s.sectionLabel}>ESG PROFILE</div>
-            <div style={s.sliders}>
-              <SliderRow label="ESG Score" color="#4ED596"
-                value={explorePortfolio.esg?.score ?? portfolio.esg.score}
-                base={portfolio.esg.score}
-                min={0} max={10}
-                onChange={v => onUpdateESG('score', v)} />
-              {portfolio.esg.sfdr.map((item, i) => (
-                <SliderRow key={item.article}
-                  label={item.article} color={i === 0 ? '#4ED596' : i === 1 ? '#5B8DEF' : '#8A8A82'}
-                  value={explorePortfolio.esg?.sfdr?.[i]?.weight ?? item.weight}
-                  base={item.weight}
-                  min={0} max={100}
-                  onChange={v => onUpdateESG('sfdr', v, i)} />
-              ))}
-            </div>
-          </>
-        )}
-
-        {showImpl && (
-          <>
-            <div style={s.sectionLabel}>
-              IMPLEMENTATION MIX
-              <TotalBadge values={exploreImplCats.map(c => c.weight)} />
-            </div>
-            <div style={s.sliders}>
-              {baseImplCats.map(baseCat => {
-                const exploreCat = exploreImplCats.find(c => c.id === baseCat.id)
-                const value = exploreCat?.weight ?? baseCat.weight
-                const label = typeof baseCat.label === 'object'
-                  ? (baseCat.label.en || baseCat.id)
-                  : (baseCat.label || baseCat.id)
-                return (
-                  <SliderRow key={baseCat.id}
-                    label={label}
-                    color={baseCat.color}
-                    value={value}
-                    base={baseCat.weight}
-                    onChange={v => onUpdateImpl(baseCat.id, v)} />
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {showSector && (
-          <>
-            <div style={s.sectionLabel}>
-              SECTOR WEIGHTS
-              <TotalBadge values={(explorePortfolio.sectors || portfolio.sectors || []).map(s => s.weight)} />
-            </div>
-            <div style={s.sliders}>
-              {(portfolio.sectors || []).map((sec, i) => {
-                const exploreWeight = explorePortfolio.sectors?.[i]?.weight ?? sec.weight
-                const label = typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)
-                return (
-                  <SliderRow key={sec.id} label={label} color={sec.color}
-                    value={exploreWeight} base={sec.weight}
-                    onChange={v => onUpdateSector(i, v)} />
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {showCurrency && (
-          <>
-            <div style={s.sectionLabel}>
-              CURRENCY WEIGHTS
-              <TotalBadge values={(explorePortfolio.currencies || portfolio.currencies || []).map(c => c.weight)} />
-            </div>
-            <div style={s.sliders}>
-              {(portfolio.currencies || []).map((cur, i) => {
-                const exploreWeight = explorePortfolio.currencies?.[i]?.weight ?? cur.weight
-                return (
-                  <SliderRow key={cur.currency} label={cur.currency}
-                    color={cur.currency === 'EUR' ? '#5B8DEF' : cur.currency === 'USD' ? '#F5A623' : cur.currency === 'GBP' ? '#A78BFA' : '#8A8A82'}
-                    value={exploreWeight} base={cur.weight}
-                    onChange={v => onUpdateCurrency(i, v)} />
-                )
-              })}
-            </div>
-          </>
-        )}
-
-        {noSliders && (
-          <div style={{ color: '#8A8A82', fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.72rem' }}>
-            No live sliders for this dimension — switch to another to explore.
+        {/* ── Links: explore label + exit ── */}
+        <div style={s.exitSection}>
+          <div style={s.exploreTag}>
+            <span style={s.exploreDot} />
+            Explore
           </div>
-        )}
-
-        <button style={s.resetBtn} onClick={onResetAlloc}>Reset all to base</button>
-      </div>
-
-      <div style={s.vDivider} />
-
-      {/* Right: dimension selector */}
-      <div style={s.section}>
-        <div style={s.sectionLabel}>DIMENSION</div>
-        <div style={s.dimGrid}>
-          {DIMENSIONS.map(d => {
-            const isActive = activeDimension === d.id
-            return (
-              <button key={d.id} onClick={() => onSelectDimension(d.id)} style={{
-                ...s.dimBtn,
-                background: isActive ? '#E01B41' : '#FFFFFF',
-                borderColor: isActive ? '#E01B41' : '#E0E0DC',
-              }}>
-                <span style={s.dimIcon}>{d.icon}</span>
-                <span style={{ ...s.dimLabel, color: isActive ? '#FFFFFF' : '#0C182E' }}>{d.label}</span>
-              </button>
-            )
-          })}
+          <button style={s.exitBtn} onClick={onExitExplore}>← Back</button>
         </div>
-      </div>
 
+        <div style={s.vDivider} />
+
+        {/* ── Sliders ── */}
+        <div style={s.sliderSection}>
+
+          {showAlloc && (
+            <>
+              <div style={s.sectionLabel}>
+                Allocation
+                <TotalBadge values={explorePortfolio.allocations.map(a => a.current)} />
+              </div>
+              <div style={s.sliders}>
+                {explorePortfolio.allocations.map(a => {
+                  const base = portfolio.allocations.find(x => x.id === a.id)?.current ?? a.current
+                  const label = typeof a.label === 'string' ? a.label : a.label?.en || a.id
+                  return (
+                    <SliderRow key={a.id} label={label} color={a.color || '#8A8A82'}
+                      value={a.current} base={base}
+                      onChange={v => onUpdateAlloc(a.id, v)} />
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {showGeo && (
+            <>
+              <div style={s.sectionLabel}>
+                Geography
+                <TotalBadge values={Object.values(explorePortfolio.geoOverride || {})} />
+              </div>
+              <div style={s.sliders}>
+                {Object.entries(explorePortfolio.geoOverride || {}).map(([region, weight]) => {
+                  const base = portfolio.allocations.reduce((sum, a) => {
+                    const geoSum = a.geographic?.reduce((s, g) => s + g.weight, 0) || 0
+                    if (!geoSum) return sum
+                    const scale = a.current / geoSum
+                    const g = a.geographic?.find(x => x.region === region)
+                    return sum + (g ? g.weight * scale : 0)
+                  }, 0)
+                  return (
+                    <SliderRow key={region} label={region}
+                      color={GEO_COLORS[region] || '#8A8A82'}
+                      value={Math.round(weight)} base={Math.round(base)}
+                      onChange={v => onUpdateGeo(region, v)} />
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {showESG && (
+            <>
+              <div style={s.sectionLabel}>ESG Score</div>
+              <div style={s.sliders}>
+                <SliderRow label="ESG Score" color="#4ED596"
+                  value={explorePortfolio.esg?.score ?? 0}
+                  base={portfolio.esg?.score ?? 0}
+                  min={0} max={10}
+                  onChange={v => onUpdateESG('score', v)} />
+                {explorePortfolio.esg?.sfdr?.map((sfdrItem, i) => (
+                  <SliderRow key={sfdrItem.article} label={sfdrItem.article}
+                    color={i === 0 ? '#4ED596' : i === 1 ? '#5B8DEF' : '#8A8A82'}
+                    value={sfdrItem.weight}
+                    base={portfolio.esg?.sfdr?.[i]?.weight ?? sfdrItem.weight}
+                    onChange={v => onUpdateESG('sfdr', v, i)} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {showImpl && (
+            <>
+              <div style={s.sectionLabel}>
+                Implementation
+                <TotalBadge values={exploreImplCats.map(c => c.weight)} />
+              </div>
+              <div style={s.sliders}>
+                {exploreImplCats.map(cat => {
+                  const base = baseImplCats.find(b => b.id === cat.id)?.weight ?? cat.weight
+                  const label = typeof cat.label === 'string' ? cat.label : cat.label?.en || cat.id
+                  return (
+                    <SliderRow key={cat.id} label={label} color={cat.color || '#8A8A82'}
+                      value={cat.weight} base={base}
+                      onChange={v => onUpdateImpl(cat.id, v)} />
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {showSector && (
+            <>
+              <div style={s.sectionLabel}>
+                Sectors
+                <TotalBadge values={explorePortfolio.sectors?.map(s => s.weight) || []} />
+              </div>
+              <div style={s.sliders}>
+                {explorePortfolio.sectors?.map((sec, i) => {
+                  const base = portfolio.sectors?.[i]?.weight ?? sec.weight
+                  const label = typeof sec.label === 'string' ? sec.label : sec.label?.en || sec.id
+                  return (
+                    <SliderRow key={sec.id} label={label} color={sec.color || '#8A8A82'}
+                      value={sec.weight} base={base}
+                      onChange={v => onUpdateSector(i, v)} />
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {showCurrency && (
+            <>
+              <div style={s.sectionLabel}>
+                Currency
+                <TotalBadge values={explorePortfolio.currencies?.map(c => c.weight) || []} />
+              </div>
+              <div style={s.sliders}>
+                {explorePortfolio.currencies?.map((cur, i) => {
+                  const base = portfolio.currencies?.[i]?.weight ?? cur.weight
+                  const color = cur.currency === 'EUR' ? '#5B8DEF' : cur.currency === 'USD' ? '#F5A623' : cur.currency === 'GBP' ? '#A78BFA' : '#8A8A82'
+                  return (
+                    <SliderRow key={cur.currency} label={cur.currency} color={color}
+                      value={cur.weight} base={base}
+                      onChange={v => onUpdateCurrency(i, v)} />
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {noSliders && (
+            <div style={s.noSliders}>
+              No sliders available for this dimension.
+            </div>
+          )}
+
+        </div>
+
+        <div style={s.vDivider} />
+
+        {/* ── Reset ── */}
+        <div style={s.resetSection}>
+          <button style={s.resetBtn} onClick={onResetAlloc}>Reset to base</button>
+        </div>
+
+      </div>
     </div>
   )
 }
 
 const s = {
-  panel: { height: '100%', display: 'flex', alignItems: 'stretch', background: '#F0F8F4', borderTop: '2.5px solid #4ED596' },
-  section: { display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10, padding: '10px 18px', flexShrink: 0 },
-  sliderSection: { display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 18px', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden' },
-  vDivider: { width: 1, background: 'rgba(78,213,150,0.3)', margin: '14px 0', flexShrink: 0 },
-  exploreTag: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.62rem', fontWeight: 800, color: '#4ED596', letterSpacing: '0.14em', display: 'flex', alignItems: 'center', gap: 5 },
-  exploreDot: { fontSize: '0.5rem', animation: 'explore-pulse 1.8s ease-in-out infinite' },
-  exitBtn: { padding: '7px 14px', background: '#FFFFFF', border: '1.5px solid #E0E0DC', borderRadius: 6, cursor: 'pointer', fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.68rem', fontWeight: 700, color: '#0C182E', whiteSpace: 'nowrap' },
-  sectionLabel: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.54rem', fontWeight: 800, color: '#8A8A82', letterSpacing: '0.12em', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
-  sliders: { display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto', flex: 1, minHeight: 0 },
-  sliderRow: { display: 'flex', alignItems: 'center', gap: 8 },
-  sliderLabel: { display: 'flex', alignItems: 'center', gap: 5, width: 120, flexShrink: 0 },
-  sliderName: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.63rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  range: { flex: 1, height: 3, accentColor: '#E01B41', cursor: 'pointer', minWidth: 60 },
-  sliderVal: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.72rem', width: 32, textAlign: 'right', flexShrink: 0 },
-  delta: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: '#E01B41', width: 26, textAlign: 'right', flexShrink: 0 },
-  resetBtn: { flexShrink: 0, alignSelf: 'flex-start', padding: '4px 10px', background: 'none', border: '1px solid rgba(78,213,150,0.4)', borderRadius: 4, cursor: 'pointer', fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.6rem', fontWeight: 700, color: '#1a7a50', marginTop: 4 },
-  dimGrid: { display: 'flex', flexWrap: 'wrap', gap: 5, maxWidth: 340 },
-  dimBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '6px 10px', border: '1.5px solid', borderRadius: 6, cursor: 'pointer', minWidth: 70, transition: 'all 0.12s ease' },
-  dimIcon: { fontSize: '0.82rem', lineHeight: 1 },
-  dimLabel: { fontFamily: "'Merriweather Sans', sans-serif", fontSize: '0.54rem', fontWeight: 700, textAlign: 'center' },
+  panel: {
+    width: '100%',
+    background: '#0C182E',
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    flexShrink: 0,
+  },
+  greenLine: {
+    height: '3px',
+    background: '#4ED596',
+    width: '100%',
+  },
+  mainRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: '0 24px',
+    height: '100px',
+    gap: 0,
+  },
+
+  /* Exit sectie */
+  exitSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: '10px',
+    flexShrink: 0,
+    paddingRight: '4px',
+  },
+  exploreTag: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '9px',
+    fontWeight: 800,
+    color: '#4ED596',
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+  },
+  exploreDot: {
+    display: 'inline-block',
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    background: '#4ED596',
+    animation: 'explore-pulse 1.8s ease-in-out infinite',
+    flexShrink: 0,
+  },
+  exitBtn: {
+    padding: '7px 14px',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'rgba(255,255,255,0.8)',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.15s',
+  },
+
+  /* Divider */
+  vDivider: {
+    width: '1px',
+    height: '60px',
+    background: 'rgba(255,255,255,0.1)',
+    flexShrink: 0,
+    margin: '0 20px',
+  },
+
+  /* Sliders */
+  sliderSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  sectionLabel: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '8px',
+    fontWeight: 800,
+    color: 'rgba(255,255,255,0.35)',
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    display: 'flex',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  sliders: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    overflowY: 'auto',
+    flex: 1,
+    minHeight: 0,
+  },
+  sliderRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  sliderLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    width: '110px',
+    flexShrink: 0,
+  },
+  sliderDot: {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  sliderName: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '10px',
+    fontWeight: 500,
+    color: 'rgba(255,255,255,0.75)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  range: {
+    flex: 1,
+    height: '3px',
+    accentColor: '#4ED596',
+    cursor: 'pointer',
+    minWidth: '60px',
+  },
+  sliderVal: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '11px',
+    width: '36px',
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+  delta: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '9px',
+    fontWeight: 700,
+    color: '#E01B41',
+    width: '28px',
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+  noSliders: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '11px',
+    color: 'rgba(255,255,255,0.35)',
+    fontStyle: 'italic',
+  },
+
+  /* Reset sectie */
+  resetSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  resetBtn: {
+    padding: '8px 14px',
+    background: 'transparent',
+    border: '1px solid rgba(78,213,150,0.35)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '9px',
+    fontWeight: 700,
+    color: '#4ED596',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.15s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
 }

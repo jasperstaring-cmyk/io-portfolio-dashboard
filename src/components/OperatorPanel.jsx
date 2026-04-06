@@ -21,16 +21,10 @@ export default function OperatorPanel({
 }) {
   const isLive = !idleMode
 
-  const eventName =
-    allEvents?.find(e => e.id === activeEventId)?.name || 'Portfolio Day'
-
-  const policyQuestion =
-    activeScenario?.framing?.policyQuestion?.[lang] ||
-    activeScenario?.framing?.policyQuestion?.en ||
-    activeScenario?.speaker?.[lang] ||
-    activeScenario?.speaker?.en ||
-    activeScenario?.title?.[lang] ||
-    activeScenario?.title?.en ||
+  const screenName =
+    activeScenario?.screenName?.[lang] ||
+    activeScenario?.screenName?.en ||
+    activeScenario?.screenName ||
     ''
 
   const hasComparison = !!activeScenario?.comparison
@@ -39,14 +33,10 @@ export default function OperatorPanel({
 
   return (
     <div style={s.panel}>
-
-      {/* Rode lijn — splitsing tussen scherm en panel */}
       <div style={s.redLine} />
-
-      {/* Hoofdrij */}
       <div style={s.mainRow}>
 
-        {/* ── Event selector (alleen als meerdere events) ── */}
+        {/* ── Event selector (alleen bij meerdere events) ── */}
         {hasMultipleEvents && (
           <>
             <div style={s.eventSection}>
@@ -65,10 +55,9 @@ export default function OperatorPanel({
           </>
         )}
 
-        {/* ── Beleidsvraag ── */}
-        <div style={s.questionSection}>
-          <div style={s.microLabel}>{eventName}</div>
-          <div style={s.question}>{policyQuestion || '\u00A0'}</div>
+        {/* ── Screenname ── */}
+        <div style={s.screenNameSection}>
+          <div style={s.screenNameText}>{screenName || '\u00A0'}</div>
         </div>
 
         <div style={s.vDivider} />
@@ -79,31 +68,24 @@ export default function OperatorPanel({
           <div style={s.navRow}>
             <button
               style={s.arrowBtn}
-              onClick={() =>
-                onSelectScenario((activeIndex - 1 + scenarios.length) % scenarios.length)
-              }
+              onClick={() => onSelectScenario((activeIndex - 1 + scenarios.length) % scenarios.length)}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9 2L4 7l5 5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M9 2L4 7l5 5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
             <div style={s.navCounter}>{activeIndex + 1} / {scenarios.length}</div>
             <button
               style={s.arrowBtn}
-              onClick={() =>
-                onSelectScenario((activeIndex + 1) % scenarios.length)
-              }
+              onClick={() => onSelectScenario((activeIndex + 1) % scenarios.length)}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5 2l5 5-5 5" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M5 2l5 5-5 5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           </div>
           <div style={s.progressTrack}>
-            <div style={{
-              ...s.progressFill,
-              width: ((activeIndex + 1) / scenarios.length) * 100 + '%',
-            }} />
+            <div style={{ ...s.progressFill, width: ((activeIndex + 1) / scenarios.length) * 100 + '%' }} />
           </div>
         </div>
 
@@ -113,24 +95,24 @@ export default function OperatorPanel({
         <button
           style={{
             ...s.btn,
-            background: isLive ? '#E01B41' : 'rgba(255,255,255,0.04)',
-            borderColor: isLive ? '#E01B41' : 'rgba(255,255,255,0.1)',
+            background: isLive ? '#E01B41' : 'rgba(255,255,255,0.07)',
+            borderColor: isLive ? '#E01B41' : 'rgba(255,255,255,0.25)',
           }}
           onClick={onToggleIdle}
         >
           {isLive ? (
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-              <polygon points="13,9 24,16 13,23" fill="white" />
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
+              <polygon points="15,10 27,18 15,26" fill="white" />
             </svg>
           ) : (
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="13" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-              <rect x="10" y="10" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.35)" />
-              <rect x="18" y="10" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.35)" />
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+              <rect x="11" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
+              <rect x="20" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
             </svg>
           )}
-          <span style={{ ...s.btnLabel, color: isLive ? '#fff' : 'rgba(255,255,255,0.3)' }}>
+          <span style={{ ...s.btnLabel, color: isLive ? '#ffffff' : 'rgba(255,255,255,0.7)' }}>
             {isLive ? 'Live' : 'Idle'}
           </span>
         </button>
@@ -139,101 +121,87 @@ export default function OperatorPanel({
         <button
           style={{
             ...s.btn,
-            background: showComparison ? 'rgba(251,199,37,0.12)' : 'rgba(255,255,255,0.04)',
-            borderColor: showComparison ? 'rgba(251,199,37,0.4)' : 'rgba(255,255,255,0.1)',
-            opacity: hasComparison ? 1 : 0.28,
+            background: showComparison ? 'rgba(251,199,37,0.15)' : 'rgba(255,255,255,0.07)',
+            borderColor: showComparison ? 'rgba(251,199,37,0.7)' : 'rgba(255,255,255,0.25)',
+            opacity: hasComparison ? 1 : 0.25,
             pointerEvents: hasComparison ? 'auto' : 'none',
           }}
           onClick={onToggleComparison}
         >
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect x="3" y="8" width="11" height="16" rx="2.5"
-              fill={showComparison ? 'rgba(251,199,37,0.45)' : 'rgba(255,255,255,0.2)'} />
-            <rect x="18" y="8" width="11" height="16" rx="2.5"
-              fill={showComparison ? 'rgba(251,199,37,0.18)' : 'rgba(255,255,255,0.1)'} />
-            <line x1="6" y1="14" x2="11" y2="14" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.45)'} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="6" y1="17" x2="11" y2="17" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.45)'} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="6" y1="20" x2="11" y2="20" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.3)'} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="21" y1="14" x2="26" y2="14" stroke={showComparison ? 'rgba(251,199,37,0.6)' : 'rgba(255,255,255,0.25)'} strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="21" y1="17" x2="26" y2="17" stroke={showComparison ? 'rgba(251,199,37,0.6)' : 'rgba(255,255,255,0.25)'} strokeWidth="1.5" strokeLinecap="round" />
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <rect x="3" y="8" width="13" height="20" rx="2.5"
+              fill={showComparison ? 'rgba(251,199,37,0.5)' : 'rgba(255,255,255,0.25)'}
+              stroke={showComparison ? 'rgba(251,199,37,0.8)' : 'rgba(255,255,255,0.4)'} strokeWidth="1" />
+            <rect x="20" y="8" width="13" height="20" rx="2.5"
+              fill={showComparison ? 'rgba(251,199,37,0.2)' : 'rgba(255,255,255,0.1)'}
+              stroke={showComparison ? 'rgba(251,199,37,0.5)' : 'rgba(255,255,255,0.25)'} strokeWidth="1" />
+            <line x1="6.5" y1="15" x2="12.5" y2="15" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.6)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="6.5" y1="19" x2="12.5" y2="19" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.6)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="6.5" y1="23" x2="12.5" y2="23" stroke={showComparison ? '#FBC725' : 'rgba(255,255,255,0.4)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="23.5" y1="15" x2="29.5" y2="15" stroke={showComparison ? 'rgba(251,199,37,0.7)' : 'rgba(255,255,255,0.35)'} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="23.5" y1="19" x2="29.5" y2="19" stroke={showComparison ? 'rgba(251,199,37,0.7)' : 'rgba(255,255,255,0.35)'} strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <span style={{ ...s.btnLabel, color: showComparison ? '#FBC725' : 'rgba(255,255,255,0.3)' }}>
-            Compare
-          </span>
+          <span style={{ ...s.btnLabel, color: showComparison ? '#FBC725' : 'rgba(255,255,255,0.65)' }}>Compare</span>
         </button>
 
         {/* ── PERFORMANCE ── */}
         <button
           style={{
             ...s.btn,
-            background: showPerformanceView ? 'rgba(224,27,65,0.1)' : 'rgba(255,255,255,0.04)',
-            borderColor: showPerformanceView ? 'rgba(224,27,65,0.35)' : 'rgba(255,255,255,0.1)',
-            opacity: hasPerfView ? 1 : 0.28,
+            background: showPerformanceView ? 'rgba(224,27,65,0.15)' : 'rgba(255,255,255,0.07)',
+            borderColor: showPerformanceView ? 'rgba(224,27,65,0.7)' : 'rgba(255,255,255,0.25)',
+            opacity: hasPerfView ? 1 : 0.25,
             pointerEvents: hasPerfView ? 'auto' : 'none',
           }}
           onClick={onTogglePerformanceView}
         >
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <line x1="3" y1="26" x2="29" y2="26" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-            <polygon points="3,22 9,15 15,18 21,9 29,5 29,26 3,26"
-              fill={showPerformanceView ? 'rgba(224,27,65,0.1)' : 'rgba(255,255,255,0.05)'} />
-            <polyline points="3,22 9,15 15,18 21,9 29,5"
-              stroke={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.4)'}
-              strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <circle cx="29" cy="5" r="2"
-              fill={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.4)'} />
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <line x1="3" y1="30" x2="33" y2="30" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+            <polygon points="3,25 10,17 17,21 24,11 33,6 33,30 3,30"
+              fill={showPerformanceView ? 'rgba(224,27,65,0.15)' : 'rgba(255,255,255,0.08)'} />
+            <polyline points="3,25 10,17 17,21 24,11 33,6"
+              stroke={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.6)'}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <circle cx="33" cy="6" r="2.5" fill={showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.6)'} />
           </svg>
-          <span style={{ ...s.btnLabel, color: showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.3)' }}>
-            Performance
-          </span>
+          <span style={{ ...s.btnLabel, color: showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.65)' }}>Performance</span>
         </button>
 
         {/* ── EXPLORE ── */}
         <button
           style={{
             ...s.btn,
-            background: exploreActive ? 'rgba(78,213,150,0.1)' : 'rgba(255,255,255,0.04)',
-            borderColor: exploreActive ? 'rgba(78,213,150,0.32)' : 'rgba(255,255,255,0.1)',
+            background: exploreActive ? 'rgba(78,213,150,0.15)' : 'rgba(255,255,255,0.07)',
+            borderColor: exploreActive ? 'rgba(78,213,150,0.7)' : 'rgba(255,255,255,0.25)',
           }}
           onClick={onEnterExplore}
         >
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="12"
-              stroke={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.25)'}
-              strokeWidth="1.5" />
-            <line x1="16" y1="4" x2="16" y2="28" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-            <line x1="4" y1="16" x2="28" y2="16" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-            <ellipse cx="16" cy="16" rx="6" ry="12"
-              stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="2.5 2" fill="none" />
-            <circle cx="16" cy="16" r="2.5"
-              fill={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.4)'} />
-            <polygon points="16,5 14,10 18,10"
-              fill={exploreActive ? 'rgba(78,213,150,0.8)' : 'rgba(255,255,255,0.35)'} />
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="14"
+              stroke={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.5)'} strokeWidth="1.5" />
+            <line x1="18" y1="4" x2="18" y2="32" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+            <line x1="4" y1="18" x2="32" y2="18" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+            <ellipse cx="18" cy="18" rx="7" ry="14"
+              stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3 2" fill="none" />
+            <circle cx="18" cy="18" r="3" fill={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.6)'} />
+            <polygon points="18,5 15.5,12 20.5,12" fill={exploreActive ? '#4ED596' : 'rgba(255,255,255,0.5)'} />
           </svg>
-          <span style={{ ...s.btnLabel, color: exploreActive ? '#4ED596' : 'rgba(255,255,255,0.3)' }}>
-            Explore
-          </span>
+          <span style={{ ...s.btnLabel, color: exploreActive ? '#4ED596' : 'rgba(255,255,255,0.65)' }}>Explore</span>
         </button>
 
-        {/* ── Configurator-knop rechtsonder ── */}
         <div style={s.vDivider} />
+
+        {/* ── Configure ── */}
         <button style={s.configBtn} onClick={onOpenConfig} title="Open configurator">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
             <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-              stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+              stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <span style={s.configLabel}>Configure</span>
         </button>
 
       </div>
-
-      <style>{`
-        @keyframes livePulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.2; }
-        }
-      `}</style>
     </div>
   )
 }
@@ -245,21 +213,15 @@ const s = {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
     flexShrink: 0,
   },
-  redLine: {
-    height: '3px',
-    background: '#E01B41',
-    width: '100%',
-  },
+  redLine: { height: '3px', background: '#E01B41', width: '100%' },
   mainRow: {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: '0 20px',
-    height: '96px',
+    padding: '0 24px',
+    height: '100px',
     gap: 0,
   },
-
-  /* Event selector */
   eventSection: {
     display: 'flex',
     flexDirection: 'column',
@@ -274,23 +236,29 @@ const s = {
     fontWeight: 700,
     color: '#ffffff',
     background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.2)',
     borderRadius: '6px',
     padding: '5px 10px',
     cursor: 'pointer',
     appearance: 'none',
     maxWidth: '160px',
   },
-
-  /* Beleidsvraag */
-  questionSection: {
+  screenNameSection: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    gap: '5px',
     flex: '1 1 0',
     minWidth: 0,
     paddingRight: '16px',
+  },
+  screenNameText: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '13px',
+    fontWeight: 700,
+    color: '#ffffff',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   microLabel: {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
@@ -298,37 +266,22 @@ const s = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.16em',
-    color: 'rgba(255,255,255,0.28)',
+    color: 'rgba(255,255,255,0.35)',
   },
-  question: {
-    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
-    fontSize: '13px',
-    fontWeight: 700,
-    color: '#ffffff',
-    lineHeight: 1.35,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-  },
-
-  /* Verticale divider */
   vDivider: {
     width: '1px',
-    height: '56px',
-    background: 'rgba(255,255,255,0.08)',
+    height: '60px',
+    background: 'rgba(255,255,255,0.1)',
     flexShrink: 0,
     margin: '0 20px',
   },
-
-  /* Navigatie */
   navSection: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '6px',
     flexShrink: 0,
-    width: '100px',
+    width: '120px',
   },
   navRow: {
     display: 'flex',
@@ -336,10 +289,10 @@ const s = {
     gap: '8px',
   },
   arrowBtn: {
-    width: '28px',
-    height: '28px',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    width: '30px',
+    height: '30px',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.22)',
     borderRadius: '6px',
     display: 'flex',
     alignItems: 'center',
@@ -350,16 +303,16 @@ const s = {
   },
   navCounter: {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 700,
-    color: 'rgba(255,255,255,0.7)',
-    minWidth: '30px',
+    color: 'rgba(255,255,255,0.9)',
+    minWidth: '52px',
     textAlign: 'center',
   },
   progressTrack: {
     width: '100%',
     height: '2px',
-    background: 'rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.12)',
     borderRadius: '1px',
     overflow: 'hidden',
   },
@@ -369,33 +322,29 @@ const s = {
     borderRadius: '1px',
     transition: 'width 0.3s ease',
   },
-
-  /* Actieknoppen */
   btn: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '7px',
-    width: '84px',
-    height: '72px',
+    width: '90px',
+    height: '76px',
     flexShrink: 0,
     borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.25)',
     cursor: 'pointer',
     transition: 'background 0.18s, border-color 0.18s, opacity 0.15s',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'rgba(255,255,255,0.07)',
     marginLeft: '8px',
   },
   btnLabel: {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
-    fontSize: '8px',
+    fontSize: '9px',
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.1em',
+    letterSpacing: '0.08em',
   },
-
-  /* Configurator-knop */
   configBtn: {
     display: 'flex',
     flexDirection: 'column',
@@ -403,13 +352,13 @@ const s = {
     justifyContent: 'center',
     gap: '5px',
     width: '64px',
-    height: '56px',
+    height: '60px',
     flexShrink: 0,
     borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.2)',
     cursor: 'pointer',
-    background: 'transparent',
-    marginLeft: '4px',
+    background: 'rgba(255,255,255,0.05)',
+    marginLeft: '8px',
     transition: 'background 0.15s',
   },
   configLabel: {
@@ -418,16 +367,6 @@ const s = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.3)',
-  },
-
-  /* Logo */
-  logoArea: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0.15,
-    paddingLeft: '4px',
-    flexShrink: 0,
+    color: 'rgba(255,255,255,0.55)',
   },
 }
