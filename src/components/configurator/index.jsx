@@ -49,6 +49,41 @@ export default function Configurator({ config: initialConfig, onApply, onSave, o
             <div style={c.headerSub}>{draft.event.name || 'Event setup'}</div>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 'auto' }}>
+            <button
+              onClick={() => window.open('/brochure.html', '_blank')}
+              style={{
+                padding: '6px 12px',
+                background: 'none',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 5,
+                cursor: 'pointer',
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.55)',
+              }}
+            >
+              Brochure ↗
+            </button>
+            <button
+              onClick={() => window.open('/handleiding.html', '_blank')}
+              style={{
+                padding: '6px 12px',
+                background: 'none',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 5,
+                cursor: 'pointer',
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.55)',
+              }}
+            >
+              User guide ↗
+            </button>
+          </div>
+
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
 
             {/* Status indicator */}
