@@ -1,17 +1,9 @@
 import { c } from './configuratorStyles'
 import {
-  Section, Field, NumInput, TextInput, LangTabs, SubLabel, TotalBadge,
+  Field, NumInput, TextInput, LangTabs, SubLabel, TotalBadge,
   LANGUAGES, LANG_FULL,
 } from './ConfigFormParts'
 import { useState } from 'react'
-
-const DIMENSION_LABELS = {
-  asset_class: 'Asset Class',
-  geography: 'Geography',
-  esg: 'ESG',
-  implementation: 'Implementation',
-  performance: 'Performance',
-}
 
 export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters }) {
   const [activeLang, setActiveLang] = useState('en')
@@ -24,16 +16,8 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
 
   const comp = sc.comparison
 
-  // Compute alloc total for comparison (merges base + overrides)
-  function compAllocTotal() {
-    return portfolio.allocations.reduce((sum, a) => {
-      const override = comp?.allocations?.find(ca => ca.id === a.id)
-      return sum + (override ? override.current : a.current)
-    }, 0)
-  }
-
   return (
-    <Section title="Compare">
+    <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: comp ? 14 : 0 }}>
         <button
           style={{ ...c.toggleBtn, ...(comp ? c.toggleBtnOn : {}) }}
@@ -43,7 +27,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
         </button>
         {!comp && (
           <span style={c.helpText}>
-            Enable to show an alternative portfolio state for this scenario
+            Schakel in om een alternatieve portefeuillestand te tonen
           </span>
         )}
       </div>
@@ -51,8 +35,8 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
       {comp && (
         <div>
 
-          {/* Comparison label per language */}
-          <SubLabel>Comparison label (shown in operator panel)</SubLabel>
+          {/* Label per taal */}
+          <SubLabel>Comparison label (operatorbalk)</SubLabel>
           <LangTabs active={activeLang} onChange={setActiveLang} />
           <Field label={LANG_FULL[activeLang]}>
             <TextInput wide
@@ -62,10 +46,10 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
             />
           </Field>
 
-          {/* Allocation overrides — from→to display */}
+          {/* Allocatie overrides */}
           <div style={{ marginTop: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <SubLabel>Allocation overrides</SubLabel>
+              <SubLabel>Allocatie overrides</SubLabel>
               <TotalBadge
                 values={portfolio.allocations.map(a => {
                   const ov = comp.allocations?.find(ca => ca.id === a.id)
@@ -75,13 +59,11 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
               />
             </div>
             <div style={{ ...c.helpText, marginBottom: 8 }}>
-              Leave blank to keep base value. Only changed categories are stored.
+              Laat leeg om de basiswaarde te bewaren. Alleen gewijzigde categorieën worden opgeslagen.
             </div>
-
-            {/* Column headers */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 4, borderBottom: '1px solid #EFEFED', marginBottom: 2 }}>
               <div style={{ flex: 1 }} />
-              <span style={{ ...c.th, width: 40 }}>Base</span>
+              <span style={{ ...c.th, width: 40 }}>Basis</span>
               <span style={{ ...c.th, width: 16, color: 'transparent' }}>→</span>
               <span style={{ ...c.th, width: 64 }}>Compare</span>
               <span style={{ ...c.th, width: 44 }}>Δ</span>
@@ -92,14 +74,10 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
               const compVal = override ? override.current : undefined
               const delta = compVal !== undefined ? compVal - a.current : 0
               const hasChange = compVal !== undefined
-
               return (
                 <div key={a.id} style={c.deltaRow}>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: a.color, flexShrink: 0,
-                    }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
                     <span style={c.rowLabel}>{a.label?.en || a.id}</span>
                   </div>
                   <span style={c.deltaFrom}>{a.current}%</span>
@@ -127,7 +105,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
             })}
           </div>
 
-          {/* ESG override — shown when dimension is ESG */}
+          {/* ESG override */}
           {sc.dimension === 'esg' && (
             <div style={{ marginTop: 14 }}>
               <SubLabel>ESG override</SubLabel>
@@ -136,16 +114,11 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
                   value={comp.esg?.score ?? ''}
                   onChange={v => upCompESG(idx, 'score', v)} />
               </Field>
-
-              {/* SFDR overrides */}
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <SubLabel>SFDR distribution (compare)</SubLabel>
+                  <SubLabel>SFDR-verdeling (compare)</SubLabel>
                   {comp.esg?.sfdr && (
-                    <TotalBadge
-                      values={comp.esg.sfdr.map(x => x.weight)}
-                      label="SFDR"
-                    />
+                    <TotalBadge values={comp.esg.sfdr.map(x => x.weight)} label="SFDR" />
                   )}
                 </div>
                 {portfolio.esg.sfdr.map((item, i) => {
@@ -172,7 +145,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
             </div>
           )}
 
-          {/* Implementation override — shown when dimension is implementation */}
+          {/* Implementation override */}
           {sc.dimension === 'implementation' && (() => {
             const implCats = Array.isArray(portfolio.implementation?.categories)
               ? portfolio.implementation.categories
@@ -223,7 +196,7 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
             <div style={{ marginTop: 14 }}>
               <SubLabel>Sector overrides</SubLabel>
               <div style={{ ...c.helpText, marginBottom: 8 }}>
-                Only fill in sectors that change.
+                Vul alleen sectoren in die wijzigen.
               </div>
               {(portfolio.sectors || []).map((sec, i) => {
                 const compSec = comp.sectors?.find(s => s.id === sec.id)
@@ -234,7 +207,6 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: sec.color }} />
                       <span style={c.rowLabel}>{typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)}</span>
-                      <span style={c.helpText}>({sec.weight}%)</span>
                     </div>
                     <span style={c.deltaArrow}>→</span>
                     <input style={{ ...c.input, width: 64 }}
@@ -291,6 +263,6 @@ export default function ConfigComparisonEditor({ sc, idx, portfolio, updaters })
 
         </div>
       )}
-    </Section>
+    </div>
   )
 }

@@ -7,7 +7,6 @@ import { useState } from 'react'
 
 const LANGUAGES = ['en', 'nl', 'fr', 'de']
 
-// Haal implementation categories op ongeacht formaat
 function getImplCats(implementation) {
   if (!implementation) return []
   if (Array.isArray(implementation.categories)) return implementation.categories
@@ -18,11 +17,43 @@ function getImplCats(implementation) {
     }))
 }
 
-// ── Series editor ──────────────────────────────────────────────────────────
-// Beheert de tijdreeks voor de performance chart.
-// Elk datapunt heeft een vrij label (maand, kwartaal, jaar — wat past),
-// een portfolio-indexwaarde en een benchmark-indexwaarde.
+// ── Tooltip — hover ────────────────────────────────────────────────────────
+function Tooltip({ text }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <span style={{
+        width: 16, height: 16, borderRadius: '50%',
+        border: '1.5px solid #8A8A82',
+        fontFamily: "'Merriweather Sans', sans-serif",
+        fontSize: '0.6rem', fontWeight: 800,
+        color: '#8A8A82', lineHeight: 1,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'default', flexShrink: 0, userSelect: 'none',
+      }}>?</span>
+      {open && (
+        <span style={{
+          position: 'absolute', left: 22, top: 0, transform: 'none',
+          zIndex: 200,
+          background: '#0C182E', color: '#FFFFFF', textTransform: 'none', letterSpacing: 'normal', fontWeight: 400,
+          fontFamily: "'Merriweather Sans', sans-serif",
+          fontSize: '0.72rem', lineHeight: 1.5,
+          padding: '7px 11px', borderRadius: 5,
+          width: 240, boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
+          pointerEvents: 'none', whiteSpace: 'normal',
+        }}>
+          {text}
+        </span>
+      )}
+    </span>
+  )
+}
 
+// ── Series editor ──────────────────────────────────────────────────────────
 function SeriesEditor({ series, onUpdate }) {
   const rows = series || []
 
@@ -47,51 +78,43 @@ function SeriesEditor({ series, onUpdate }) {
   }
 
   return (
-    <div style={{ marginTop: 6 }}>
-      {rows.length > 0 && (
-        <div style={{ display: 'flex', gap: 4, marginBottom: 4, paddingLeft: 2 }}>
-          <span style={{ ...se.th, flex: 2 }}>Label</span>
-          <span style={se.th}>Portfolio</span>
-          <span style={se.th}>Benchmark</span>
-          <span style={{ width: 22 }} />
-        </div>
-      )}
-
+    <div style={{ marginTop: 8 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 4 }}>
+        <div style={{ ...se.thCell, flex: 1 }}>Label</div>
+        <div style={{ ...se.thCell, width: 80 }}>Portfolio</div>
+        <div style={{ ...se.thCell, width: 80 }}>Benchmark</div>
+        <div style={{ width: 28 }} />
+      </div>
+      {/* Rijen */}
       {rows.map((row, i) => (
         <div key={i} style={se.row}>
           <input
-            style={{ ...c.input, flex: 2, minWidth: 0 }}
+            style={{ ...c.input, flex: 1, minWidth: 0 }}
             type="text"
             value={row.label || ''}
             placeholder={i === 0 ? 'e.g. Jan 2024 or Q1 or 2022' : ''}
             onChange={e => updateRow(i, 'label', e.target.value)}
           />
           <input
-            style={{ ...c.input, width: 70 }}
-            type="number"
-            step="0.1"
+            style={{ ...c.input, width: 80, textAlign: 'right' }}
+            type="number" step="0.1"
             value={row.portfolio ?? ''}
             onChange={e => updateRow(i, 'portfolio', e.target.value)}
           />
           <input
-            style={{ ...c.input, width: 70 }}
-            type="number"
-            step="0.1"
+            style={{ ...c.input, width: 80, textAlign: 'right' }}
+            type="number" step="0.1"
             value={row.benchmark ?? ''}
             onChange={e => updateRow(i, 'benchmark', e.target.value)}
           />
           <button style={se.removeBtn} onClick={() => removeRow(i)} title="Remove">×</button>
         </div>
       ))}
-
       {rows.length === 0 && (
-        <div style={se.empty}>
-          No data points yet. Add a row to define the chart's time series.
-        </div>
+        <div style={se.empty}>No data points yet. Add a row to define the time series.</div>
       )}
-
       <button style={se.addBtn} onClick={addRow}>+ Add data point</button>
-
       {rows.length > 0 && (
         <div style={se.hint}>
           First row is index 100 — enter absolute values (e.g. 100, 103.2).
@@ -103,191 +126,243 @@ function SeriesEditor({ series, onUpdate }) {
 }
 
 const se = {
-  th: {
+  thCell: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.56rem', fontWeight: 700,
+    fontSize: '0.62rem', fontWeight: 700,
     color: '#8A8A82', letterSpacing: '0.06em',
-    textTransform: 'uppercase', width: 70,
+    textTransform: 'uppercase',
+    paddingBottom: 3,
   },
-  row: {
-    display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3,
-  },
+  row: { display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 },
   removeBtn: {
-    width: 22, height: 22, flexShrink: 0,
+    width: 24, height: 24, flexShrink: 0,
     background: 'none', border: '1px solid rgba(224,27,65,0.25)',
     borderRadius: 4, cursor: 'pointer',
-    color: '#E01B41', fontSize: '0.8rem', fontWeight: 700,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 0,
+    color: '#E01B41', fontSize: '0.85rem', fontWeight: 700,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
   },
   addBtn: {
-    marginTop: 6,
-    padding: '4px 10px',
-    background: 'none',
-    border: '1px solid rgba(78,213,150,0.4)',
-    borderRadius: 4, cursor: 'pointer',
+    marginTop: 8, padding: '5px 12px', background: 'none',
+    border: '1px solid rgba(78,213,150,0.4)', borderRadius: 4, cursor: 'pointer',
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.6rem', fontWeight: 700,
-    color: '#1a7a50',
+    fontSize: '0.68rem', fontWeight: 700, color: '#1a7a50',
   },
   empty: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.65rem', color: '#8A8A82',
-    fontStyle: 'italic', marginBottom: 6,
+    fontSize: '0.72rem', color: '#8A8A82', fontStyle: 'italic', marginBottom: 6,
   },
   hint: {
     fontFamily: "'Merriweather Sans', sans-serif",
-    fontSize: '0.58rem', color: '#8A8A82',
-    marginTop: 6, lineHeight: 1.5,
+    fontSize: '0.66rem', color: '#8A8A82', marginTop: 8, lineHeight: 1.5,
   },
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
+// ── Nav items ──────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: 'event',          label: 'Event' },
+  { id: 'portfolio',      label: 'Portfolio' },
+  { id: 'allocatie',      label: 'Allocation' },
+  { id: 'implementation', label: 'Implementation' },
+  { id: 'esg',            label: 'ESG' },
+  { id: 'performance',    label: 'Performance' },
+  { id: 'sector',         label: 'Sector & Currency' },
+]
 
+// ── Main component ─────────────────────────────────────────────────────────
 export default function ConfigEventTab({ draft, updaters }) {
-  const [activeLang, setActiveLang] = useState('en')
+  const [activeSection, setActiveSection] = useState('event')
   const { upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency, upScale } = updaters
   const p = draft.portfolio
-
   const displayScale = draft.displayScale ?? 1.0
 
   const allocTotal  = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
   const targetTotal = p.allocations.reduce((s, a) => s + (Number(a.target)  || 0), 0)
   const sfdrTotal   = p.esg.sfdr.reduce((s, x) => s + (Number(x.weight) || 0), 0)
   const implCats    = getImplCats(p.implementation)
-  const implTotal   = implCats.reduce((s, c) => s + (Number(c.weight) || 0), 0)
+  const implTotal   = implCats.reduce((s, cat) => s + (Number(cat.weight) || 0), 0)
+  const sectorTotal = (p.sectors || []).reduce((s, x) => s + (Number(x.weight) || 0), 0)
+  const currTotal   = (p.currencies || []).reduce((s, x) => s + (Number(x.weight) || 0), 0)
 
-  function upSeries(newSeries) {
-    upPerf('series', newSeries)
+  function upSeries(newSeries) { upPerf('series', newSeries) }
+
+  function indicator(total, tolerance = 0.5) {
+    return Math.abs(total - 100) >= tolerance ? 'warn' : null
+  }
+
+  const indicators = {
+    allocatie:      indicator(allocTotal) || indicator(targetTotal),
+    implementation: indicator(implTotal),
+    esg:            indicator(sfdrTotal),
+    sector:         indicator(sectorTotal) || indicator(currTotal),
   }
 
   return (
-    <div style={c.grid2}>
+    <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
 
-      {/* ── Left column ── */}
-      <div>
-
-        {/* Event settings */}
-        <Section title="Event">
-          <Field label="Event name">
-            <TextInput wide value={draft.event.name} onChange={v => upEvent('name', v)} />
-          </Field>
-          <Field label="Default language">
-            <select style={c.input} value={draft.event.language}
-              onChange={e => upEvent('language', e.target.value)}>
-              {LANGUAGES.map(l => (
-                <option key={l} value={l}>{LANG_FULL[l]}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Tekstschaal (presentatiegrootte)">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <input
-                type="range"
-                min="0.8" max="1.6" step="0.05"
-                value={displayScale}
-                onChange={e => upScale(e.target.value)}
-                style={{ flex: 1, accentColor: '#0C182E' }}
-              />
-              <span style={{
+      {/* ── Zijbalk navigatie ── */}
+      <div style={{
+        width: 178, flexShrink: 0,
+        borderRight: '1px solid #E0E0DC',
+        paddingTop: 10, paddingBottom: 10,
+      }}>
+        {NAV_ITEMS.map(item => {
+          const isActive = activeSection === item.id
+          const warn = indicators[item.id]
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '10px 16px',
+                background: isActive ? '#F0F0ED' : 'none',
+                border: 'none',
+                borderLeft: `2px solid ${isActive ? '#E01B41' : 'transparent'}`,
+                cursor: 'pointer',
                 fontFamily: "'Merriweather Sans', sans-serif",
-                fontSize: '0.75rem', fontWeight: 700,
-                color: '#0C182E', minWidth: 36, textAlign: 'right',
-              }}>
-                {displayScale.toFixed(2)}×
-              </span>
-            </div>
-            <div style={c.helpText}>
-              1.00 = laptop · 1.20 = kleine zaal · 1.35 = auditorium · 1.50 = groot scherm
-            </div>
-          </Field>
-        </Section>
-
-        {/* Portfolio identity */}
-        <Section title="Portfolio">
-          <Field label="Portfolio name">
-            <TextInput wide value={p.name} onChange={v => upPortfolio('name', v)} />
-          </Field>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Field label="Risk profile">
-              <select style={c.input} value={p.profile}
-                onChange={e => upPortfolio('profile', e.target.value)}>
-                {['Defensive', 'Balanced', 'Growth', 'Dynamic'].map(v => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Currency">
-              <select style={c.input} value={p.currency}
-                onChange={e => upPortfolio('currency', e.target.value)}>
-                {['EUR', 'GBP', 'CHF', 'USD'].map(v => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-        </Section>
-
-        {/* Asset allocation */}
-        <Section
-          title="Asset Allocation"
-          titleRight={
-            <div style={{ display: 'flex', gap: 6 }}>
-              <TotalBadge values={p.allocations.map(a => a.current)} label="Current" />
-              <TotalBadge values={p.allocations.map(a => a.target)} label="Target" />
-            </div>
-          }
-        >
-          {(Math.abs(allocTotal - 100) >= 0.5 || Math.abs(targetTotal - 100) >= 0.5) && (
-            <div style={{
-              ...c.helpText,
-              background: 'rgba(224,27,65,0.06)',
-              border: '1px solid rgba(224,27,65,0.18)',
-              borderRadius: 4, padding: '5px 8px', marginBottom: 8,
-              color: '#E01B41',
-            }}>
-              {[
-                Math.abs(allocTotal - 100) >= 0.5 && `Current total: ${allocTotal}%`,
-                Math.abs(targetTotal - 100) >= 0.5 && `Target total: ${targetTotal}%`,
-              ].filter(Boolean).join(' · ')}
-              {' — must add up to 100%'}
-            </div>
-          )}
-          <div style={c.tableHead}>
-            <span style={{ flex: 2 }}>Category</span>
-            <span style={c.th}>Current</span>
-            <span style={c.th}>Target</span>
-            <span style={c.th}>Min</span>
-            <span style={c.th}>Max</span>
-          </div>
-          {p.allocations.map(a => (
-            <div key={a.id} style={c.tableRow}>
-              <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: a.color, flexShrink: 0,
+                fontSize: '0.82rem', fontWeight: isActive ? 700 : 400,
+                color: isActive ? '#0C182E' : '#5A5A54',
+                textAlign: 'left',
+                transition: 'all 0.1s',
+              }}
+            >
+              {item.label}
+              {warn && (
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: '#F5A623', flexShrink: 0,
                 }} />
-                <span style={c.rowLabel}>{a.label?.en || a.id}</span>
-              </div>
-              <NumInput small value={a.current} onChange={v => upAlloc(a.id, 'current', v)} />
-              <NumInput small value={a.target}  onChange={v => upAlloc(a.id, 'target',  v)} />
-              <NumInput small value={a.min}     onChange={v => upAlloc(a.id, 'min',     v)} />
-              <NumInput small value={a.max}     onChange={v => upAlloc(a.id, 'max',     v)} />
-            </div>
-          ))}
-        </Section>
-
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* ── Right column ── */}
-      <div>
+      {/* ── Actief paneel ── */}
+      <div style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
 
-        {/* Implementation mix — reads from categories[] */}
-        <Section
-          title="Implementation Mix"
-          titleRight={<TotalBadge values={implCats.map(c => c.weight)} label="Mix total" />}
-        >
-          <div style={{ marginTop: 8 }}>
+        {/* ── Event ── */}
+        {activeSection === 'event' && (
+          <div style={{ maxWidth: 540 }}>
+            <PanelTitle>Event</PanelTitle>
+            <Field label="Event name">
+              <TextInput wide value={draft.event.name} onChange={v => upEvent('name', v)} />
+            </Field>
+            <Field label="Default language">
+              <select style={c.input} value={draft.event.language}
+                onChange={e => upEvent('language', e.target.value)}>
+                {LANGUAGES.map(l => (
+                  <option key={l} value={l}>{LANG_FULL[l]}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                Tekstschaal
+                <Tooltip text="Scales all text in the presentation view. Use 1.00 for laptop, 1.35 for auditorium, 1.50 for large screen." />
+              </span>
+            }>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <input
+                  type="range" min="0.8" max="1.6" step="0.05"
+                  value={displayScale}
+                  onChange={e => upScale(e.target.value)}
+                  style={{ flex: 1, accentColor: '#0C182E' }}
+                />
+                <span style={{
+                  fontFamily: "'Merriweather Sans', sans-serif",
+                  fontSize: '0.82rem', fontWeight: 700,
+                  color: '#0C182E', minWidth: 40, textAlign: 'right',
+                }}>
+                  {displayScale.toFixed(2)}×
+                </span>
+              </div>
+              <div style={c.helpText}>
+                1.00 = laptop · 1.20 = small room · 1.35 = auditorium · 1.50 = large screen
+              </div>
+            </Field>
+          </div>
+        )}
+
+        {/* ── Portfolio ── */}
+        {activeSection === 'portfolio' && (
+          <div style={{ maxWidth: 540 }}>
+            <PanelTitle>Portfolio</PanelTitle>
+            <Field label="Portfolio name">
+              <TextInput wide value={p.name} onChange={v => upPortfolio('name', v)} />
+            </Field>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Field label="Risk profile">
+                <select style={c.input} value={p.profile}
+                  onChange={e => upPortfolio('profile', e.target.value)}>
+                  {['Defensive', 'Balanced', 'Growth', 'Dynamic'].map(v => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Currency">
+                <select style={c.input} value={p.currency}
+                  onChange={e => upPortfolio('currency', e.target.value)}>
+                  {['EUR', 'GBP', 'CHF', 'USD'].map(v => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* ── Allocatie ── */}
+        {activeSection === 'allocatie' && (
+          <div style={{ maxWidth: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <PanelTitle style={{ marginBottom: 0 }}>Asset Allocation</PanelTitle>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <TotalBadge values={p.allocations.map(a => a.current)} label="Current" />
+                <TotalBadge values={p.allocations.map(a => a.target)} label="Target" />
+              </div>
+            </div>
+            {(Math.abs(allocTotal - 100) >= 0.5 || Math.abs(targetTotal - 100) >= 0.5) && (
+              <WarnBanner>
+                {[
+                  Math.abs(allocTotal - 100) >= 0.5 && `Current: ${allocTotal}%`,
+                  Math.abs(targetTotal - 100) >= 0.5 && `Target: ${targetTotal}%`,
+                ].filter(Boolean).join(' · ')}
+                {' — must add up to 100%'}
+              </WarnBanner>
+            )}
+            <div style={c.tableHead}>
+              <span style={{ flex: 2 }}>Categorie</span>
+              <span style={c.th}>Current</span>
+              <span style={c.th}>Target</span>
+              <span style={c.th}>Min</span>
+              <span style={c.th}>Max</span>
+            </div>
+            {p.allocations.map(a => (
+              <div key={a.id} style={c.tableRow}>
+                <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
+                  <span style={c.rowLabel}>{a.label?.en || a.id}</span>
+                </div>
+                <NumInput small value={a.current} onChange={v => upAlloc(a.id, 'current', v)} />
+                <NumInput small value={a.target}  onChange={v => upAlloc(a.id, 'target',  v)} />
+                <NumInput small value={a.min}     onChange={v => upAlloc(a.id, 'min',     v)} />
+                <NumInput small value={a.max}     onChange={v => upAlloc(a.id, 'max',     v)} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Implementation ── */}
+        {activeSection === 'implementation' && (
+          <div style={{ maxWidth: 540 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <PanelTitle style={{ marginBottom: 0 }}>Implementation Mix</PanelTitle>
+              <TotalBadge values={implCats.map(cat => cat.weight)} label="Mix total" />
+            </div>
+            {Math.abs(implTotal - 100) >= 0.5 && (
+              <WarnBanner>Mix total: {implTotal}% — must add up to 100%</WarnBanner>
+            )}
             {implCats.map(cat => {
               const label = typeof cat.label === 'object'
                 ? (cat.label.en || cat.id)
@@ -299,108 +374,143 @@ export default function ConfigEventTab({ draft, updaters }) {
                 </Field>
               )
             })}
-            <Field label="Weighted avg. TER (%)" row>
-              <NumInput small step={0.01}
-                value={p.costs?.weightedTer}
-                onChange={v => upPortfolio('costs', { ...p.costs, weightedTer: v })} />
-            </Field>
-          </div>
-        </Section>
-
-        {/* ESG profile */}
-        <Section
-          title="ESG Profile"
-          titleRight={
-            <TotalBadge values={p.esg.sfdr.map(x => x.weight)} label="SFDR" />
-          }
-        >
-          <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
-            <Field label="ESG Score (0–10)" row>
-              <NumInput small step={0.1} min={0} max={10} value={p.esg.score}
-                onChange={v => upESG('score', v)} />
-            </Field>
-            <Field label="Carbon Risk Score" row>
-              <NumInput small value={p.esg.carbonRisk} onChange={v => upESG('carbonRisk', v)} />
-            </Field>
-          </div>
-          <SubLabel>SFDR Distribution</SubLabel>
-          {sfdrTotal !== 100 && Math.abs(sfdrTotal - 100) >= 0.5 && (
-            <div style={{
-              ...c.helpText,
-              background: 'rgba(224,27,65,0.06)',
-              border: '1px solid rgba(224,27,65,0.18)',
-              borderRadius: 4, padding: '5px 8px', marginBottom: 8,
-              color: '#E01B41',
-            }}>
-              SFDR weights total {sfdrTotal}% — adjust to reach 100%
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #EFEFED' }}>
+              <Field label="Weighted avg. TER (%)" row>
+                <NumInput small step={0.01}
+                  value={p.costs?.weightedTer}
+                  onChange={v => upPortfolio('costs', { ...p.costs, weightedTer: v })} />
+              </Field>
             </div>
-          )}
-          {p.esg.sfdr.map((item, i) => (
-            <Field key={item.article} label={item.article} row>
-              <NumInput small value={item.weight} onChange={v => upSFDR(i, v)} />
-              <span style={c.unit}>%</span>
-            </Field>
-          ))}
-        </Section>
+          </div>
+        )}
 
-        {/* Performance */}
-        <Section title="Performance">
-          <SubLabel>Key metrics</SubLabel>
-          <div style={c.grid2mini}>
-            {[
-              { key: 'ytd',         label: 'YTD %' },
-              { key: 'oneYear',     label: '1Y %' },
-              { key: 'threeYear',   label: '3Y Ann. %' },
-              { key: 'benchmark',   label: 'Benchmark %' },
-              { key: 'volatility',  label: 'Volatility %' },
-              { key: 'maxDrawdown', label: 'Max Drawdown %' },
-            ].map(f => (
-              <Field key={f.key} label={f.label}>
-                <NumInput step={0.1} value={p.performance[f.key]} onChange={v => upPerf(f.key, v)} />
+        {/* ── ESG ── */}
+        {activeSection === 'esg' && (
+          <div style={{ maxWidth: 540 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <PanelTitle style={{ marginBottom: 0 }}>ESG Profiel</PanelTitle>
+              <TotalBadge values={p.esg.sfdr.map(x => x.weight)} label="SFDR" />
+            </div>
+            <div style={{ display: 'flex', gap: 20, marginBottom: 18 }}>
+              <Field label="ESG Score (0–10)" row>
+                <NumInput small step={0.1} min={0} max={10} value={p.esg.score}
+                  onChange={v => upESG('score', v)} />
+              </Field>
+              <Field label="Carbon Risk Score" row>
+                <NumInput small value={p.esg.carbonRisk} onChange={v => upESG('carbonRisk', v)} />
+              </Field>
+            </div>
+            <SubLabel>SFDR-verdeling</SubLabel>
+            {Math.abs(sfdrTotal - 100) >= 0.5 && (
+              <WarnBanner>SFDR total: {sfdrTotal}% — must add up to 100%</WarnBanner>
+            )}
+            {p.esg.sfdr.map((item, i) => (
+              <Field key={item.article} label={item.article} row>
+                <NumInput small value={item.weight} onChange={v => upSFDR(i, v)} />
+                <span style={c.unit}>%</span>
               </Field>
             ))}
           </div>
-          <SubLabel style={{ marginTop: 12 }}>Time series (chart)</SubLabel>
-          <SeriesEditor
-            series={p.performance?.series}
-            onUpdate={upSeries}
-          />
-        </Section>
+        )}
 
-        {/* Sector weights */}
-        <Section
-          title="Sector Weights"
-          titleRight={
-            <TotalBadge values={(p.sectors || []).map(s => s.weight)} label="Total" />
-          }
-        >
-          {(p.sectors || []).map((sec, i) => {
-            const label = typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)
-            return (
-              <Field key={sec.id} label={label} row>
-                <NumInput small value={sec.weight} onChange={v => upSector(i, v)} />
-                <span style={c.unit}>%</span>
-              </Field>
-            )
-          })}
-        </Section>
+        {/* ── Performance ── */}
+        {activeSection === 'performance' && (
+          <div style={{ maxWidth: 620 }}>
+            <PanelTitle>Performance</PanelTitle>
+            <SubLabel>Key metrics</SubLabel>
+            <div style={{ ...c.grid2mini, marginBottom: 24 }}>
+              {[
+                { key: 'ytd',         label: 'YTD %' },
+                { key: 'oneYear',     label: '1Y %' },
+                { key: 'threeYear',   label: '3Y Ann. %' },
+                { key: 'benchmark',   label: 'Benchmark %' },
+                { key: 'volatility',  label: 'Volatility %' },
+                { key: 'maxDrawdown', label: 'Max Drawdown %' },
+              ].map(f => (
+                <Field key={f.key} label={f.label}>
+                  <NumInput step={0.1} value={p.performance[f.key]} onChange={v => upPerf(f.key, v)} />
+                </Field>
+              ))}
+            </div>
+            <SubLabel>Time series (chart)</SubLabel>
+            <SeriesEditor series={p.performance?.series} onUpdate={upSeries} />
+          </div>
+        )}
 
-        {/* Currency weights */}
-        <Section
-          title="Currency Weights"
-          titleRight={
-            <TotalBadge values={(p.currencies || []).map(c => c.weight)} label="Total" />
-          }
-        >
-          {(p.currencies || []).map((cur, i) => (
-            <Field key={cur.currency} label={cur.currency} row>
-              <NumInput small value={cur.weight} onChange={v => upCurrency(i, v)} />
-              <span style={c.unit}>%</span>
-            </Field>
-          ))}
-        </Section>
+        {/* ── Sector & Valuta ── */}
+        {activeSection === 'sector' && (
+          <div style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
+
+            <div style={{ minWidth: 280 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                <PanelTitle style={{ marginBottom: 0 }}>Sector Weights</PanelTitle>
+                <TotalBadge values={(p.sectors || []).map(s => s.weight)} label="Total" />
+              </div>
+              {Math.abs(sectorTotal - 100) >= 0.5 && (
+                <WarnBanner>Sector total: {sectorTotal}% — must add up to 100%</WarnBanner>
+              )}
+              {(p.sectors || []).map((sec, i) => {
+                const label = typeof sec.label === 'object' ? (sec.label.en || sec.id) : (sec.label || sec.id)
+                return (
+                  <Field key={sec.id} label={label} row>
+                    <NumInput small value={sec.weight} onChange={v => upSector(i, v)} />
+                    <span style={c.unit}>%</span>
+                  </Field>
+                )
+              })}
+            </div>
+
+            <div style={{ minWidth: 240 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                <PanelTitle style={{ marginBottom: 0 }}>Currency Weights</PanelTitle>
+                <TotalBadge values={(p.currencies || []).map(cur => cur.weight)} label="Total" />
+              </div>
+              {Math.abs(currTotal - 100) >= 0.5 && (
+                <WarnBanner>Currency total: {currTotal}% — must add up to 100%</WarnBanner>
+              )}
+              {(p.currencies || []).map((cur, i) => (
+                <Field key={cur.currency} label={cur.currency} row>
+                  <NumInput small value={cur.weight} onChange={v => upCurrency(i, v)} />
+                  <span style={c.unit}>%</span>
+                </Field>
+              ))}
+            </div>
+
+          </div>
+        )}
 
       </div>
+    </div>
+  )
+}
+
+// ── Hulpcomponenten ────────────────────────────────────────────────────────
+
+function PanelTitle({ children, style }) {
+  return (
+    <div style={{
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: '0.82rem', fontWeight: 800,
+      color: '#0C182E', letterSpacing: '0.06em',
+      textTransform: 'uppercase', marginBottom: 18,
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function WarnBanner({ children }) {
+  return (
+    <div style={{
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: '0.72rem',
+      background: 'rgba(224,27,65,0.06)',
+      border: '1px solid rgba(224,27,65,0.18)',
+      borderRadius: 4, padding: '6px 10px', marginBottom: 12,
+      color: '#E01B41',
+    }}>
+      {children}
     </div>
   )
 }
