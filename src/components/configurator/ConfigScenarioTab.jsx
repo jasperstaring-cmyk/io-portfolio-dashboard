@@ -7,14 +7,10 @@ const DIM_ICONS = {
   esg: '◈',
   implementation: '◧',
   performance: '↗',
-}
-
-const DIM_SHORT = {
-  asset_class: 'Asset',
-  geography: 'Geo',
-  esg: 'ESG',
-  implementation: 'Impl.',
-  performance: 'Perf.',
+  sector: '⬡',
+  currency: '€',
+  style: '▦',
+  cost: '€€',
 }
 
 export default function ConfigScenarioTab({
@@ -43,6 +39,13 @@ export default function ConfigScenarioTab({
         {draft.scenarios.map((s, i) => {
           const isActive = i === activeScenario
           const hasComp = !!s.comparison
+          const hasExplore = !!s.explore?.enabled
+
+          // Gebruik screenName als primaire label — dan sprekernaam als fallback
+          const displayName =
+            s.screenName?.en || s.screenName ||
+            s.speakerProfile?.name || s.speaker?.en || 'Unnamed'
+
           return (
             <button key={s.id} onClick={() => setActiveScenario(i)}
               style={{
@@ -55,7 +58,7 @@ export default function ConfigScenarioTab({
                 ...c.scenName,
                 color: isActive ? '#FFFFFF' : '#0C182E',
               }}>
-                {s.speakerProfile?.name || s.speaker?.en || 'Unnamed'}
+                {displayName}
               </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', flexShrink: 0 }}>
@@ -65,47 +68,50 @@ export default function ConfigScenarioTab({
                   background: isActive ? 'rgba(224,27,65,0.22)' : 'rgba(224,27,65,0.08)',
                   color: isActive ? '#ff6b8a' : '#E01B41',
                 }}>
-                  {DIM_ICONS[s.dimension]}
+                  {DIM_ICONS[s.dimension] || '◉'}
                 </span>
 
-                {/* Green dot if comparison active */}
+                {/* Groene dot als compare aanstaat */}
                 {hasComp && (
                   <span style={{
                     ...c.compDot,
-                    background: isActive ? '#4ED596' : '#4ED596',
+                    background: '#4ED596',
                     opacity: isActive ? 1 : 0.7,
-                  }} title="Has comparison" />
+                  }} title="Compare configured" />
+                )}
+
+                {/* Blauwe dot als explore aanstaat */}
+                {hasExplore && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: '#5B8DEF',
+                    opacity: isActive ? 1 : 0.7,
+                    flexShrink: 0,
+                  }} title="Explore enabled" />
                 )}
               </div>
             </button>
           )
         })}
 
-        {/* Legend */}
-        <div style={{
-          padding: '7px 12px',
-          borderTop: '1px solid #EFEFED',
-          display: 'flex', gap: 10,
-        }}>
-          <span style={{ ...c.helpText, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ ...c.compDot, width: 5, height: 5 }} /> Compare
-          </span>
-        </div>
-
-        <button style={c.addBtn} onClick={handleAdd}>+ Add scenario</button>
+        <button style={c.addBtn} onClick={handleAdd}>+ Add use case</button>
       </div>
 
-      {/* ── Scenario editor ── */}
-      {sc && (
-        <ConfigScenarioEditor
-          sc={sc}
-          idx={activeScenario}
-          portfolio={draft.portfolio}
-          updaters={updaters}
-          onRemove={() => handleRemove(activeScenario)}
-          canRemove={draft.scenarios.length > 1}
-        />
-      )}
+      {/* ── Editor ── */}
+      <div style={c.scenEditorWrap}>
+        {sc && (
+          <ConfigScenarioEditor
+            key={sc.id}
+            sc={sc}
+            idx={activeScenario}
+            portfolio={draft.portfolio}
+            updaters={updaters}
+            onRemove={() => handleRemove(activeScenario)}
+            canRemove={draft.scenarios.length > 1}
+          />
+        )}
+      </div>
+
     </div>
   )
 }

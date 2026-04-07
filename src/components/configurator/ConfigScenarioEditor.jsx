@@ -320,6 +320,17 @@ export default function ConfigScenarioEditor({ sc, idx, portfolio, updaters, onR
 
           {/* Policy question & theme */}
           <Section title="Policy Question & Theme">
+            <Field label="Screen name (shown in operator panel)">
+              <TextInput wide
+                value={sc.screenName?.en || sc.screenName || ''}
+                onChange={v => upScenario(idx, 'screenName', typeof sc.screenName === 'object' ? { ...sc.screenName, en: v } : v)}
+                placeholder="e.g. Active / Passive, Private Markets, ESG & SFDR..."
+              />
+            </Field>
+            <div style={{ ...c.helpText, marginBottom: 12 }}>
+              Short title shown in the operator panel navigation list. Keep it brief — max 3 words.
+            </div>
+
             <LangTabs active={activeLang} onChange={setActiveLang} />
 
             <div key={activeLang}>
