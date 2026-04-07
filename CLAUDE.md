@@ -1,37 +1,30 @@
-# CLAUDE.md — Portfolio Day Dashboard
-> Instructiebestand voor Claude Code. **Altijd volledig lezen vóór je iets implementeert.**
-> Dit is het enige projectdocument dat je kunt lezen. Alle andere documentatie leeft buiten de repo.
-> Bij twijfel over architectuur of keuzes: stop en vraag. Ga nooit op eigen interpretatie af.
+# IO Portfolio Dashboard — CLAUDE.md
+
+> **Lees dit bestand altijd volledig vóór je code schrijft.**  
+> Dit is de technische referentie voor Claude Code. Alle architectuurkeuzes, patronen en constanten staan hier.
 
 ---
 
-## 1. Wat is dit project?
+## 1. Wat het is
 
-Het **Portfolio Day Dashboard** is een interactief presentatie-instrument van **Investment Officer (IO)**, gebouwd voor live gebruik op het podium tijdens de jaarlijkse Portfolio Day voor beleggingsprofessionals (NL/BE). Het is geen klantapplicatie en geen realtime tool — het is een visuele rode draad door het programma.
-
-**Doelgroep:** ~150 buy-side beleggingsprofessionals in een auditoriumsetting.
-**Zichtbaarheid:** Groot scherm op het podium, kijkafstand 15–20 meter.
+Het IO Portfolio Dashboard is een live presentatie-instrument voor kennisevents. Per sessie wordt ingezoomd op het deel van de beleggingsportefeuille dat relevant is voor het onderwerp van dat moment. Het vertrekpunt is altijd de **beleidsvraag** — de vraag die een beleggingsprofessional in de zaal zichzelf stelt.
 
 ---
 
-## 2. Jouw rol als Claude Code
+## 2. Werkwijze
 
-Jij **implementeert uitsluitend**. Jij bedenkt geen architectuur, kiest geen alternatieven, en maakt geen eigen afwegingen.
+**Twee omgevingen, vaste rolverdeling:**
 
-**Wat jij doet:**
-- Bestanden plaatsen op de exacte paden die de instructie opgeeft
-- `npm run build` en `npm test` uitvoeren na elke wijziging
-- Committen naar `main` → Vercel deployt automatisch
-- Resultaat rapporteren (build OK/errors, test-uitslag, wat je ziet)
+- **Dit Claude-project** (claude.ai) — richting bepalen, code voorbereiden, documentatie bijhouden
+- **Claude Code** (lokaal) — bestanden plaatsen, builden, testen, committen
 
-**Wat jij nooit doet:**
-- Bestanden hernoemen, verplaatsen of samenvoegen tenzij expliciet gevraagd
-- Meer wijzigen dan de instructie vraagt
-- Architectuurkeuzes maken of bestaande patronen "verbeteren"
-- Externe libraries toevoegen die nog niet in `package.json` staan
-- Bestanden rechtstreeks in GitHub aanpassen — alles gaat via de lokale omgeving
+**Workflow:**
+1. Claude schrijft code in dit project
+2. Jasper plaatst bestanden lokaal
+3. Claude Code runt build + tests
+4. Commit naar GitHub → Vercel deployt automatisch
 
-Als een instructie onduidelijk is of lijkt te conflicteren met wat je in de code ziet: **stop en vraag**, implementeer niet op goed geluk.
+**Bestandslevering:** altijd individuele bestanden met exact doelpad — nooit zips tenzij expliciet gevraagd.
 
 ---
 
@@ -55,6 +48,8 @@ Als een instructie onduidelijk is of lijkt te conflicteren met wat je in de code
 ```
 public/
   io_horizontal_white@10x.png
+  brochure.html                        ← statische brochure (inline base64)
+  handleiding.html                     ← statische handleiding (inline base64)
 src/
   App.jsx                              ← hoofdcomponent, laadt registry, levert ScaleContext
   main.jsx
@@ -65,19 +60,19 @@ src/
     resolveUseCase.test.js             ← unit tests (Vitest) — 46 tests
   components/
     IdleView.jsx
-    PresentationView.jsx               ← chrome schaalt via useT()
+    PresentationView.jsx               ← beleidsvraag schaalt via useTextScale()
     ExplorePresentationView.jsx
-    OperatorPanel.jsx                  ← horizontale balk onderin, vier actieknoppen
-    ExplorePanel.jsx                   ← uitklaplade + balkstructuur gelijk aan OperatorPanel
+    OperatorPanel.jsx
+    ExplorePanel.jsx
     Configurator.jsx
     configurator/
       index.jsx
-      useConfigDraft.js                ← alle draft-state en updaters incl. displayScale
+      useConfigDraft.js                ← alle draft-state en updaters incl. drie schaalassen
       configuratorStyles.js
       ConfigFormParts.jsx
-      ConfigEventTab.jsx               ← bevat tekstschaal-slider
-      ConfigScenarioTab.jsx            ← use case lijst toont screenName
-      ConfigScenarioEditor.jsx         ← invoerveld voor screenName
+      ConfigEventTab.jsx               ← drie presentatiesliders onder "Presentatie-instellingen"
+      ConfigScenarioTab.jsx
+      ConfigScenarioEditor.jsx
       ConfigComparisonEditor.jsx
     charts/
       chartTokens.js                   ← CENTRALE typografie- en lijndikte-tokens + ScaleContext
@@ -105,7 +100,7 @@ Voeg geen nieuwe bestanden of mappen toe zonder expliciete instructie.
 ### 5.1 `registry.json` is de enige bron van waarheid
 - Bestandspad: `src/data/registry.json`
 - Schema versie: `1.1` — staat altijd in het `schemaVersion` veld
-- Bevat: `schemaVersion`, `displayScale`, `activeEventId`, `events[]`
+- Bevat: `schemaVersion`, `displayScale`, `textScale`, `labelScale`, `strokeScale`, `activeEventId`, `events[]`
 - Verander nooit de schema-structuur zonder expliciete instructie
 
 ### 5.2 `resolveUseCase()` is de enige merge-logica
@@ -132,10 +127,15 @@ Charts krijgen:
 {
   "schemaVersion": "1.1",
   "displayScale": 1.0,
+  "textScale": 1.0,
+  "labelScale": 1.0,
+  "strokeScale": 1.0,
   "activeEventId": "portfolio_day_2026",
   "events": [ /* Event[] */ ]
 }
 ```
+
+`displayScale` is legacy — blijft aanwezig voor backwards-compat. De drie nieuwe velden (`textScale`, `labelScale`, `strokeScale`) zijn leidend. Als ze ontbreken, valt App.jsx terug op `displayScale`.
 
 ### Use case structuur
 Elke use case heeft vier lagen:
@@ -144,98 +144,69 @@ Elke use case heeft vier lagen:
 - `explore` — de verkenningsruimte voor interactie met de zaal
 - `performanceView` — optionele tijdreeks per use case
 
-```json
-{
-  "id": "opening",
-  "screenName": "Active / Passive",
-  "dimension": "asset_class",
-  "policyQuestion": { "nl": "...", "en": "..." },
-  "theme": { "nl": "...", "en": "..." },
-  "speaker": { "name": "...", "title": "...", "organisation": "..." },
-  "base": { "useEventPortfolio": true },
-  "compare": {
-    "label": { "nl": "...", "en": "..." },
-    "allocations": [ { "id": "equities", "current": 35 } ]
-  },
-  "framing": { "asset_class": { "equities": { "label": { "nl": "Groeimotor", "en": "Growth engine" } } } },
-  "explore": { "enabled": true, "startFrom": "base", "dimensions": ["asset_class"] },
-  "performanceView": { "base": [ /* TimeSeriesPoint[] */ ] }
-}
-```
-
-### screenName
-Nieuw veld per use case (april 2026). Korte inhoudelijke naam (max 3 woorden), zichtbaar in operatorbalk en configuratorlijst. Geen sprekernaam. Kan string zijn of `{ en: "...", nl: "..." }` — primaire waarde is `.en`.
-
-### Implementation — enige geldige formaat
-```json
-"implementation": {
-  "categories": [
-    { "id": "active",   "label": { "nl": "Actief beheer", "en": "Active Management" }, "weight": 55, "color": "#E01B41" },
-    { "id": "passive",  "label": { "nl": "Passief / ETF", "en": "Passive / ETF" },     "weight": 35, "color": "#5B8DEF" }
-  ],
-  "explore": {
-    "active":  { "min": 0, "max": 80 },
-    "passive": { "min": 0, "max": 80 }
-  }
-}
-```
-
-Het `categories[]` formaat is het **enige geldige formaat** in schema v1.1. Gebruik nooit een oud formaat.
-
-### Geldige dimensie-waarden
-`"asset_class"` | `"geography"` | `"esg"` | `"implementation"` | `"performance"` | `"sector"` | `"currency"` | `"style"` | `"cost"`
-
 ---
 
-## 7. Typografie en lijndikte — chartTokens.js
+## 7. Typografie-systeem — chartTokens (drie schaalassen)
 
-Alle typografie én lijndikte zijn gecentraliseerd in `src/components/charts/chartTokens.js`. Dit bestand levert `ScaleContext`, `makeTokens(scale)` en de `useT()` hook.
+**ScaleContext** bevat nu een object met drie onafhankelijke assen:
 
-### Gebruik in elke chart én PresentationView — altijd zo:
+| As | Bereik | Doel |
+|---|---|---|
+| `textScale` | 0.80–2.00 | Beleidsvraag / framing-tekst in PresentationView |
+| `labelScale` | 0.80–1.60 | Grafiek-labels en -waarden (SVG fontSize, CSS rem) |
+| `strokeScale` | 0.80–1.60 | Lijndikte (strokeWidth) |
+
+**ScaleContext accepteert getal (legacy) of object.** Bij een getal worden alle drie de assen op die waarde gezet.
+
+**Twee hooks:**
+
 ```js
-import { useT } from '../charts/chartTokens'  // pad aanpassen aan locatie
+import { useT, useTextScale } from './chartTokens'
 
-export default function MijnChart({ ... }) {
-  const T = useT()           // ← altijd bovenaan de component-functie
-  const s = makeStyles(T)    // ← makeStyles aanroepen ná de hook, binnen de functie
+// In charts — gebruikt labelScale voor tekst, strokeScale voor lijnen:
+const T = useT()
+
+// In PresentationView — uitsluitend voor beleidsvraag:
+const textScale = useTextScale()
+```
+
+**`makeTokens(labelScale, strokeScale)`** — twee parameters (was één). Altijd aanroepen ná de hook.
+
+```js
+export default function MijnChart({ portfolio }) {
+  const T = useT()
+  const s = makeStyles(T)
   // ...
 }
 
-function makeStyles(T) {     // ← buiten de component-functie definiëren
+function makeStyles(T) {
   return {
-    label: { fontSize: T.small },
-    lijn:  { strokeWidth: T.strokeMid },
+    label: { fontSize: T.small, fontWeight: T.wBody },
+    // ...
   }
 }
 ```
 
-**Nooit:** `T` gebruiken buiten de component-functie, of hardcoded px/rem-waarden in charts.
+**PresentationView — beleidsvraag:**
+```js
+const textScale = useTextScale()
+// fontSize schaalt op textScale, onafhankelijk van grafiek-labels:
+policyQuestion: {
+  fontSize: `${(1.40 * textScale).toFixed(3)}rem`,
+}
+```
 
-### Typografie-tokens (basiswaarden bij scale 1.0)
-| Token | Waarde | Gebruik |
-|---|---|---|
-| `T.micro` | 0.58rem | Sublabels, sectietitels in chart |
-| `T.small` | 0.68rem | As-labels, bijschriften |
-| `T.body` | 0.82rem | Rijnamen, categorie-namen |
-| `T.medium` | 0.95rem | Secundaire waarden |
-| `T.large` | 1.10rem | Primaire %-waarden |
-| `T.xlarge` | 1.40rem | Prominente waarden, beleidsvraag |
-| `T.display` | 2.00rem | KPI-koppen, gauge-waarden |
-| `T.hero` | 3.00rem | Allergrootste waarden |
-| `T.svgMicro` | 9px | SVG as-labels |
-| `T.svgSmall` | 11px | SVG delta-badges |
-| `T.svgBody` | 13px | SVG callout namen |
-| `T.svgLarge` | 19px | SVG callout percentages |
-| `T.svgHero` | 30px | SVG callout percentages (geselecteerd) |
+**Token-tabel:**
+| Token | Gebruik |
+|-------|---------|
+| `T.micro` t/m `T.hero` | CSS font-size (rem-string), schaalt op `labelScale` |
+| `T.svgMicro` t/m `T.svgHero` | SVG fontSize attribuut (getal), schaalt op `labelScale` |
+| `T.strokeHair` t/m `T.strokeHeavy` | SVG strokeWidth (getal), schaalt op `strokeScale` |
+| `T.wBody`, `T.wMedium`, `T.wHeavy` | Font-weight (getal), onveranderd |
+| `T.primary`, `T.secondary`, `T.muted`, `T.faint` | Witschaal kleuren |
+| `T.red`, `T.green`, `T.amber` | Status-kleuren |
 
-### Stroke-tokens
-| Token | Waarde | Gebruik |
-|---|---|---|
-| `T.strokeHair` | 0.5 | Kaartgrenzen, subtiele scheidingen |
-| `T.strokeThin` | 0.9 | Gridlijnen, segment-scheidingen |
-| `T.strokeMid` | 1.6 | Callout-lijnen actief, compare-ringen |
-| `T.strokeThick` | 2.8 | Hoofd-datalijnen (PerformanceChart) |
-| `T.strokeHeavy` | 4.5 | ESG arc-dikte, gauge-tracks |
+**Nooit `T` buiten de component-functie gebruiken.** `makeStyles(T)` altijd aanroepen ná de hook.
 
 ---
 
@@ -243,198 +214,82 @@ function makeStyles(T) {     // ← buiten de component-functie definiëren
 
 | Kleur | Hex | Gebruik |
 |-------|-----|---------|
-| Blauw | `#5B8DEF` | Categorieonderscheid — eerste kleur |
-| Amber | `#F5A623` | Categorieonderscheid — derde kleur |
-| Paars | `rgba(167,139,250,0.85)` | Categorieonderscheid — tweede kleur |
-| Grijs | `#8A8A82` | Categorieonderscheid — restcategorie |
-| **Groen** | `#4ED596` | **Uitsluitend** positieve delta-richting |
-| **Rood** | `#E01B41` | **Uitsluitend** negatieve delta-richting + UI-accenten |
+| Groen | `#4ED596` | Uitsluitend positieve delta-richting |
+| Rood | `#E01B41` | Uitsluitend negatieve delta-richting |
+| Amber | `#F5A623` | Categorieonderscheid (derde kleur) |
+| Blauw | `#5B8DEF` | Categorieonderscheid (eerste kleur) |
+| Paars | `rgba(167,139,250,…)` | Categorieonderscheid (tweede kleur) |
 
-**Uitzondering:** `CostChart` gebruikt groen voor lage kosten en rood voor hoge kosten — dit is een statuskleur, gedocumenteerd als bewuste uitzondering.
-
-**ESG score kleurlogica** (ook een uitzondering — statuskleur):
-- ≥ 7.0 → groen (`#4ED596`)
-- ≥ 5.0 → amber (`#F5A623`)
-- < 5.0 → rood (`#E01B41`)
+**Uitzondering:** `CostChart` gebruikt groen/rood als statuskleur (lage/hoge TER). Dit is bewust en gedocumenteerd.
 
 ---
 
-## 9. Animatie-regels
+## 9. Configurator — schaalassen
 
-### Gebruik altijd useEffect-gebaseerde animaties:
+**Drie sliders in `ConfigEventTab.jsx`** onder sectiekop "Presentatie-instellingen":
+
+| Slider | Updater | Bereik | Wat het doet |
+|---|---|---|---|
+| Beleidsvraag | `upTextScale` | 0.80–2.00 | Schaalt de beleidsvraag/framing-tekst bovenin PresentationView |
+| Grafiek-labels | `upLabelScale` | 0.80–1.60 | Schaalt alle labels en waarden binnen de grafieken |
+| Lijndikte | `upStrokeScale` | 0.80–1.60 | Schaalt strokeWidth van grafieklijnen, arcs en compare-ringen |
+
+**`useConfigDraft.js`** exporteert:
+- `upTextScale(val)` — past `draft.textScale` aan
+- `upLabelScale(val)` — past `draft.labelScale` aan
+- `upStrokeScale(val)` — past `draft.strokeScale` aan
+- `upScale(val)` — legacy, past alleen `draft.displayScale` aan
+
+**`App.jsx`** heeft drie losse useState-waarden:
 ```js
-const [visible, setVisible] = useState(false)
-useEffect(() => {
-  setVisible(false)
-  const t = setTimeout(() => setVisible(true), 80)
-  return () => clearTimeout(t)
-}, [afhankelijkheid])
+const [textScale,   setTextScale]   = useState(rawRegistry.textScale   ?? initialScale)
+const [labelScale,  setLabelScale]  = useState(rawRegistry.labelScale  ?? initialScale)
+const [strokeScale, setStrokeScale] = useState(rawRegistry.strokeScale ?? initialScale)
 ```
 
-**Nooit:** `animated` state met setTimeout als CSS className-trigger op SVG-elementen — onbetrouwbaar.
-
-### Specifieke gevallen:
-- **SVG-naalden:** `transform: translate()` op een `<g>` element — niet op individuele paden
-- **ESG-arcs:** animatie via `stroke-dashoffset`
-- **Arc-animaties algemeen:** `useEffect` + inline `opacity`/`transform`
-
----
-
-## 10. Layout-regels voor charts
-
-Alle chart-wrappers:
+ScaleContext wordt gevoed als object:
 ```js
-{
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'stretch',
-  minHeight: 0,      // ← cruciaal voor flex-kinderen die de ruimte vullen
-  height: '100%',
-}
-```
-
-Alle SVG's:
-```jsx
-<svg
-  viewBox="0 0 400 300"
-  preserveAspectRatio="xMidYMid meet"
-  style={{ width: '100%', height: '100%' }}
->
+const scaleContextValue = { textScale, labelScale, strokeScale }
+<ScaleContext.Provider value={scaleContextValue}>
 ```
 
 ---
 
-## 11. GeographyChart — speciale regels
+## 10. Technische constanten
 
-- D3 wordt dynamisch geladen via CDN (`import()` via jsdelivr)
-- TopoJSON eveneens via CDN
-- Kaartgrenzen: `stroke` **niet** via tokens — bewuste uitzondering, vaste SVG-waarden
-- EM-landen gesplitst in geografische subregio's op de kaart, geaggregeerd als één totaal in de bar chart
-- `buildGeoMap()` schaalt gewichten proportioneel via `a.current`
-- D3-logica leeft buiten de React render-cyclus — bewust patroon, niet aanpassen
-
-**Let op:** CDN-laden is niet geschikt voor offline gebruik. Bundeling staat op de roadmap maar wordt pas opgepakt na expliciete instructie.
-
----
-
-## 12. Explore-modus
-
-- Explore-state wordt **altijd** via deep clone geïsoleerd bij activering
-- Wijzigingen in explore beïnvloeden base/compare state **nooit**
-- `ExploreTotalBadge` ontvangt `exploreMode` prop — badge is **nooit** zichtbaar buiten explore context
-- `ExplorePanel` bevat de sliders; `ExplorePresentationView` toont de chart
-- Explore gap: als de som van explore-gewichten < 100%, verschijnt een gestreept grijs segment in Implementation- en Currency-balken
+- Arc-animaties via `useEffect` + inline opacity/transform (niet via CSS className op SVG)
+- ESG-arc animatie via `stroke-dashoffset`
+- SVG naald-animaties via `transform translate` op een `<g>` element
+- Alle chart-wrappers gebruiken `alignItems: stretch` met `minHeight: 0`
+- SVG's gebruiken `preserveAspectRatio="xMidYMid meet"`
+- GeographyChart: geografische gewichten proportioneel geschaald met `a.current`
+- Explore-state wordt geïsoleerd via deep clone bij activering
+- Charts ontvangen `comparisonPortfolio` als prop — nooit `scenario.comparison`
+- `ExploreTotalBadge` ontvangt `exploreMode` prop — badge nooit zichtbaar buiten explore context
+- `performanceView` op use case-niveau overschrijft event-portfolio performance via de bestaande merge-logica
+- GeographyChart kaartgrenzen: D3 buiten React render, stroke niet via tokens — bewust en acceptabel
+- ESGChart arc-dikte: vaste SVG-waarde in eigen viewBox — niet via tokens
+- D3 geladen via CDN — niet geschikt voor offline gebruik (openstaand punt)
+- Configurator-tooltips via `createPortal` naar `document.body`
 
 ---
 
-## 13. Operatorbalk en modi
+## 11. Testing en CI
 
-### Vijf modi
-| Modus | Naam | Beschrijving |
-|---|---|---|
-| 0 | Idle | Startscherm. Alleen Configure, eventnaam en Start zichtbaar in balk. |
-| 1 | Scenario | Actieve use case. Alle balksecties zichtbaar. |
-| 2 | Navigatie | Operator navigeert en togglet Compare/Performance. |
-| 3 | Performance view | Performance chart vervangt tijdelijk de actieve dimensie. |
-| 4 | Explore | Aparte groene UI met uitklaplade en sliders. Terug via Back-knop. |
-
-### Zichtbaarheid in idle-stand
-In idle zijn **alleen** zichtbaar: Configure, eventnaam, screenName en Start-knop.
-Navigatieteller, Compare, Performance en Explore zijn `visibility: hidden` — ze houden hun ruimte maar zijn niet zichtbaar.
-
-### Explore uitklaplade
-- Zweeft omhoog vanuit bovenkant operatorbalk
-- Breedte: `min(1400px, 96vw)`, gecentreerd horizontaal
-- Groene bovenlijn (3px `#4ED596`) als explore-indicator
-- Toggle tab: "▼ Hide" / "▲ Show" — gecentreerd bovenin de lade
-- Lade animeert via `max-height` + `opacity` transition
-- `operator-wrapper` in `global.css` heeft `overflow: visible` en `position: relative` — nodig voor de lade, niet aanpassen
-
-### Back-knop in Explore
-Horizontale groene pill, podiumleesbaar op 15–20 meter afstand.
+- Unit tests: `src/utils/resolveUseCase.test.js` (Vitest)
+- GitHub Actions CI: draait automatisch op elke push naar `main`
+- StackBlitz terminal kan Vitest niet direct uitvoeren — GitHub Actions is het verificatiepad
 
 ---
 
-## 14. CSS en global.css
+## 12. Openstaande punten
 
-- `operator-wrapper` heeft `overflow: visible` en `position: relative` — **niet wijzigen**
-- Voeg geen inline stijlen toe die al in `global.css` gedefinieerd zijn
-- Gebruik geen Tailwind of andere CSS-frameworks — alleen handgeschreven CSS en inline styles
-
----
-
-## 15. IO Design tokens — referentie
-
-```
-Achtergrond (dashboard):  #0C182E
-Accent rood:              #E01B41
-Tekst primair:            #FFFFFF
-Tekst secundair:          rgba(255,255,255,0.75)
-Tekst gedempt:            rgba(255,255,255,0.45)
-Tekst faint:              rgba(255,255,255,0.28)
-Font-family:              'Merriweather Sans', sans-serif
-Configurator achtergrond: #F8F8F7
-```
+| Punt | Status |
+|------|--------|
+| Registry persistentie via GitHub Contents API | 🔜 Volgende bouwstap |
+| D3 lokaal bundelen (GeographyChart — offline gebruik) | 🔜 Na concept-validatie |
+| ExplorePanel sliders — verificatie correct functioneren | 🔜 Nog te testen |
 
 ---
 
-## 16. Tests uitvoeren
-
-```bash
-npm run build     # Altijd na elke wijziging — geen errors toegestaan
-npm test          # Vitest — 46 tests in resolveUseCase.test.js
-```
-
-Als `npm test` lokaal niet werkt: push naar `main` en controleer GitHub Actions op:
-`https://github.com/jasperstaring-cmyk/io-portfolio-dashboard/actions`
-
-Test-bestand: `src/utils/resolveUseCase.test.js` — **niet aanpassen** tenzij expliciet gevraagd.
-
----
-
-## 17. Checklist vóór elke commit
-
-- [ ] `npm run build` geeft geen errors
-- [ ] `npm test` slaagt (of GitHub Actions gecontroleerd na push)
-- [ ] Geen hardcoded px/rem-waarden in charts — gebruik `T.*` tokens
-- [ ] Geen groen/rood voor categorieonderscheid — alleen voor delta-richting (uitzonderingen: CostChart en ESG score)
-- [ ] Charts ontvangen `comparisonPortfolio` prop — nooit `scenario.comparison`
-- [ ] `resolveUseCase()` is de enige plek met merge-logica
-- [ ] Animaties via `useEffect` + opacity/transform — geen CSS className-toggle op SVG
-- [ ] SVG's hebben `preserveAspectRatio="xMidYMid meet"`
-- [ ] Chart-wrappers hebben `alignItems: stretch` + `minHeight: 0`
-- [ ] `useT()` bovenaan de component-functie, `makeStyles(T)` erna — `T` nooit buiten de functie
-- [ ] Niet meer gewijzigd dan de instructie vroeg
-
----
-
-## 18. Bestandslevering
-
-Instructies vanuit het Claude-project bevatten altijd:
-- Exacte bestandsnamen (bijv. `index.jsx`, nooit `configurator_index.jsx`)
-- Exacte doelpaden (bijv. `src/components/charts/AssetClassChart.jsx`)
-- Beschrijving van wat de wijziging doet
-- Welke checks uitgevoerd moeten worden
-
-Jij voert de checks uit en rapporteert het resultaat terug — inclusief eventuele build-errors of afwijkende test-uitkomsten.
-
----
-
-## 19. Openstaande punten (april 2026)
-
-| Punt | Status | Toelichting |
-|------|--------|-------------|
-| **Registry persistentie via GitHub Contents API** | 🔜 Volgende bouwstap | Save to registry schrijft nog niet naar GitHub. Wacht op expliciete instructie. |
-| **Auditorium-optimalisatie** | ✅ Opgelost | Typografie, lijndikte, PresentationView-chrome via chartTokens.js |
-| **OperatorPanel herontwerp** | ✅ Opgelost | Horizontale balk, vier actieknoppen, screenName, navigatieteller |
-| **ExplorePanel uitklaplade** | ✅ Opgelost | Omhoog vanuit control panel, horizontale sliders, toggle tab |
-| **screenName veld** | ✅ Opgelost | Per use case instelbaar in configurator, zichtbaar in operatorbalk en lijst |
-| **Idle-stand verfijning** | ✅ Opgelost | Balk maximaal rustig in idle: alleen Configure, eventnaam en Start zichtbaar |
-| **Back-knop Explore** | ✅ Opgelost | Horizontale pill, podiumleesbaar op 15–20 meter |
-
-Implementeer niets uit de "openstaande punten" zonder expliciete instructie — ook al lijkt het logisch of bijna af.
-
----
-
-*Investment Officer — Portfolio Day Dashboard*
-*CLAUDE.md — gegenereerd op basis van Projectinstructie v14.0, Datamodel v1.1 — april 2026*
+*IO Portfolio Dashboard — CLAUDE.md — April 2026*
