@@ -60,7 +60,11 @@ export default function App() {
   const [idleMode, setIdleMode] = useState(true)
   const [showPerformanceView, setShowPerformanceView] = useState(false)
 
-  const [displayScale, setDisplayScale] = useState(initialScale)
+  // ── Drie onafhankelijke schaalassen ─────────────────────────────────────
+  // Fallback: als registry alleen displayScale heeft, gebruiken alle drie die waarde
+  const [textScale,   setTextScale]   = useState(rawRegistry.textScale   ?? initialScale)
+  const [labelScale,  setLabelScale]  = useState(rawRegistry.labelScale  ?? initialScale)
+  const [strokeScale, setStrokeScale] = useState(rawRegistry.strokeScale ?? initialScale)
 
   const [exploreMode, setExploreMode] = useState(false)
   const [explorePortfolio, setExplorePortfolio] = useState(
@@ -83,7 +87,7 @@ export default function App() {
     const event = allEvents.find(e => e.id === eventId)
     if (!event) return
     const usecases = event.usecases || event.scenarios || []
-    setConfig(buildLegacyConfig(event, usecases, displayScale))
+    setConfig(buildLegacyConfig(event, usecases, textScale))
     setActiveEventId(eventId)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -94,7 +98,15 @@ export default function App() {
   }
 
   function handleApplyConfig(newConfig) {
-    if (newConfig.displayScale !== undefined) setDisplayScale(newConfig.displayScale)
+    // Lees de drie assen uit de config (met fallback op displayScale)
+    const legacy = newConfig.displayScale ?? 1.0
+    if (newConfig.textScale   !== undefined) setTextScale(newConfig.textScale)
+    else if (newConfig.displayScale !== undefined) setTextScale(legacy)
+    if (newConfig.labelScale  !== undefined) setLabelScale(newConfig.labelScale)
+    else if (newConfig.displayScale !== undefined) setLabelScale(legacy)
+    if (newConfig.strokeScale !== undefined) setStrokeScale(newConfig.strokeScale)
+    else if (newConfig.displayScale !== undefined) setStrokeScale(legacy)
+
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -104,7 +116,14 @@ export default function App() {
   }
 
   function handleSaveConfig(newConfig) {
-    if (newConfig.displayScale !== undefined) setDisplayScale(newConfig.displayScale)
+    const legacy = newConfig.displayScale ?? 1.0
+    if (newConfig.textScale   !== undefined) setTextScale(newConfig.textScale)
+    else if (newConfig.displayScale !== undefined) setTextScale(legacy)
+    if (newConfig.labelScale  !== undefined) setLabelScale(newConfig.labelScale)
+    else if (newConfig.displayScale !== undefined) setLabelScale(legacy)
+    if (newConfig.strokeScale !== undefined) setStrokeScale(newConfig.strokeScale)
+    else if (newConfig.displayScale !== undefined) setStrokeScale(legacy)
+
     setConfig(newConfig)
     setActiveScenarioIndex(0)
     setShowComparison(false)
@@ -248,8 +267,11 @@ export default function App() {
     setExplorePortfolio(clonePortfolio(config.portfolio))
   }
 
+  // ScaleContext als object met drie assen
+  const scaleContextValue = { textScale, labelScale, strokeScale }
+
   return (
-    <ScaleContext.Provider value={displayScale}>
+    <ScaleContext.Provider value={scaleContextValue}>
       <div className="app">
         <div className="presentation-wrapper">
           {idleMode ? (

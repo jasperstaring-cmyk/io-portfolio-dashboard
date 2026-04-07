@@ -9,7 +9,7 @@ import CurrencyChart from './charts/CurrencyChart'
 import StyleChart from './charts/StyleChart'
 import CostChart from './charts/CostChart'
 import { resolveUseCase } from '../utils/resolveUseCase'
-import { useT } from './charts/chartTokens'
+import { useT, useTextScale } from './charts/chartTokens'
 
 const DIMENSIONS = {
   asset_class:    AssetClassChart,
@@ -28,6 +28,7 @@ export default function PresentationView({
   showPerformanceView, lang
 }) {
   const T = useT()
+  const textScale = useTextScale()
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function PresentationView({
 
   const comparisonPortfolio = showComparison ? resolvedCompare : null
 
-  const perfView   = scenario?.performanceView
+  const perfView    = scenario?.performanceView
   const hasPerfView = !!(perfView?.base?.length || perfView?.compare?.length)
 
   const perfBasePortfolio = hasPerfView ? {
@@ -67,7 +68,7 @@ export default function PresentationView({
 
   const showingPerf = showPerformanceView && hasPerfView
 
-  const s = makeStyles(T)
+  const s = makeStyles(T, textScale)
 
   return (
     <div style={s.container}>
@@ -163,8 +164,8 @@ export default function PresentationView({
   )
 }
 
-// ─── Styles meeschalen met T ────────────────────────────────────────────────
-function makeStyles(T) {
+// ─── Styles — T schaalt labels/chrome, textScale schaalt beleidsvraag ───────
+function makeStyles(T, textScale) {
   return {
     container: {
       width: '100%', height: '100%',
@@ -189,7 +190,7 @@ function makeStyles(T) {
       pointerEvents: 'none', zIndex: 0,
     },
 
-    // ── Header ──
+    // ── Header — schaalt op labelScale via T ──
     header: {
       display: 'flex', alignItems: 'center',
       justifyContent: 'space-between',
@@ -268,7 +269,7 @@ function makeStyles(T) {
       flexShrink: 0, position: 'relative', zIndex: 1,
     },
 
-    // ── Policy block ──
+    // ── Policy block — beleidsvraag schaalt op textScale ──
     policyBlock: {
       marginBottom: '18px',
       position: 'relative', zIndex: 1, flexShrink: 0,
@@ -311,9 +312,11 @@ function makeStyles(T) {
       border: '1px solid rgba(91,141,239,0.28)',
       padding: '3px 9px', borderRadius: '3px',
     },
+
+    // Beleidsvraag: schaalt op textScale (onafhankelijk van grafiek-labels)
     policyQuestion: {
       fontFamily: "'Merriweather', serif",
-      fontSize: T.xlarge,
+      fontSize: `${(1.40 * textScale).toFixed(3)}rem`,
       fontWeight: 700,
       color: '#FFFFFF',
       lineHeight: 1.28, letterSpacing: '-0.025em',
@@ -327,7 +330,7 @@ function makeStyles(T) {
       display: 'flex', alignItems: 'stretch',
     },
 
-    // ── Footer — bewust klein, hoeft niet te schalen ──
+    // ── Footer — bewust klein, schaalt niet ──
     footer: {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       borderTop: '1px solid rgba(255,255,255,0.08)',
