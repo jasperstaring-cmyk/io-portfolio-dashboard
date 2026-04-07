@@ -36,7 +36,19 @@ export default function OperatorPanel({
       <div style={s.redLine} />
       <div style={s.mainRow}>
 
-        {/* ── Event selector (alleen bij meerdere events) ── */}
+        {/* ── Configure — links, subtiel ── */}
+        <button style={s.configBtn} onClick={onOpenConfig} title="Open configurator">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+              stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span style={s.configLabel}>Configure</span>
+        </button>
+
+        <div style={s.vDivider} />
+
+        {/* ── Event selector ── */}
         {hasMultipleEvents && (
           <>
             <div style={s.eventSection}>
@@ -91,29 +103,31 @@ export default function OperatorPanel({
 
         <div style={s.vDivider} />
 
-        {/* ── START / IDLE ── */}
+        {/* ── START / PAUSE — toont actie, niet huidige staat ── */}
         <button
           style={{
             ...s.btn,
-            background: isLive ? '#E01B41' : 'rgba(255,255,255,0.07)',
-            borderColor: isLive ? '#E01B41' : 'rgba(255,255,255,0.25)',
+            background: isLive ? 'rgba(255,255,255,0.07)' : '#E01B41',
+            borderColor: isLive ? 'rgba(255,255,255,0.25)' : '#E01B41',
           }}
           onClick={onToggleIdle}
         >
           {isLive ? (
+            // Dashboard is live → toon Pause (klik = stoppen)
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
               <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
-              <polygon points="15,10 27,18 15,26" fill="white" />
+              <rect x="11" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.8)" />
+              <rect x="20" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.8)" />
             </svg>
           ) : (
+            // Dashboard is idle → toon Start (klik = beginnen)
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-              <rect x="11" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
-              <rect x="20" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
+              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />
+              <polygon points="15,10 27,18 15,26" fill="white" />
             </svg>
           )}
-          <span style={{ ...s.btnLabel, color: isLive ? '#ffffff' : 'rgba(255,255,255,0.7)' }}>
-            {isLive ? 'Live' : 'Idle'}
+          <span style={{ ...s.btnLabel, color: isLive ? 'rgba(255,255,255,0.7)' : '#ffffff' }}>
+            {isLive ? 'Pause' : 'Start'}
           </span>
         </button>
 
@@ -189,18 +203,6 @@ export default function OperatorPanel({
           <span style={{ ...s.btnLabel, color: exploreActive ? '#4ED596' : 'rgba(255,255,255,0.65)' }}>Explore</span>
         </button>
 
-        <div style={s.vDivider} />
-
-        {/* ── Configure ── */}
-        <button style={s.configBtn} onClick={onOpenConfig} title="Open configurator">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
-            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-              stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          <span style={s.configLabel}>Configure</span>
-        </button>
-
       </div>
     </div>
   )
@@ -222,6 +224,33 @@ const s = {
     height: '100px',
     gap: 0,
   },
+
+  /* Configure — helemaal links, subtiel */
+  configBtn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '5px',
+    width: '56px',
+    height: '56px',
+    flexShrink: 0,
+    borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.12)',
+    cursor: 'pointer',
+    background: 'rgba(255,255,255,0.03)',
+    transition: 'background 0.15s, border-color 0.15s',
+    marginRight: '4px',
+  },
+  configLabel: {
+    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
+    fontSize: '7px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    color: 'rgba(255,255,255,0.4)',
+  },
+
   eventSection: {
     display: 'flex',
     flexDirection: 'column',
@@ -344,29 +373,5 @@ const s = {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
-  },
-  configBtn: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '5px',
-    width: '64px',
-    height: '60px',
-    flexShrink: 0,
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.2)',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.05)',
-    marginLeft: '8px',
-    transition: 'background 0.15s',
-  },
-  configLabel: {
-    fontFamily: "'Merriweather Sans', system-ui, sans-serif",
-    fontSize: '7px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.55)',
   },
 }

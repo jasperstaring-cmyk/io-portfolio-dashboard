@@ -258,6 +258,7 @@ export default function App() {
             <ExplorePresentationView
               event={config.event}
               portfolio={explorePortfolio}
+              scenario={activeScenario}
               activeDimension={exploreDimension}
               lang={lang}
             />

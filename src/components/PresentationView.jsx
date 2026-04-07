@@ -116,8 +116,6 @@ export default function PresentationView({
         transition: 'opacity 0.42s ease, transform 0.42s ease',
       }}>
         <div style={s.policyMeta}>
-          <span style={s.policyLabel}>PORTFOLIO QUESTION</span>
-          {themeName && <span style={s.themeTag}>{themeName}</span>}
           {showComparison && compLabel && (
             <span style={s.compTag}>⟳ {compLabel}</span>
           )}
@@ -156,7 +154,8 @@ export default function PresentationView({
       {/* ── FOOTER ── */}
       <div style={s.footer}>
         <span style={s.footerLeft}>
-          {portfolio.name} · {portfolio.profile} · {portfolio.currency}
+          <span style={s.footerLabel}>Portfolio Question</span>
+          {scenario?.theme?.[lang] || scenario?.theme?.en || ''}
         </span>
         <span style={s.footerRight}>Investment Officer © 2026</span>
       </div>
@@ -338,6 +337,15 @@ function makeStyles(T) {
     footerLeft: {
       fontFamily: "'Merriweather Sans', sans-serif",
       fontSize: '0.62rem', color: 'rgba(255,255,255,0.5)',
+    },
+    footerLabel: {
+      fontFamily: "'Merriweather Sans', sans-serif",
+      fontSize: '0.62rem',
+      fontWeight: 800,
+      color: '#E01B41',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginRight: '8px',
     },
     footerRight: {
       fontFamily: "'Merriweather Sans', sans-serif",

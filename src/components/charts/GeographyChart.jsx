@@ -1,5 +1,6 @@
 import { useT } from './chartTokens'
 import { useEffect, useRef } from 'react'
+import ExploreTotalBadge from './ExploreTotalBadge'
 
 // Categoriekleuren — neutraal, geen statusoordeel
 // Rood en groen zijn GERESERVEERD voor compare/delta
@@ -84,7 +85,7 @@ function loadDeps() {
   return Promise.all([d3Promise, topojsonPromise, worldPromise])
 }
 
-export default function GeographyChart({ portfolio, comparisonPortfolio, showComparison }) {
+export default function GeographyChart({ portfolio, comparisonPortfolio, showComparison, exploreMode = false }) {
   const T = useT()
   const s = makeStyles(T)
   const svgRef = useRef(null)
@@ -261,13 +262,18 @@ export default function GeographyChart({ portfolio, comparisonPortfolio, showCom
           )
         })}
       </div>
+      <ExploreTotalBadge
+        exploreMode={exploreMode}
+        total={Object.values(portfolio.geoOverride || {}).reduce((s, v) => s + v, 0)}
+        label="Geography"
+      />
     </div>
   )
 }
 
 function makeStyles(T) {
   return {
-  wrap:        { display: 'flex', gap: 40, height: '100%', width: '100%', alignItems: 'stretch' },
+  wrap:        { display: 'flex', gap: 40, height: '100%', width: '100%', alignItems: 'stretch', position: 'relative' },
   mapCol:      { flex: 1.6, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
   mapWrap:     { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 },
   mapSvg:      { width: '100%', height: '100%', display: 'block' },
