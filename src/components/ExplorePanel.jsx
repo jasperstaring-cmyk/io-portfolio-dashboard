@@ -73,7 +73,6 @@ export default function ExplorePanel({
   const baseImplCats    = getImplCategories(portfolio.implementation)
   const exploreImplCats = getImplCategories(explorePortfolio.implementation)
 
-  const eventName = allEvents?.find(e => e.id === activeEventId)?.name || 'Portfolio Day'
   const hasMultipleEvents = allEvents?.length > 1
 
   const screenName =
@@ -195,10 +194,9 @@ export default function ExplorePanel({
         </div>
       </div>
 
-      {/* ── Control balk — identiek aan OperatorPanel ── */}
+      {/* ── Control balk ── */}
       <div style={s.mainRow}>
 
-        {/* ── Links: event selector + screenName — identiek aan OperatorPanel ── */}
         {hasMultipleEvents && (
           <>
             <div style={s.eventSection}>
@@ -225,13 +223,16 @@ export default function ExplorePanel({
           <div style={s.screenNameText}>{screenName || '\u00A0'}</div>
         </div>
 
+        {/* Spacer duwt Back naar rechts */}
+        <div style={{ flex: '1 1 0' }} />
+
         <div style={s.vDivider} />
 
-        {/* ── Back knop — in stijl van actieknoppen ── */}
+        {/* ── Back knop — prominent en podiumleesbaar ── */}
         <button style={s.backBtn} onClick={onExitExplore}>
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="15" stroke="rgba(78,213,150,0.5)" strokeWidth="1.5" />
-            <path d="M21 11l-7 7 7 7" stroke="#4ED596" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M19 12H5M5 12l7-7M5 12l7 7"
+              stroke="#4ED596" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span style={s.backLabel}>Back</span>
         </button>
@@ -251,7 +252,7 @@ const s = {
   },
   greenLine: { height: '3px', background: '#4ED596', width: '100%' },
 
-  /* Lade */
+  /* ── Uitklaplade ── */
   drawerWrap: {
     position: 'absolute',
     bottom: '103px',
@@ -262,6 +263,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
+    /* Verankert de lade visueel aan de footer — geen zwevend effect */
     filter: 'drop-shadow(0 -8px 32px rgba(0,0,0,0.55))',
   },
   toggleTab: {
@@ -287,6 +289,8 @@ const s = {
   drawerBody: {
     background: '#0C182E',
     border: '1px solid rgba(78,213,150,0.35)',
+    /* Onderste border weggelaten zodat de lade naadloos aansluit op de footer */
+    borderBottom: 'none',
     overflow: 'hidden',
     transition: 'max-height 0.32s ease, opacity 0.25s ease, padding 0.32s ease',
     paddingLeft: '36px',
@@ -330,13 +334,12 @@ const s = {
     fontStyle: 'italic', padding: '16px 0',
   },
 
-  /* Control balk */
+  /* ── Control balk ── */
   mainRow: {
     display: 'flex', flexDirection: 'row', alignItems: 'center',
     padding: '0 24px', height: '100px', gap: 0,
   },
 
-  /* Event selector — identiek aan OperatorPanel */
   eventSection: {
     display: 'flex', flexDirection: 'column',
     justifyContent: 'center', gap: '5px',
@@ -352,10 +355,9 @@ const s = {
     cursor: 'pointer', appearance: 'none', maxWidth: '160px',
   },
 
-  /* ScreenName sectie — identiek aan OperatorPanel */
   screenNameSection: {
     display: 'flex', flexDirection: 'column', justifyContent: 'center',
-    gap: '5px', flex: '1 1 0', minWidth: 0, paddingRight: '16px',
+    gap: '5px', minWidth: 0, paddingRight: '16px',
   },
   exploreTag: {
     display: 'flex', alignItems: 'center', gap: '6px',
@@ -385,22 +387,26 @@ const s = {
     flexShrink: 0, margin: '0 20px',
   },
 
-  /* Back knop */
+  /* ── Back knop — horizontale pill, prominent en podiumleesbaar ── */
   backBtn: {
-    display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center',
-    gap: '7px', width: '90px', height: '76px',
-    flexShrink: 0, borderRadius: '10px',
-    border: '1px solid rgba(78,213,150,0.45)',
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    height: '56px',
+    padding: '0 28px',
+    flexShrink: 0,
+    borderRadius: '10px',
+    border: '1px solid rgba(78,213,150,0.5)',
     cursor: 'pointer',
-    background: 'rgba(78,213,150,0.08)',
-    marginLeft: '8px',
+    background: 'rgba(78,213,150,0.1)',
     transition: 'background 0.18s, border-color 0.18s',
   },
   backLabel: {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
-    fontSize: '9px', fontWeight: 700,
-    textTransform: 'uppercase', letterSpacing: '0.08em',
+    fontSize: '13px', fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '0.1em',
     color: '#4ED596',
   },
 }

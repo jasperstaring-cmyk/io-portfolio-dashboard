@@ -69,13 +69,13 @@ export default function OperatorPanel({
 
         {/* ── Screenname ── */}
         <div style={s.screenNameSection}>
-          <div style={s.screenNameText}>{screenName || '\u00A0'}</div>
+          <div style={{ ...s.screenNameText, visibility: isLive ? 'visible' : 'hidden' }}>{screenName || '\u00A0'}</div>
         </div>
 
         <div style={s.vDivider} />
 
-        {/* ── Navigatie ── */}
-        <div style={s.navSection}>
+        {/* ── Navigatie — verborgen in idle-stand ── */}
+        <div style={{ ...s.navSection, visibility: isLive ? 'visible' : 'hidden' }}>
           <div style={s.microLabel}>Use case</div>
           <div style={s.navRow}>
             <button
@@ -101,44 +101,46 @@ export default function OperatorPanel({
           </div>
         </div>
 
-        <div style={s.vDivider} />
+        <div style={{ ...s.vDivider, visibility: isLive ? 'visible' : 'hidden' }} />
 
-        {/* ── START / PAUSE — toont actie, niet huidige staat ── */}
+        {/* ── START / PAUSE ──
+            Zelfde formaat als de drie actieknoppen (s.btn).
+            START (idle): rood gevuld — herkenbare primaire actie in de startstand.
+            PAUSE (live): gedimd — ondergeschikt zodra het dashboard actief is.
+        ── */}
         <button
           style={{
             ...s.btn,
-            background: isLive ? 'rgba(255,255,255,0.07)' : '#E01B41',
-            borderColor: isLive ? 'rgba(255,255,255,0.25)' : '#E01B41',
+            ...(isLive ? s.btnPause : s.btnStart),
           }}
           onClick={onToggleIdle}
         >
           {isLive ? (
-            // Dashboard is live → toon Pause (klik = stoppen)
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
-              <rect x="11" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.8)" />
-              <rect x="20" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.8)" />
+              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+              <rect x="11" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
+              <rect x="20" y="11" width="5" height="14" rx="1.5" fill="rgba(255,255,255,0.6)" />
             </svg>
           ) : (
-            // Dashboard is idle → toon Start (klik = beginnen)
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" />
-              <polygon points="15,10 27,18 15,26" fill="white" />
+              <circle cx="18" cy="18" r="15" stroke="rgba(224,27,65,0.7)" strokeWidth="1.5" />
+              <polygon points="15,10 27,18 15,26" fill="#E01B41" />
             </svg>
           )}
-          <span style={{ ...s.btnLabel, color: isLive ? 'rgba(255,255,255,0.7)' : '#ffffff' }}>
+          <span style={{ ...s.btnLabel, color: isLive ? 'rgba(255,255,255,0.5)' : '#E01B41' }}>
             {isLive ? 'Pause' : 'Start'}
           </span>
         </button>
 
-        {/* ── COMPARE ── */}
+        {/* ── COMPARE — verborgen in idle-stand ── */}
         <button
           style={{
             ...s.btn,
             background: showComparison ? 'rgba(251,199,37,0.15)' : 'rgba(255,255,255,0.07)',
             borderColor: showComparison ? 'rgba(251,199,37,0.7)' : 'rgba(255,255,255,0.25)',
             opacity: hasComparison ? 1 : 0.25,
-            pointerEvents: hasComparison ? 'auto' : 'none',
+            pointerEvents: hasComparison && isLive ? 'auto' : 'none',
+            visibility: isLive ? 'visible' : 'hidden',
           }}
           onClick={onToggleComparison}
         >
@@ -158,14 +160,15 @@ export default function OperatorPanel({
           <span style={{ ...s.btnLabel, color: showComparison ? '#FBC725' : 'rgba(255,255,255,0.65)' }}>Compare</span>
         </button>
 
-        {/* ── PERFORMANCE ── */}
+        {/* ── PERFORMANCE — verborgen in idle-stand ── */}
         <button
           style={{
             ...s.btn,
             background: showPerformanceView ? 'rgba(224,27,65,0.15)' : 'rgba(255,255,255,0.07)',
             borderColor: showPerformanceView ? 'rgba(224,27,65,0.7)' : 'rgba(255,255,255,0.25)',
             opacity: hasPerfView ? 1 : 0.25,
-            pointerEvents: hasPerfView ? 'auto' : 'none',
+            pointerEvents: hasPerfView && isLive ? 'auto' : 'none',
+            visibility: isLive ? 'visible' : 'hidden',
           }}
           onClick={onTogglePerformanceView}
         >
@@ -181,12 +184,13 @@ export default function OperatorPanel({
           <span style={{ ...s.btnLabel, color: showPerformanceView ? '#E01B41' : 'rgba(255,255,255,0.65)' }}>Performance</span>
         </button>
 
-        {/* ── EXPLORE ── */}
+        {/* ── EXPLORE — verborgen in idle-stand ── */}
         <button
           style={{
             ...s.btn,
             background: exploreActive ? 'rgba(78,213,150,0.15)' : 'rgba(255,255,255,0.07)',
             borderColor: exploreActive ? 'rgba(78,213,150,0.7)' : 'rgba(255,255,255,0.25)',
+            visibility: isLive ? 'visible' : 'hidden',
           }}
           onClick={onEnterExplore}
         >
@@ -225,7 +229,6 @@ const s = {
     gap: 0,
   },
 
-  /* Configure — helemaal links, subtiel */
   configBtn: {
     display: 'flex',
     flexDirection: 'column',
@@ -351,6 +354,8 @@ const s = {
     borderRadius: '1px',
     transition: 'width 0.3s ease',
   },
+
+  /* Basis actieknop — alle vier knoppen (incl. Start/Pause) delen dit formaat */
   btn: {
     display: 'flex',
     flexDirection: 'column',
@@ -367,6 +372,19 @@ const s = {
     background: 'rgba(255,255,255,0.07)',
     marginLeft: '8px',
   },
+
+  /* START — rode rand + subtiele tint, zelfde gewicht als andere actieknoppen */
+  btnStart: {
+    background: 'rgba(224,27,65,0.15)',
+    borderColor: 'rgba(224,27,65,0.7)',
+  },
+
+  /* PAUSE — gedimd, ondergeschikt zodra het dashboard actief is */
+  btnPause: {
+    background: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
   btnLabel: {
     fontFamily: "'Merriweather Sans', system-ui, sans-serif",
     fontSize: '9px',
