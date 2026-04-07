@@ -46,7 +46,9 @@ html, body, #root {
   width: 100%;
   flex-shrink: 0;
   background: #0C182E;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }

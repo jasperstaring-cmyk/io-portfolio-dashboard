@@ -289,6 +289,11 @@ export default function App() {
               activeDimension={exploreDimension}
               onSelectDimension={setExploreDimension}
               onExitExplore={() => setExploreMode(false)}
+              activeScenario={activeScenario}
+              lang={lang}
+              allEvents={allEvents}
+              activeEventId={activeEventId}
+              onSelectEvent={handleSelectEvent}
             />
           ) : (
             <OperatorPanel
