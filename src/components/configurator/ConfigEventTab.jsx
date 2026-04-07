@@ -53,6 +53,30 @@ function Tooltip({ text }) {
   )
 }
 
+// ── Herbruikbare slider-rij ────────────────────────────────────────────────
+function ScaleSlider({ value, onChange, min, max, step, helpText }) {
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <input
+          type="range" min={min} max={max} step={step}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          style={{ flex: 1, accentColor: '#0C182E' }}
+        />
+        <span style={{
+          fontFamily: "'Merriweather Sans', sans-serif",
+          fontSize: '0.82rem', fontWeight: 700,
+          color: '#0C182E', minWidth: 40, textAlign: 'right',
+        }}>
+          {Number(value).toFixed(2)}×
+        </span>
+      </div>
+      {helpText && <div style={c.helpText}>{helpText}</div>}
+    </>
+  )
+}
+
 // ── Series editor ──────────────────────────────────────────────────────────
 function SeriesEditor({ series, onUpdate }) {
   const rows = series || []
@@ -171,9 +195,19 @@ const NAV_ITEMS = [
 // ── Main component ─────────────────────────────────────────────────────────
 export default function ConfigEventTab({ draft, updaters }) {
   const [activeSection, setActiveSection] = useState('event')
-  const { upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency, upScale } = updaters
+  const {
+    upEvent, upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR,
+    upSector, upCurrency,
+    upTextScale, upLabelScale, upStrokeScale,
+  } = updaters
+
   const p = draft.portfolio
-  const displayScale = draft.displayScale ?? 1.0
+
+  // Scale-waarden met fallback op displayScale voor backwards-compat
+  const legacyScale  = draft.displayScale ?? 1.0
+  const textScale    = draft.textScale    ?? legacyScale
+  const labelScale   = draft.labelScale   ?? legacyScale
+  const strokeScale  = draft.strokeScale  ?? legacyScale
 
   const allocTotal  = p.allocations.reduce((s, a) => s + (Number(a.current) || 0), 0)
   const targetTotal = p.allocations.reduce((s, a) => s + (Number(a.target)  || 0), 0)
@@ -256,31 +290,67 @@ export default function ConfigEventTab({ draft, updaters }) {
                 ))}
               </select>
             </Field>
-            <Field label={
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                Tekstschaal
-                <Tooltip text="Scales all text in the presentation view. Use 1.00 for laptop, 1.35 for auditorium, 1.50 for large screen." />
-              </span>
-            }>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <input
-                  type="range" min="0.8" max="1.6" step="0.05"
-                  value={displayScale}
-                  onChange={e => upScale(e.target.value)}
-                  style={{ flex: 1, accentColor: '#0C182E' }}
-                />
-                <span style={{
-                  fontFamily: "'Merriweather Sans', sans-serif",
-                  fontSize: '0.82rem', fontWeight: 700,
-                  color: '#0C182E', minWidth: 40, textAlign: 'right',
-                }}>
-                  {displayScale.toFixed(2)}×
+
+            {/* ── Presentatie-instellingen ── */}
+            <div style={{
+              marginTop: 28,
+              paddingTop: 20,
+              borderTop: '1px solid #E0E0DC',
+            }}>
+              <div style={{
+                fontFamily: "'Merriweather Sans', sans-serif",
+                fontSize: '0.72rem', fontWeight: 800,
+                color: '#8A8A82', letterSpacing: '0.08em',
+                textTransform: 'uppercase', marginBottom: 18,
+              }}>
+                Presentatie-instellingen
+              </div>
+
+              {/* Slider 1: Beleidsvraag */}
+              <Field label={
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  Beleidsvraag
+                  <Tooltip text="Schaalt de grootte van de beleidsvraag en framing-tekst bovenin het scherm. Vergroot voor grote zalen en projectieschermen." />
                 </span>
-              </div>
-              <div style={c.helpText}>
-                1.00 = laptop · 1.20 = small room · 1.35 = auditorium · 1.50 = large screen
-              </div>
-            </Field>
+              }>
+                <ScaleSlider
+                  value={textScale}
+                  onChange={upTextScale}
+                  min="0.8" max="2.0" step="0.05"
+                  helpText="0.80 = laptop · 1.00 = normaal · 1.35 = auditorium · 1.80 = groot scherm"
+                />
+              </Field>
+
+              {/* Slider 2: Grafiek-labels */}
+              <Field label={
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  Grafiek-labels
+                  <Tooltip text="Schaalt de lettergrootte van alle labels en waarden binnen de grafieken. Vergroot als cijfers op afstand moeilijk leesbaar zijn." />
+                </span>
+              }>
+                <ScaleSlider
+                  value={labelScale}
+                  onChange={upLabelScale}
+                  min="0.8" max="1.6" step="0.05"
+                  helpText="0.80 = compact · 1.00 = normaal · 1.35 = auditorium · 1.60 = groot scherm"
+                />
+              </Field>
+
+              {/* Slider 3: Lijndikte */}
+              <Field label={
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  Lijndikte
+                  <Tooltip text="Schaalt de dikte van grafieklijnen, arcs en compare-ringen. Vergroot als lijnen op afstand moeilijk zichtbaar zijn." />
+                </span>
+              }>
+                <ScaleSlider
+                  value={strokeScale}
+                  onChange={upStrokeScale}
+                  min="0.8" max="1.6" step="0.05"
+                  helpText="0.80 = dun · 1.00 = normaal · 1.35 = auditorium · 1.60 = dik"
+                />
+              </Field>
+            </div>
           </div>
         )}
 

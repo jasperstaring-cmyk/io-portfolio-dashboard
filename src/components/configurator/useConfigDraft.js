@@ -1,19 +1,5 @@
 import { useState } from 'react'
 
-// ── useConfigDraft v2 ──────────────────────────────────────────────────────
-// Owns all draft state for the configurator.
-// Works with registry.json format (v1.1) — backwards compatible with v1.0.
-// Exposes clean updater functions. No JSX — pure logic only.
-
-// Helper: get implementation categories regardless of format
-function getImplCats(implementation) {
-  if (!implementation) return []
-  if (Array.isArray(implementation.categories)) return implementation.categories
-  return Object.entries(implementation)
-    .filter(([, v]) => typeof v === 'number')
-    .map(([id, weight]) => ({ id, weight }))
-}
-
 export function useConfigDraft(initialConfig) {
   const [draft, setDraft] = useState(() => JSON.parse(JSON.stringify(initialConfig)))
   const [savedDraft, setSavedDraft] = useState(() => JSON.parse(JSON.stringify(initialConfig)))
@@ -24,13 +10,9 @@ export function useConfigDraft(initialConfig) {
     setHasUnsavedChanges(true)
   }
 
-  // ── Event ────────────────────────────────────────────────────────────────
-
   function upEvent(key, val) {
     mark(d => ({ ...d, event: { ...d.event, [key]: val } }))
   }
-
-  // ── Portfolio ────────────────────────────────────────────────────────────
 
   function upPortfolio(key, val) {
     mark(d => ({ ...d, portfolio: { ...d.portfolio, [key]: val } }))
@@ -48,7 +30,6 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // v1.1: update implementation category by id
   function upImplCat(id, key, val) {
     mark(d => ({
       ...d,
@@ -123,11 +104,25 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
+  // ── Scale updaters (drie onafhankelijke assen) ───────────────────────────
 
   function upScale(val) {
     mark(d => ({ ...d, displayScale: Number(val) }))
   }
-  // ── Use cases (scenarios) ────────────────────────────────────────────────
+
+  function upTextScale(val) {
+    mark(d => ({ ...d, textScale: Number(val) }))
+  }
+
+  function upLabelScale(val) {
+    mark(d => ({ ...d, labelScale: Number(val) }))
+  }
+
+  function upStrokeScale(val) {
+    mark(d => ({ ...d, strokeScale: Number(val) }))
+  }
+
+  // ── Use cases ────────────────────────────────────────────────────────────
 
   function upScenario(idx, key, val) {
     mark(d => ({
@@ -157,8 +152,6 @@ export function useConfigDraft(initialConfig) {
       ),
     }))
   }
-
-  // ── Base override ────────────────────────────────────────────────────────
 
   function upBaseToggle(idx, useEventPortfolio) {
     mark(d => ({
@@ -212,8 +205,6 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // ── Framing ──────────────────────────────────────────────────────────────
-
   function upFraming(idx, dimension, catId, field, lang, val) {
     mark(d => ({
       ...d,
@@ -239,8 +230,6 @@ export function useConfigDraft(initialConfig) {
       }),
     }))
   }
-
-  // ── Explore ──────────────────────────────────────────────────────────────
 
   function upExploreToggle(idx, enabled) {
     mark(d => ({
@@ -271,10 +260,6 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // ── Performance view ─────────────────────────────────────────────────────
-  // Beheert de optionele performance tijdreeks per use case.
-  // serie = 'base' of 'compare', data = array van { label, portfolio, benchmark }
-
   function upPerfView(idx, serie, data) {
     mark(d => ({
       ...d,
@@ -282,7 +267,6 @@ export function useConfigDraft(initialConfig) {
         if (i !== idx) return s
         const current = s.performanceView || {}
         const updated = { ...current, [serie]: data }
-        // Verwijder performanceView als beide series leeg zijn
         const isEmpty = !updated.base?.length && !updated.compare?.length
         return isEmpty
           ? { ...s, performanceView: undefined }
@@ -290,8 +274,6 @@ export function useConfigDraft(initialConfig) {
       }),
     }))
   }
-
-  // ── Comparison ───────────────────────────────────────────────────────────
 
   function upCompLabel(idx, lang, val) {
     mark(d => ({
@@ -431,8 +413,6 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // ── Scenario CRUD ────────────────────────────────────────────────────────
-
   function addScenario(currentLength) {
     const newSc = {
       id: `sc_${Date.now()}`,
@@ -455,8 +435,6 @@ export function useConfigDraft(initialConfig) {
     }))
   }
 
-  // ── Registry / persistence ───────────────────────────────────────────────
-
   function markSaved() {
     setSavedDraft(JSON.parse(JSON.stringify(draft)))
     setHasUnsavedChanges(false)
@@ -470,28 +448,18 @@ export function useConfigDraft(initialConfig) {
   return {
     draft,
     hasUnsavedChanges,
-    // Event
     upEvent,
-    // Portfolio
     upPortfolio, upAlloc, upImplCat, upPerf, upESG, upSFDR, upSector, upCurrency,
-    upScale,
-    // Use cases
+    upScale, upTextScale, upLabelScale, upStrokeScale,
     upScenario, upScenarioLang, upSpeaker,
-    // Base override
     upBaseToggle, upBaseAlloc, upBaseImplCat,
-    // Framing
     upFraming,
-    // Explore
     upExploreToggle, upExploreStartFrom,
-    // Performance view
     upPerfView,
-    // Comparison
     upCompLabel, upCompAlloc, upCompESG, upCompSFDR,
     upCompImplCat, toggleComparison,
     upCompSector, upCompCurrency,
-    // Scenario CRUD
     addScenario, removeScenario,
-    // Persistence
     markSaved, discardChanges,
   }
 }
